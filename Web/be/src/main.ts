@@ -1,9 +1,15 @@
-import { ValidationPipe } from '@nestjs/common';
+import { Logger, ValidationPipe } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+  const logger = new Logger('Bootstrap');
+
+  const configService = app.get(ConfigService);
+
+  const port = configService.get<number>('PORT') || 3000;
 
   app.setGlobalPrefix('api');
 
@@ -11,10 +17,13 @@ async function bootstrap() {
     new ValidationPipe({
       whitelist: true,
       transform: true,
+      transformOptions: {
+        enableImplicitConversion: true,
+      },
     }),
   );
 
-  await app.listen(3000);
-  console.log(`Application is running on: ${await app.getUrl()}/api`);
+  await app.listen(port);
+  logger.log(`Application is running on: http://localhost:${port}/api`);
 }
 bootstrap();
