@@ -46,4 +46,3 @@ export class UsersController {
     return this.usersService.sanitizeUser(user);
   }
 }
-
