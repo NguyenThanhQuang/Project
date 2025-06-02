@@ -8,13 +8,15 @@ import {
   IsOptional,
   IsPhoneNumber,
   IsString,
+  MaxLength,
   ValidateNested,
 } from 'class-validator';
 import { Types } from 'mongoose';
 
-export class PassengerInfoDto {
+export class PassengerHoldDto {
   @IsNotEmpty({ message: 'Tên hành khách không được để trống' })
   @IsString()
+  @MaxLength(100)
   name: string;
 
   @IsNotEmpty({ message: 'Số điện thoại hành khách không được để trống' })
@@ -23,6 +25,7 @@ export class PassengerInfoDto {
 
   @IsNotEmpty({ message: 'Số ghế không được để trống' })
   @IsString()
+  @MaxLength(10) // Giả sử số ghế không quá dài
   seatNumber: string;
 }
 
@@ -31,21 +34,16 @@ export class CreateBookingHoldDto {
   @IsMongoId()
   tripId: Types.ObjectId;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Thông tin hành khách không được để trống' })
   @IsArray()
-  @ArrayMinSize(1, { message: 'Phải chọn ít nhất một ghế' })
-  @IsString({ each: true, message: 'Mỗi số ghế phải là chuỗi' })
-  seatNumbers: string[];
-
-  @IsNotEmpty()
-  @IsArray()
-  @ArrayMinSize(1)
+  @ArrayMinSize(1, { message: 'Phải có ít nhất một hành khách' })
   @ValidateNested({ each: true })
-  @Type(() => PassengerInfoDto)
-  passengers: PassengerInfoDto[];
+  @Type(() => PassengerHoldDto)
+  passengers: PassengerHoldDto[];
 
   @IsNotEmpty({ message: 'Tên liên hệ không được để trống' })
   @IsString()
+  @MaxLength(100)
   contactName: string;
 
   @IsNotEmpty({ message: 'Số điện thoại liên hệ không được để trống' })
@@ -54,5 +52,6 @@ export class CreateBookingHoldDto {
 
   @IsOptional()
   @IsEmail({}, { message: 'Email liên hệ không đúng định dạng' })
+  @MaxLength(100)
   contactEmail?: string;
 }

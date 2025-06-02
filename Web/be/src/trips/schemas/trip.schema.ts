@@ -18,18 +18,26 @@ export enum SeatStatus {
   BOOKED = 'booked',
 }
 
-const PointSchemaStructure = {
-  type: { type: String, enum: ['Point'], default: 'Point' },
+// Cấu trúc cho điểm (location)
+const PointSchemaStructureRequired = {
+  type: { type: String, enum: ['Point'], default: 'Point', required: true },
   coordinates: { type: [Number], required: true },
 };
 
+const PointSchemaStructureOptional = {
+  // Dùng cho Stop
+  type: { type: String, enum: ['Point'], default: 'Point' },
+  coordinates: { type: [Number] },
+};
+
+// Cấu trúc cho điểm dừng
 @Schema({ _id: false })
 export class Stop {
   @Prop({ type: String, required: true, trim: true })
   name: string;
 
-  @Prop(raw(PointSchemaStructure))
-  location?: typeof PointSchemaStructure;
+  @Prop(raw(PointSchemaStructureOptional))
+  location?: { type: 'Point'; coordinates: [number, number] };
 
   @Prop({ type: Date })
   expectedArrivalTime?: Date;
@@ -39,12 +47,13 @@ export class Stop {
 }
 export const StopSchema = SchemaFactory.createForClass(Stop);
 
+// Cấu trúc cho Route
 @Schema({ _id: false })
 export class RouteInfo {
   @Prop(
     raw({
       name: { type: String, required: true, trim: true },
-      location: raw(PointSchemaStructure),
+      location: PointSchemaStructureRequired,
     }),
   )
   from: {
@@ -55,7 +64,7 @@ export class RouteInfo {
   @Prop(
     raw({
       name: { type: String, required: true, trim: true },
-      location: raw(PointSchemaStructure),
+      location: PointSchemaStructureRequired,
     }),
   )
   to: {
@@ -71,6 +80,7 @@ export class RouteInfo {
 }
 export const RouteInfoSchema = SchemaFactory.createForClass(RouteInfo);
 
+// Cấu trúc cho Ghế
 @Schema({ _id: false })
 export class Seat {
   @Prop({ type: String, required: true })

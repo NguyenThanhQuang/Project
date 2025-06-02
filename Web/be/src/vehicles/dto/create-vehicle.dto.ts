@@ -5,6 +5,7 @@ import {
   IsObject,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
 } from 'class-validator';
 import { Types } from 'mongoose';

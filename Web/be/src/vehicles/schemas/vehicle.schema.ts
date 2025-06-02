@@ -1,4 +1,4 @@
-import { Prop, Schema, SchemaFactory, raw } from '@nestjs/mongoose';
+import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
 import { Company } from '../../companies/schemas/company.schema';
 
@@ -20,14 +20,7 @@ export class Vehicle {
   @Prop({ type: String, trim: true })
   description?: string;
 
-  @Prop(
-    raw({
-      rows: { type: Number },
-      cols: { type: Number },
-
-      layout: { type: Object },
-    }),
-  )
+  @Prop({ type: Object })
   seatMap?: Record<string, any>;
 
   @Prop({ type: Number, required: true, min: 1 })

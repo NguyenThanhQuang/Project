@@ -71,6 +71,7 @@ export class Booking {
 
   @Prop({ type: [PassengerInfoSchema], required: true, default: [] })
   passengers: PassengerInfo[];
+
   @Prop({ type: String, required: true, trim: true })
   contactName: string;
 

@@ -1,5 +1,6 @@
 import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   ArrayMinSize,
   IsArray,
   IsDateString,
@@ -9,11 +10,12 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  MaxLength,
   Min,
   ValidateNested,
 } from 'class-validator';
 import { Types } from 'mongoose';
-import { SeatStatus, TripStatus } from '../schemas/trip.schema';
+import { TripStatus } from '../schemas/trip.schema';
 
 class PointDto {
   @IsArray()
@@ -24,19 +26,21 @@ class PointDto {
 }
 
 class LocationPointDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Tên điểm không được để trống' })
   @IsString()
+  @MaxLength(100)
   name: string;
 
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Thông tin vị trí không được để trống' })
   @ValidateNested()
   @Type(() => PointDto)
   location: PointDto;
 }
 
 class StopDto {
-  @IsNotEmpty()
+  @IsNotEmpty({ message: 'Tên điểm dừng không được để trống' })
   @IsString()
+  @MaxLength(100)
   name: string;
 
   @IsOptional()
@@ -72,17 +76,8 @@ class RouteInfoDto {
 
   @IsOptional()
   @IsString()
+  @MaxLength(4096)
   polyline?: string;
-}
-
-export class SeatDto {
-  @IsNotEmpty()
-  @IsString()
-  seatNumber: string;
-
-  @IsOptional()
-  @IsEnum(SeatStatus)
-  status?: SeatStatus;
 }
 
 export class CreateTripDto {
@@ -115,10 +110,4 @@ export class CreateTripDto {
   @IsOptional()
   @IsEnum(TripStatus)
   status?: TripStatus;
-
-  @IsNotEmpty({ message: 'Danh sách ghế không được để trống khi tạo chuyến.' })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => SeatDto)
-  seats: SeatDto[];
 }
