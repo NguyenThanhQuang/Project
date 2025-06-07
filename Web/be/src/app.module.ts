@@ -5,6 +5,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { CompaniesModule } from './companies/companies.module';
+import { TripsModule } from './trips/trips.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 
@@ -22,6 +23,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     AuthModule,
     CompaniesModule,
     VehiclesModule,
+    TripsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
