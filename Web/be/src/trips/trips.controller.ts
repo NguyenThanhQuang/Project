@@ -91,13 +91,13 @@ export class TripsController {
     // if (user.role === UserRole.COMPANY_ADMIN && trip.companyId._id.toString() !== user.companyId.toString()) {
     //   throw new ForbiddenException('Bạn không có quyền cập nhật chuyến đi này.');
     // }
-    return this.tripsService.update(tripId, updateTripDto);
+    return this.tripsService.update(tripId.toString(), updateTripDto);
   }
 
   /**
    * @description Xóa một chuyến đi.
    * @route DELETE /api/trips/:tripId
-   * @access Admin, Company_Admin (cần logic phân quyền cụ thể trong service)
+   * @access Admin, Company_Admin (chưa có logic phân quyền cụ thể trong service)
    */
   @Delete(':tripId')
   @UseGuards(JwtAuthGuard)
@@ -108,7 +108,6 @@ export class TripsController {
     @Param('tripId', ParseMongoIdPipe) tripId: Types.ObjectId,
     /* @Req() req */
   ) {
-    // TODO: Logic phân quyền tương tự như updateTrip
-    await this.tripsService.remove(tripId);
+    await this.tripsService.remove(tripId.toString());
   }
 }
