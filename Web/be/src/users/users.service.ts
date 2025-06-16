@@ -58,8 +58,32 @@ export class UsersService {
     return user;
   }
 
-  sanitizeUser(user: UserDocument): Omit<UserDocument, 'passwordHash'> {
-    const { passwordHash, ...result } = user.toObject();
-    return result as Omit<UserDocument, 'passwordHash'>;
+  async findOneByCondition(
+    condition: Partial<User>,
+  ): Promise<UserDocument | null> {
+    return this.userModel.findOne(condition).exec();
+  }
+
+  sanitizeUser(
+    user: UserDocument,
+  ): Omit<
+    UserDocument,
+    | 'passwordHash'
+    | 'emailVerificationToken'
+    | 'emailVerificationExpires'
+    | 'passwordResetToken'
+    | 'passwordResetExpires'
+  > {
+    const userObject = user.toObject ? user.toObject() : { ...user };
+    const {
+      passwordHash,
+      emailVerificationToken,
+      emailVerificationExpires,
+      passwordResetToken,
+      passwordResetExpires,
+      __v,
+      ...result
+    } = userObject;
+    return result as any;
   }
 }

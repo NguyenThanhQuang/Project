@@ -40,14 +40,43 @@ export class User {
 
   @Prop({ type: Types.ObjectId, ref: 'Company' })
   companyId?: Types.ObjectId;
+
+  @Prop({ type: Boolean, default: false })
+  isEmailVerified: boolean;
+
+  @Prop({
+    type: String,
+    select: false,
+    index: true,
+    unique: true,
+    sparse: true,
+  })
+  emailVerificationToken?: string;
+
+  @Prop({ type: Date, select: false })
+  emailVerificationExpires?: Date;
+
+  @Prop({
+    type: String,
+    select: false,
+    index: true,
+    unique: true,
+    sparse: true,
+  })
+  passwordResetToken?: string;
+
+  @Prop({ type: Date, select: false })
+  passwordResetExpires?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.pre<UserDocument>('save', async function (next) {
   if (this.isModified('passwordHash') || this.isNew) {
-    const salt = await bcrypt.genSalt(10);
-    this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
+    if (this.passwordHash) {
+      const salt = await bcrypt.genSalt(10);
+      this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
+    }
   }
   next();
 });
