@@ -8,15 +8,9 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
-export type SanitizedUser = Omit<
-  User,
-  | 'passwordHash'
-  | 'emailVerificationToken'
-  | 'emailVerificationExpires'
-  | 'passwordResetToken'
-  | 'passwordResetExpires'
-  | '__v'
->;
+export type UserDocument = HydratedDocument<User> & {
+  comparePassword: (password: string) => Promise<boolean>;
+};
 
 @Schema({ timestamps: true })
 export class User {
@@ -64,7 +58,6 @@ export class User {
   @Prop({ type: Date, select: false })
   emailVerificationExpires?: Date;
 
-  // Các trường cho reset password
   @Prop({
     type: String,
     select: false,
@@ -81,7 +74,7 @@ export class User {
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.pre<UserDocument>('save', async function (next) {
-  if (this.isModified('passwordHash')) {
+  if (this.isModified('passwordHash') && this.passwordHash) {
     const salt = await bcrypt.genSalt(10);
     this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
   }
@@ -90,11 +83,19 @@ UserSchema.pre<UserDocument>('save', async function (next) {
 
 UserSchema.methods.comparePassword = async function (
   this: UserDocument,
-  password: string,
+  passwordToCheck: string,
 ): Promise<boolean> {
-  return bcrypt.compare(password, this.passwordHash);
+  if (!this.passwordHash || typeof passwordToCheck !== 'string') {
+    return false;
+  }
+  return bcrypt.compare(passwordToCheck, this.passwordHash);
 };
 
-export type UserDocument = HydratedDocument<User> & {
-  comparePassword: (password: string) => Promise<boolean>;
-};
+export type SanitizedUser = Omit<
+  User,
+  | 'passwordHash'
+  | 'emailVerificationToken'
+  | 'emailVerificationExpires'
+  | 'passwordResetToken'
+  | 'passwordResetExpires'
+>;

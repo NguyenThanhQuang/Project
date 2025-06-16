@@ -1,14 +1,17 @@
 import {
+  Body,
   Controller,
+  ForbiddenException,
   Get,
-  NotFoundException,
   Param,
+  Patch,
   Req,
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { Types } from 'mongoose';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { SanitizedUser } from './schemas/user.schema';
 import { UsersService } from './users.service';
 
 interface AuthenticatedRequest extends Request {
@@ -21,28 +24,35 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getMyProfile(@Req() req: AuthenticatedRequest) {
+  async getMyProfile(@Req() req: AuthenticatedRequest): Promise<SanitizedUser> {
     const userId = req.user.userId;
     const user = await this.usersService.findById(userId);
-    if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng.');
-    }
     return this.usersService.sanitizeUser(user);
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  async updateMyProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<SanitizedUser> {
+    const userId = req.user.userId;
+    return this.usersService.updateProfile(userId, updateUserDto);
   }
 
   @UseGuards(JwtAuthGuard)
   @Get(':userId')
   async getUserProfile(
-    @Param('userId') userId: string,
+    @Param('userId') targetUserId: string,
     @Req() req: AuthenticatedRequest,
-  ) {
-    if (!Types.ObjectId.isValid(userId)) {
-      throw new NotFoundException('ID người dùng không hợp lệ.');
+  ): Promise<SanitizedUser> {
+    if (req.user.role !== 'admin' && req.user.userId !== targetUserId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền truy cập thông tin này.',
+      );
     }
-    const user = await this.usersService.findById(userId);
-    if (!user) {
-      throw new NotFoundException('Không tìm thấy người dùng.');
-    }
+
+    const user = await this.usersService.findById(targetUserId);
     return this.usersService.sanitizeUser(user);
   }
 }

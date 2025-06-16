@@ -1,7 +1,13 @@
-import { ConflictException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
+import { UpdateUserDto } from './dto/update-user.dto';
 import {
   SanitizedUser,
   User,
@@ -49,34 +55,52 @@ export class UsersService {
   async findOneByEmail(email: string): Promise<UserDocument | null> {
     return this.userModel
       .findOne({ email: email.toLowerCase() })
-      .select('+passwordHash')
+      .select(
+        '+passwordHash +emailVerificationToken +emailVerificationExpires +passwordResetToken +passwordResetExpires',
+      )
       .exec();
   }
 
   async findOneByPhone(phone: string): Promise<UserDocument | null> {
-    return this.userModel.findOne({ phone }).select('+passwordHash').exec();
+    return this.userModel
+      .findOne({ phone })
+      .select(
+        '+passwordHash +emailVerificationToken +emailVerificationExpires +passwordResetToken +passwordResetExpires',
+      )
+      .exec();
   }
 
-  async findById(id: string | Types.ObjectId): Promise<UserDocument | null> {
+  async findById(id: string | Types.ObjectId): Promise<UserDocument> {
     if (!Types.ObjectId.isValid(id)) {
-      return null;
+      throw new NotFoundException('ID người dùng không hợp lệ.');
     }
-    return this.userModel.findById(id).exec();
+    const user = await this.userModel
+      .findById(id)
+      .select(
+        '+emailVerificationToken +emailVerificationExpires +passwordResetToken +passwordResetExpires',
+      )
+      .exec();
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng.');
+    }
+    return user;
   }
 
   async findOneByCondition(
     condition: Partial<User>,
   ): Promise<UserDocument | null> {
-    let query = this.userModel.findOne(condition) as import('mongoose').Query<
-      UserDocument | null,
-      UserDocument
-    >;
+    const selectFields = ['+passwordHash'];
     if (condition.emailVerificationToken) {
-      query = query.select(
-        '+emailVerificationToken +emailVerificationExpires',
-      ) as import('mongoose').Query<UserDocument | null, UserDocument>;
+      selectFields.push('+emailVerificationToken', '+emailVerificationExpires');
     }
-    return query.exec();
+    if (condition.passwordResetToken) {
+      selectFields.push('+passwordResetToken', '+passwordResetExpires');
+    }
+
+    return this.userModel
+      .findOne(condition)
+      .select(selectFields.join(' '))
+      .exec();
   }
 
   sanitizeUser(user: UserDocument): SanitizedUser {
@@ -92,5 +116,54 @@ export class UsersService {
       ...result
     } = userObject;
     return result as SanitizedUser;
+  }
+
+  async updateProfile(
+    userId: string | Types.ObjectId,
+    updateUserDto: UpdateUserDto,
+  ): Promise<SanitizedUser> {
+    const user = await this.findById(userId);
+
+    if (updateUserDto.phone && updateUserDto.phone !== user.phone) {
+      const existingUserWithPhone = await this.userModel
+        .findOne({ phone: updateUserDto.phone })
+        .exec();
+      if (
+        existingUserWithPhone &&
+        existingUserWithPhone._id.toString() !== user._id.toString()
+      ) {
+        throw new ConflictException(
+          'Số điện thoại này đã được sử dụng bởi một tài khoản khác.',
+        );
+      }
+      user.phone = updateUserDto.phone;
+    }
+
+    if (typeof updateUserDto.name === 'string') {
+      user.name = updateUserDto.name;
+    }
+
+    try {
+      await user.save();
+    } catch (error) {
+      this.handleMongoError(error);
+      // Fallback error nếu handleMongoError không throw
+      throw new BadRequestException(
+        'Không thể cập nhật thông tin người dùng. Vui lòng thử lại.',
+      );
+    }
+
+    return this.sanitizeUser(user);
+  }
+
+  private handleMongoError(error: any): void {
+    if (error.code === 11000) {
+      const field = Object.keys(error.keyValue)[0];
+      const value = error.keyValue[field];
+      throw new ConflictException(
+        `Giá trị '${value}' cho trường '${field}' đã tồn tại.`,
+      );
+    }
+    //Xử lý cho các mã lỗi MongoDB khác
   }
 }
