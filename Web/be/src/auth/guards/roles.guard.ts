@@ -3,6 +3,7 @@ import {
   ExecutionContext,
   ForbiddenException,
   Injectable,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { UserRole } from '../../users/schemas/user.schema';
@@ -22,11 +23,15 @@ export class RolesGuard implements CanActivate {
       return true;
     }
 
-    const { user } = context.switchToHttp().getRequest();
+    interface RequestWithUser extends Request {
+      user?: { role?: UserRole };
+    }
+    const request = context.switchToHttp().getRequest<RequestWithUser>();
+    const user = request.user;
 
     if (!user || !user.role) {
-      throw new ForbiddenException(
-        'Bạn không có quyền truy cập tài nguyên này.',
+      throw new UnauthorizedException(
+        'Yêu cầu chưa được xác thực hoặc không có thông tin người dùng.',
       );
     }
 

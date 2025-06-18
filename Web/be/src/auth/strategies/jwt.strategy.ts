@@ -12,6 +12,7 @@ export interface JwtPayload {
   sub: string;
   email: string;
   role: string;
+  companyId?: string;
 }
 
 @Injectable()
@@ -45,6 +46,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         'Người dùng không tồn tại hoặc token không hợp lệ.',
       );
     }
-    return { userId: payload.sub, email: payload.email, role: payload.role };
+    return {
+      userId: payload.sub,
+      email: payload.email,
+      role: payload.role,
+      companyId: user.companyId,
+    };
   }
 }
