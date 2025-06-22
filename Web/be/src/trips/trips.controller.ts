@@ -108,6 +108,7 @@ export class TripsController {
     @Param('tripId', ParseMongoIdPipe) tripId: Types.ObjectId,
     /* @Req() req */
   ) {
+    // TODO: Logic phân quyền tương tự như updateTrip
     await this.tripsService.remove(tripId.toString());
   }
 }
