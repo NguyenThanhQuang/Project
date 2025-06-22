@@ -1,10 +1,13 @@
 import {
+  Body,
   Controller,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
   NotFoundException,
   Param,
+  Patch,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -13,9 +16,9 @@ import { Types } from 'mongoose';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from './schemas/user.schema';
+import { UpdateUserDto } from './dto/update-user.dto';
+import { SanitizedUser, UserRole } from './schemas/user.schema';
 import { UsersService } from './users.service';
-
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: UserRole };
 }
@@ -26,20 +29,44 @@ export class UsersController {
 
   @UseGuards(JwtAuthGuard)
   @Get('me')
-  async getMyProfile(@Req() req: AuthenticatedRequest) {
+  async getMyProfile(@Req() req: AuthenticatedRequest): Promise<SanitizedUser> {
     const userId = req.user.userId;
     const user = await this.usersService.findById(userId);
-
     return this.usersService.sanitizeUser(user);
   }
 
   @UseGuards(JwtAuthGuard)
+  @Patch('me')
+  async updateMyProfile(
+    @Req() req: AuthenticatedRequest,
+    @Body() updateUserDto: UpdateUserDto,
+  ): Promise<SanitizedUser> {
+    const userId = req.user.userId;
+    return this.usersService.updateProfile(userId, updateUserDto);
+  }
+
+  // Endpoint để lấy thông tin người dùng theo ID
+  // Cần phân quyền cẩn thận cho endpoint này
+  @UseGuards(JwtAuthGuard) // Chỉ cần đăng nhập là có thể gọi, cần thêm RolesGuard nếu muốn giới hạn
   @Get(':userId')
-  async getUserProfile(@Param('userId') userId: string) {
-    if (!Types.ObjectId.isValid(userId)) {
+  async getUserProfile(
+    @Param('userId') targetUserId: string,
+    @Req() req: AuthenticatedRequest, // Thêm @Req() để có thể kiểm tra quyền của người gọi
+  ): Promise<SanitizedUser> {
+    // Cập nhật kiểu trả về
+    // Kiểm tra quyền: Chỉ admin hoặc chính người dùng đó mới được xem thông tin chi tiết
+    // Hoặc nếu bạn muốn endpoint này chỉ dành cho Admin, thì dùng RolesGuard và @Roles(UserRole.ADMIN)
+    if (req.user.role !== UserRole.ADMIN && req.user.userId !== targetUserId) {
+      throw new ForbiddenException(
+        'Bạn không có quyền truy cập thông tin này.',
+      );
+    }
+
+    if (!Types.ObjectId.isValid(targetUserId)) {
       throw new NotFoundException('ID người dùng không hợp lệ.');
     }
-    const user = await this.usersService.findById(userId);
+    const user = await this.usersService.findById(targetUserId);
+    // findById đã xử lý NotFoundException
     return this.usersService.sanitizeUser(user);
   }
 
@@ -63,4 +90,20 @@ export class UsersController {
       message: 'Chào mừng người quản lý (Admin hoặc Company Admin)!',
     };
   }
+
+  // (Tùy chọn) Endpoint cho Admin cập nhật thông tin của bất kỳ người dùng nào
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(UserRole.ADMIN)
+  // @Patch(':userId')
+  // async updateUserByAdmin(
+  //   @Param('userId') targetUserId: string,
+  //   @Body() updateUserDto: UpdateUserDto, // Có thể cần một AdminUpdateUserDto riêng biệt
+  // ): Promise<SanitizedUser> {
+  //   if (!Types.ObjectId.isValid(targetUserId)) {
+  //     throw new NotFoundException('ID người dùng không hợp lệ.');
+  //   }
+  //   // Cần đảm bảo rằng admin không thể thay đổi vai trò hoặc các trường nhạy cảm khác một cách vô ý
+  //   // thông qua DTO chung này. Xem xét việc tạo AdminUpdateUserDto.
+  //   return this.usersService.updateProfile(targetUserId, updateUserDto);
+  // }
 }
