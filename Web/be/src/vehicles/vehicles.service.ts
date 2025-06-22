@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
@@ -17,21 +18,47 @@ export class VehiclesService {
     private readonly companiesService: CompaniesService,
   ) {}
 
-  private validateSeatMap(seatMap: any, totalSeats: number): boolean {
-    if (!seatMap || typeof seatMap !== 'object') return true;
+  /**
+   * Validate sơ đồ ghế (seatMap).
+   * - Kiểm tra seatMap có cấu trúc hợp lệ (tối thiểu là có thuộc tính layout dạng mảng).
+   * - Đếm số ghế trong layout và so sánh với totalSeats đã khai báo.
+   * Logic này có thể được mở rộng để validate các quy tắc phức tạp.
+   * @param seatMap - Đối tượng sơ đồ ghế từ DTO.
+   * @param totalSeats - Tổng số ghế đã khai báo.
+   */
+  private validateSeatMap(seatMap: any, totalSeats: number): void {
+    if (!seatMap) {
+      return;
+    }
 
-    return true;
+    if (typeof seatMap !== 'object' || !Array.isArray(seatMap.layout)) {
+      throw new BadRequestException(
+        'Sơ đồ ghế (seatMap) không hợp lệ. Cần có thuộc tính "layout" là một mảng.',
+      );
+    }
+
+    let countedSeats = 0;
+    for (const row of seatMap.layout) {
+      if (Array.isArray(row)) {
+        for (const seat of row) {
+          if (seat !== null && seat !== undefined) {
+            countedSeats++;
+          }
+        }
+      }
+    }
+
+    if (countedSeats !== totalSeats) {
+      throw new BadRequestException(
+        `Số lượng ghế trong sơ đồ (${countedSeats}) không khớp với tổng số ghế đã khai báo (${totalSeats}).`,
+      );
+    }
   }
 
   async create(createVehicleDto: CreateVehicleDto): Promise<VehicleDocument> {
     await this.companiesService.findOne(createVehicleDto.companyId);
 
-    if (createVehicleDto.seatMap) {
-      this.validateSeatMap(
-        createVehicleDto.seatMap,
-        createVehicleDto.totalSeats,
-      );
-    }
+    this.validateSeatMap(createVehicleDto.seatMap, createVehicleDto.totalSeats);
 
     const existingVehicle = await this.vehicleModel
       .findOne({
@@ -82,19 +109,19 @@ export class VehiclesService {
   ): Promise<VehicleDocument> {
     const existingVehicle = await this.findOne(id);
 
-    if (
-      updateVehicleDto.companyId &&
-      updateVehicleDto.companyId.toString() !==
-        existingVehicle.companyId.toString()
-    ) {
-      await this.companiesService.findOne(updateVehicleDto.companyId);
-    }
-
-    const companyIdForCheck =
-      updateVehicleDto.companyId || existingVehicle.companyId;
-    const typeForCheck = updateVehicleDto.type || existingVehicle.type;
-
     if (updateVehicleDto.type || updateVehicleDto.companyId) {
+      if (
+        updateVehicleDto.companyId &&
+        updateVehicleDto.companyId.toString() !==
+          existingVehicle.companyId.toString()
+      ) {
+        await this.companiesService.findOne(updateVehicleDto.companyId);
+      }
+
+      const companyIdForCheck =
+        updateVehicleDto.companyId || existingVehicle.companyId;
+      const typeForCheck = updateVehicleDto.type || existingVehicle.type;
+
       const conflictingVehicle = await this.vehicleModel
         .findOne({
           companyId: companyIdForCheck,
@@ -102,6 +129,7 @@ export class VehiclesService {
           _id: { $ne: id },
         })
         .exec();
+
       if (conflictingVehicle) {
         throw new ConflictException(
           `Loại xe "${typeForCheck}" đã tồn tại cho nhà xe này.`,
@@ -110,17 +138,11 @@ export class VehiclesService {
     }
 
     const totalSeatsForValidation =
-      updateVehicleDto.totalSeats !== undefined
-        ? updateVehicleDto.totalSeats
-        : existingVehicle.totalSeats;
+      updateVehicleDto.totalSeats ?? existingVehicle.totalSeats;
     const seatMapForValidation =
-      updateVehicleDto.seatMap !== undefined
-        ? updateVehicleDto.seatMap
-        : existingVehicle.seatMap;
+      updateVehicleDto.seatMap ?? existingVehicle.seatMap;
 
-    if (seatMapForValidation) {
-      this.validateSeatMap(seatMapForValidation, totalSeatsForValidation);
-    }
+    this.validateSeatMap(seatMapForValidation, totalSeatsForValidation);
 
     Object.assign(existingVehicle, updateVehicleDto);
     return existingVehicle.save();
@@ -128,13 +150,21 @@ export class VehiclesService {
 
   async remove(id: string): Promise<VehicleDocument> {
     const vehicle = await this.findOne(id);
-    // const trips = await this.tripModel.countDocuments({ vehicleId: id });
-    // if (trips > 0) throw new ConflictException('Không thể xóa loại xe khi vẫn còn chuyến đi liên kết.');
+
+    // **Ghi chú quan trọng:**
+    // Module `Trips`, logic kiểm tra:
+    // const tripCount = await this.tripModel.countDocuments({ vehicleId: id }).exec();
+    // if (tripCount > 0) {
+    //   throw new ConflictException(
+    //     'Không thể xóa loại xe này vì nó đang được sử dụng trong ' + tripCount + ' chuyến đi.'
+    //   );
+    // }
+
     await vehicle.deleteOne();
     return vehicle;
   }
 
-  async deleteAll(): Promise<any> {
-    return this.vehicleModel.deleteMany({}).exec();
-  }
+  // async deleteAll(): Promise<any> {
+  //   return this.vehicleModel.deleteMany({}).exec();
+  // }
 }
