@@ -26,6 +26,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     VehiclesModule,
     TripsModule,
     MailModule,
+    VehiclesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
