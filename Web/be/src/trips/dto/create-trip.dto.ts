@@ -25,7 +25,7 @@ class PointDto {
   coordinates: [number, number];
 }
 
-class LocationPointDto {
+export class LocationPointDto {
   @IsNotEmpty({ message: 'Tên điểm không được để trống' })
   @IsString()
   @MaxLength(100)
@@ -37,7 +37,7 @@ class LocationPointDto {
   location: PointDto;
 }
 
-class StopDto {
+export class StopDto {
   @IsNotEmpty({ message: 'Tên điểm dừng không được để trống' })
   @IsString()
   @MaxLength(100)
@@ -57,7 +57,7 @@ class StopDto {
   expectedDepartureTime?: string;
 }
 
-class RouteInfoDto {
+export class RouteInfoDto {
   @IsNotEmpty()
   @ValidateNested()
   @Type(() => LocationPointDto)

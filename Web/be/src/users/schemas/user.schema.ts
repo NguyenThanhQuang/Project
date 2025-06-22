@@ -8,7 +8,9 @@ export enum UserRole {
   ADMIN = 'admin',
 }
 
-export type UserDocument = HydratedDocument<User>;
+export type UserDocument = HydratedDocument<User> & {
+  comparePassword: (password: string) => Promise<boolean>;
+};
 
 @Schema({ timestamps: true })
 export class User {
@@ -24,7 +26,7 @@ export class User {
   @Prop({ type: String, required: true, unique: true, trim: true })
   phone: string;
 
-  @Prop({ type: String, required: true })
+  @Prop({ type: String, required: true, select: false })
   passwordHash: string;
 
   @Prop({ type: String, required: true, trim: true })
@@ -40,12 +42,39 @@ export class User {
 
   @Prop({ type: Types.ObjectId, ref: 'Company' })
   companyId?: Types.ObjectId;
+
+  @Prop({ type: Boolean, default: false })
+  isEmailVerified: boolean;
+
+  @Prop({
+    type: String,
+    select: false,
+    index: true,
+    unique: true,
+    sparse: true,
+  })
+  emailVerificationToken?: string;
+
+  @Prop({ type: Date, select: false })
+  emailVerificationExpires?: Date;
+
+  @Prop({
+    type: String,
+    select: false,
+    index: true,
+    unique: true,
+    sparse: true,
+  })
+  passwordResetToken?: string;
+
+  @Prop({ type: Date, select: false })
+  passwordResetExpires?: Date;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);
 
 UserSchema.pre<UserDocument>('save', async function (next) {
-  if (this.isModified('passwordHash') || this.isNew) {
+  if (this.isModified('passwordHash') && this.passwordHash) {
     const salt = await bcrypt.genSalt(10);
     this.passwordHash = await bcrypt.hash(this.passwordHash, salt);
   }
@@ -53,7 +82,20 @@ UserSchema.pre<UserDocument>('save', async function (next) {
 });
 
 UserSchema.methods.comparePassword = async function (
-  password: string,
+  this: UserDocument,
+  passwordToCheck: string,
 ): Promise<boolean> {
-  return bcrypt.compare(password, this.passwordHash);
+  if (!this.passwordHash || typeof passwordToCheck !== 'string') {
+    return false;
+  }
+  return bcrypt.compare(passwordToCheck, this.passwordHash);
 };
+
+export type SanitizedUser = Omit<
+  User,
+  | 'passwordHash'
+  | 'emailVerificationToken'
+  | 'emailVerificationExpires'
+  | 'passwordResetToken'
+  | 'passwordResetExpires'
+>;
