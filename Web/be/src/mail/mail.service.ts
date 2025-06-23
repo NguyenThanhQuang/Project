@@ -60,22 +60,23 @@ export class MailService {
   async sendVerificationEmail(email: string, name: string, token: string) {
     const clientUrl = this.configService.get<string>(
       'CLIENT_URL',
-      'http://localhost:3001',
+      'http://localhost:3001', // Default client URL
     );
+    // Path trên client để xử lý xác thực email
     const verificationPath = this.configService.get<string>(
       'CLIENT_EMAIL_VERIFICATION_PATH',
-      '/auth/verify',
+      '/auth/verify-email', // Default path
     );
     const verificationUrl = `${clientUrl}${verificationPath}?token=${token}`;
 
     const mailFromName = this.configService.get<string>(
       'MAIL_FROM_NAME',
-      'Your Awesome App',
+      'Your Awesome App', // Default sender name
     );
     const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
     const tokenExpiresText = this.configService.get<string>(
       'EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_TEXT',
-      '24 giờ',
+      '24 giờ', // Default expiry text
     );
 
     if (!mailFromAddress) {
@@ -123,4 +124,77 @@ export class MailService {
       );
     }
   }
+
+  // PHẦN THÊM MỚI CHO QUÊN MẬT KHẨU
+  async sendPasswordResetEmail(email: string, name: string, token: string) {
+    const clientUrl = this.configService.get<string>(
+      'CLIENT_URL',
+      'http://localhost:3001', // Default client URL
+    );
+    // Path trên client để người dùng nhập mật khẩu mới
+    const resetPasswordPath = this.configService.get<string>(
+      'CLIENT_PASSWORD_RESET_PATH',
+      '/auth/reset-password', // Default path
+    );
+    const resetUrl = `${clientUrl}${resetPasswordPath}?token=${token}`;
+
+    const mailFromName = this.configService.get<string>(
+      'MAIL_FROM_NAME',
+      'Your Awesome App',
+    );
+    const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
+    const tokenExpiresText = this.configService.get<string>(
+      'PASSWORD_RESET_TOKEN_EXPIRES_IN_TEXT', // Sử dụng biến riêng cho password reset
+      '1 giờ', // Default expiry text
+    );
+
+    if (!mailFromAddress) {
+      this.logger.error(
+        'MAIL_FROM_ADDRESS is not configured. Cannot send password reset email.',
+      );
+      throw new InternalServerErrorException(
+        'Không thể gửi email do thiếu cấu hình địa chỉ người gửi.',
+      );
+    }
+
+    const mailOptions = {
+      from: `"${mailFromName}" <${mailFromAddress}>`,
+      to: email,
+      subject: `Yêu cầu Đặt lại Mật khẩu cho ${mailFromName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+          <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+            <h2 style="color: #dc3545;">Chào ${name},</h2>
+            <p>Chúng tôi nhận được yêu cầu đặt lại mật khẩu cho tài khoản của bạn tại <strong>${mailFromName}</strong>.</p>
+            <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email này. Mật khẩu của bạn sẽ không thay đổi.</p>
+            <p>Để đặt lại mật khẩu, vui lòng nhấp vào nút bên dưới:</p>
+            <p style="text-align: center; margin: 25px 0;">
+              <a href="${resetUrl}" style="background-color: #dc3545; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block;">Đặt lại Mật khẩu</a>
+            </p>
+            <p>Nếu nút trên không hoạt động, bạn cũng có thể sao chép và dán URL sau vào thanh địa chỉ của trình duyệt:</p>
+            <p style="word-break: break-all;"><a href="${resetUrl}" style="color: #dc3545;">${resetUrl}</a></p>
+            <p>Liên kết đặt lại mật khẩu này sẽ có hiệu lực trong vòng <strong>${tokenExpiresText}</strong>.</p>
+            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+            <p style="font-size: 0.9em; color: #777;">Trân trọng,<br>Đội ngũ ${mailFromName}</p>
+          </div>
+        </div>
+      `,
+    };
+
+    try {
+      const info = await this.transporter.sendMail(mailOptions);
+      this.logger.log(
+        `Password reset email sent to ${email}. Message ID: ${info.messageId}, Preview URL: ${nodemailer.getTestMessageUrl(info)}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error sending password reset email to ${email}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại sau.',
+      );
+    }
+  }
+  // KẾT THÚC PHẦN THÊM MỚI
 }
