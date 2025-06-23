@@ -60,23 +60,22 @@ export class MailService {
   async sendVerificationEmail(email: string, name: string, token: string) {
     const clientUrl = this.configService.get<string>(
       'CLIENT_URL',
-      'http://localhost:3001', // Default client URL
+      'http://localhost:3001',
     );
-    // Path trên client để xử lý xác thực email
     const verificationPath = this.configService.get<string>(
       'CLIENT_EMAIL_VERIFICATION_PATH',
-      '/auth/verify-email', // Default path
+      '/auth/verify-email',
     );
     const verificationUrl = `${clientUrl}${verificationPath}?token=${token}`;
 
     const mailFromName = this.configService.get<string>(
       'MAIL_FROM_NAME',
-      'Your Awesome App', // Default sender name
+      'Your Awesome App',
     );
     const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
     const tokenExpiresText = this.configService.get<string>(
       'EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_TEXT',
-      '24 giờ', // Default expiry text
+      '24 giờ',
     );
 
     if (!mailFromAddress) {
@@ -125,16 +124,14 @@ export class MailService {
     }
   }
 
-  // PHẦN THÊM MỚI CHO QUÊN MẬT KHẨU
   async sendPasswordResetEmail(email: string, name: string, token: string) {
     const clientUrl = this.configService.get<string>(
       'CLIENT_URL',
-      'http://localhost:3001', // Default client URL
+      'http://localhost:3001',
     );
-    // Path trên client để người dùng nhập mật khẩu mới
     const resetPasswordPath = this.configService.get<string>(
       'CLIENT_PASSWORD_RESET_PATH',
-      '/auth/reset-password', // Default path
+      '/auth/reset-password',
     );
     const resetUrl = `${clientUrl}${resetPasswordPath}?token=${token}`;
 
@@ -144,8 +141,8 @@ export class MailService {
     );
     const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
     const tokenExpiresText = this.configService.get<string>(
-      'PASSWORD_RESET_TOKEN_EXPIRES_IN_TEXT', // Sử dụng biến riêng cho password reset
-      '1 giờ', // Default expiry text
+      'PASSWORD_RESET_TOKEN_EXPIRES_IN_TEXT',
+      '1 giờ',
     );
 
     if (!mailFromAddress) {
@@ -196,5 +193,4 @@ export class MailService {
       );
     }
   }
-  // KẾT THÚC PHẦN THÊM MỚI
 }

@@ -21,7 +21,9 @@ import {
   InternalCreateUserPayload,
   UsersService,
 } from '../users/users.service';
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
 
 @Injectable()
@@ -115,7 +117,7 @@ export class AuthService {
     }
 
     const emailVerificationToken = await this.generateSecureToken();
-    const expiresInMsDefault = 86400000; // 24 giờ
+    const expiresInMsDefault = 86400000;
     const expiresInMs = parseInt(
       this.configService.get<string>(
         'EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_MS',
@@ -141,7 +143,7 @@ export class AuthService {
       if (error instanceof ConflictException) throw error;
       if (error.code === 11000) {
         this.logger.warn(
-          `MongoDB duplicate key error during user creation for email ${emailLower} or phone ${registerDto.phone}. This might indicate a race condition or an issue with token uniqueness if it's the token field. Error: ${error.message}`,
+          `MongoDB duplicate key error during user creation for email ${emailLower} or phone ${registerDto.phone}. Error: ${error.message}`,
         );
         throw new ConflictException(
           'Không thể tạo tài khoản do lỗi dữ liệu trùng lặp. Vui lòng thử lại.',
@@ -152,7 +154,6 @@ export class AuthService {
       );
     }
 
-    // Kiểm tra và log token xác thực
     if (newUser && newUser.emailVerificationToken) {
       this.logger.log(
         `[TESTING] New user ${newUser.email} created. Verification Token: ${newUser.emailVerificationToken}`,
@@ -273,6 +274,9 @@ export class AuthService {
         !user.emailVerificationExpires ||
         user.emailVerificationExpires.getTime() < Date.now()
       ) {
+        user.emailVerificationToken = undefined;
+        user.emailVerificationExpires = undefined;
+        await user.save();
         throw new UnauthorizedException(
           'Token xác thực đã hết hạn. Vui lòng yêu cầu gửi lại.',
         );
@@ -288,6 +292,7 @@ export class AuthService {
       email: user.email,
       sub: user._id.toString(),
       role: user.role,
+      companyId: user.companyId?.toString(),
     };
     const accessToken = this.jwtService.sign(payload);
 
@@ -305,7 +310,7 @@ export class AuthService {
       this.logger.warn(
         `Attempt to resend verification for non-existent email: ${emailLower}`,
       );
-      return; // Bỏ qua để không lộ thông tin email
+      return;
     }
 
     if (user.isEmailVerified) {
@@ -325,8 +330,14 @@ export class AuthService {
     await user.save();
 
     try {
-      if (!user.emailVerificationToken)
-        throw new Error('Token missing for resend');
+      if (!user.emailVerificationToken) {
+        this.logger.error(
+          `Critical: Token for resend missing for ${user.email}`,
+        );
+        throw new InternalServerErrorException(
+          'Lỗi hệ thống khi chuẩn bị gửi lại email.',
+        );
+      }
       await this.mailService.sendVerificationEmail(
         user.email,
         user.name,
@@ -342,5 +353,144 @@ export class AuthService {
         'Không thể gửi lại email xác thực. Vui lòng thử lại sau.',
       );
     }
+  }
+
+  async requestPasswordReset(
+    forgotPasswordDto: ForgotPasswordDto,
+  ): Promise<{ message: string }> {
+    const email = forgotPasswordDto.email.toLowerCase();
+    const user = await this.usersService.findOneByEmail(email);
+
+    const generalSuccessMessage =
+      'Nếu địa chỉ email của bạn tồn tại trong hệ thống và đã được xác thực, bạn sẽ nhận được một email hướng dẫn đặt lại mật khẩu trong vài phút nữa.';
+
+    if (!user) {
+      this.logger.warn(
+        `Password reset requested for non-existent email: ${email}`,
+      );
+      return { message: generalSuccessMessage };
+    }
+
+    if (!user.isEmailVerified) {
+      this.logger.warn(
+        `Password reset requested for unverified email: ${email}`,
+      );
+      return { message: generalSuccessMessage };
+    }
+
+    user.passwordResetToken = await this.generateSecureToken();
+    const expiresInMs = parseInt(
+      this.configService.get<string>(
+        'PASSWORD_RESET_TOKEN_EXPIRES_IN_MS',
+        '3600000',
+      ),
+      10,
+    );
+    user.passwordResetExpires = new Date(Date.now() + expiresInMs);
+
+    try {
+      await user.save();
+      if (!user.passwordResetToken) {
+        this.logger.error(
+          `Critical error: Password reset token missing for user ${user.email} after save, before sending mail.`,
+        );
+        throw new InternalServerErrorException(
+          'Lỗi hệ thống khi tạo token đặt lại mật khẩu.',
+        );
+      }
+      await this.mailService.sendPasswordResetEmail(
+        user.email,
+        user.name,
+        user.passwordResetToken,
+      );
+      this.logger.log(
+        `Password reset process initiated for ${user.email}. Token: ${user.passwordResetToken}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Error during password reset process for ${user.email}:`,
+        error,
+      );
+    }
+    return { message: generalSuccessMessage };
+  }
+
+  async resetPasswordWithToken(
+    resetPasswordDto: ResetPasswordDto,
+  ): Promise<{ message: string }> {
+    const { token, newPassword, confirmNewPassword } = resetPasswordDto;
+    if (newPassword !== confirmNewPassword) {
+      throw new BadRequestException(
+        'Mật khẩu mới và xác nhận mật khẩu không khớp.',
+      );
+    }
+
+    const user = await this.usersService.findOneByCondition({
+      passwordResetToken: token,
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'Token đặt lại mật khẩu không hợp lệ hoặc đã được sử dụng.',
+      );
+    }
+
+    if (
+      !user.passwordResetExpires ||
+      user.passwordResetExpires.getTime() < Date.now()
+    ) {
+      user.passwordResetToken = undefined;
+      user.passwordResetExpires = undefined;
+      await user.save();
+      throw new BadRequestException(
+        'Token đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu lại.',
+      );
+    }
+
+    user.passwordHash = newPassword;
+    user.passwordResetToken = undefined;
+    user.passwordResetExpires = undefined;
+
+    try {
+      await user.save();
+      this.logger.log(`Password reset successfully for user ${user.email}.`);
+    } catch (error) {
+      this.logger.error(
+        `Error saving user after password reset for ${user.email}:`,
+        error,
+      );
+      throw new InternalServerErrorException(
+        'Không thể đặt lại mật khẩu. Vui lòng thử lại sau.',
+      );
+    }
+
+    return { message: 'Mật khẩu của bạn đã được đặt lại thành công.' };
+  }
+
+  async validatePasswordResetToken(
+    token: string,
+  ): Promise<{ isValid: boolean; message?: string; email?: string }> {
+    if (!token || typeof token !== 'string') {
+      return { isValid: false, message: 'Token không được cung cấp.' };
+    }
+    const user = await this.usersService.findOneByCondition({
+      passwordResetToken: token,
+    });
+
+    if (!user) {
+      return {
+        isValid: false,
+        message: 'Token không hợp lệ hoặc đã được sử dụng.',
+      };
+    }
+
+    if (
+      !user.passwordResetExpires ||
+      user.passwordResetExpires.getTime() < Date.now()
+    ) {
+      return { isValid: false, message: 'Token đã hết hạn.' };
+    }
+
+    return { isValid: true, email: user.email };
   }
 }

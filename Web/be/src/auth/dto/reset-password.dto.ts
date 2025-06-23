@@ -19,8 +19,9 @@ export class ResetPasswordDto {
   newPassword: string;
 
   @IsNotEmpty({ message: 'Xác nhận mật khẩu mới không được để trống.' })
-  @Matches('newPassword', {
-    message: 'Xác nhận mật khẩu không khớp với mật khẩu mới.',
-  })
+  @IsString()
+  //   @Matches('newPassword', undefined, {
+  //     message: 'Xác nhận mật khẩu không khớp với mật khẩu mới.',
+  //   })
   confirmNewPassword: string;
 }
