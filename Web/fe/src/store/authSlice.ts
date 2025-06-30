@@ -10,7 +10,7 @@ interface User {
   name: string;
   email: string;
   phone: string;
-  role: string;
+  role: "user" | "company_admin" | "admin";
   companyId?: string;
 }
 
@@ -38,12 +38,17 @@ export const registerUser = createAsyncThunk(
       const response = await api.post("/auth/register", userData);
       return response.data;
     } catch (error: any) {
-      if (error.response && error.response.data) {
-        return rejectWithValue(
-          error.response.data.message || "Đăng ký không thành công."
-        );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        const message = Array.isArray(error.response.data.message)
+          ? error.response.data.message.join(", ")
+          : error.response.data.message;
+        return rejectWithValue(message);
       }
-      return rejectWithValue("Đã có lỗi không xác định xảy ra.");
+      return rejectWithValue("Đã có lỗi không xác định xảy ra khi đăng ký.");
     }
   }
 );
@@ -59,12 +64,19 @@ export const loginUser = createAsyncThunk(
       localStorage.setItem("accessToken", response.data.accessToken);
       return response.data;
     } catch (error: any) {
-      if (error.response && error.response.data) {
-        return rejectWithValue(
-          error.response.data.message || "Đăng nhập không thành công."
-        );
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        const message = Array.isArray(error.response.data.message)
+          ? error.response.data.message.join(", ")
+          : error.response.data.message;
+        return rejectWithValue(message);
       }
-      return rejectWithValue("Đã có lỗi không xác định xảy ra.");
+      return rejectWithValue(
+        "Email, số điện thoại hoặc mật khẩu không chính xác."
+      );
     }
   }
 );
@@ -104,11 +116,16 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state) => {
         state.status = "succeeded";
+        // CẢI TIẾN NHỎ: Reset status về 'idle' sau khi đăng ký thành công
+        // để không bị kẹt ở trạng thái 'succeeded' mãi mãi.
+        // Hoặc bạn có thể xử lý trong component để chuyển tab/hiển thị thông báo.
+        // Giữ nguyên là 'succeeded' cũng ổn, tùy vào logic UI.
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
       })
+
       .addCase(loginUser.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -125,6 +142,7 @@ const authSlice = createSlice({
         state.status = "failed";
         state.error = action.payload as string;
       })
+
       .addCase(loadUser.pending, (state) => {
         state.status = "loading";
       })
@@ -132,10 +150,11 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.user = action.payload;
       })
-      .addCase(loadUser.rejected, (state) => {
-        state.status = "idle";
+      .addCase(loadUser.rejected, (state, action) => {
+        state.status = "failed";
         state.user = null;
         state.token = null;
+        state.error = action.payload as string;
         localStorage.removeItem("accessToken");
       });
   },

@@ -27,9 +27,11 @@ import {
   Phone,
 } from "@mui/icons-material";
 
+import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store";
 import { loginUser, registerUser } from "../../store/authSlice";
+
 interface AuthModalProps {
   open: boolean;
   onClose: () => void;
@@ -44,6 +46,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
   const [tab, setTab] = useState<"login" | "register">(initialTab);
   const [showPassword, setShowPassword] = useState(false);
 
+  const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
   const { status, error } = useSelector((state: RootState) => state.auth);
 
@@ -60,9 +63,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
   }, [initialTab, open]);
 
   useEffect(() => {
-    if (isLoginSuccess()) {
-      onClose();
-    }
     if (isRegisterSuccess()) {
       alert(
         "Đăng ký thành công! Vui lòng kiểm tra email để xác thực tài khoản."
@@ -76,9 +76,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
         confirmPassword: "",
       });
     }
-  }, [status]);
+  }, [status, tab]);
 
-  const isLoginSuccess = () => status === "succeeded" && tab === "login";
   const isRegisterSuccess = () => status === "succeeded" && tab === "register";
 
   const handleTabChange = (
@@ -93,8 +92,6 @@ const AuthModal: React.FC<AuthModalProps> = ({
       phone: "",
       confirmPassword: "",
     });
-    // Có thể dispatch action để clear error trong Redux state nếu cần
-    // dispatch(clearAuthError());
   };
 
   const handleInputChange =
@@ -111,7 +108,26 @@ const AuthModal: React.FC<AuthModalProps> = ({
           identifier: formData.email,
           password: formData.password,
         })
-      );
+      )
+        .unwrap()
+        .then((result) => {
+          onClose();
+          switch (result.user.role) {
+            case "admin":
+              navigate("/admin/dashboard");
+              break;
+            case "company_admin":
+              navigate("/company/dashboard");
+              break;
+            case "user":
+            default:
+              navigate("/my-bookings");
+              break;
+          }
+        })
+        .catch((rejectedValue) => {
+          console.error("Login failed:", rejectedValue);
+        });
     } else {
       if (formData.password !== formData.confirmPassword) {
         alert("Mật khẩu xác nhận không khớp");
@@ -124,7 +140,11 @@ const AuthModal: React.FC<AuthModalProps> = ({
           phone: formData.phone,
           password: formData.password,
         })
-      );
+      )
+        .unwrap()
+        .catch((err) => {
+          console.error("Registration failed:", err);
+        });
     }
   };
 
@@ -162,7 +182,18 @@ const AuthModal: React.FC<AuthModalProps> = ({
             <Close />
           </IconButton>
         </Box>
-        <Tabs value={tab} onChange={handleTabChange} /* ... */>
+        <Tabs
+          value={tab}
+          onChange={handleTabChange}
+          sx={{
+            px: 3,
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 600,
+              fontSize: "1rem",
+            },
+          }}
+        >
           <Tab label="Đăng nhập" value="login" />
           <Tab label="Đăng ký" value="register" />
         </Tabs>
@@ -202,12 +233,15 @@ const AuthModal: React.FC<AuthModalProps> = ({
             onChange={handleInputChange("email")}
             required
             sx={{ mb: 2 }}
-            InputProps={
-              {
-                /* ... */
-              }
-            }
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Email sx={{ color: "primary.main" }} />
+                </InputAdornment>
+              ),
+            }}
           />
+
           {tab === "register" && (
             <TextField
               fullWidth
@@ -235,11 +269,23 @@ const AuthModal: React.FC<AuthModalProps> = ({
             onChange={handleInputChange("password")}
             required
             sx={{ mb: tab === "register" ? 2 : 3 }}
-            InputProps={
-              {
-                /* ... */
-              }
-            }
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <Lock sx={{ color: "primary.main" }} />
+                </InputAdornment>
+              ),
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
 
           {tab === "register" && (
@@ -251,11 +297,13 @@ const AuthModal: React.FC<AuthModalProps> = ({
               onChange={handleInputChange("confirmPassword")}
               required
               sx={{ mb: 3 }}
-              InputProps={
-                {
-                  /* ... */
-                }
-              }
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock sx={{ color: "primary.main" }} />
+                  </InputAdornment>
+                ),
+              }}
             />
           )}
 
@@ -265,11 +313,16 @@ const AuthModal: React.FC<AuthModalProps> = ({
             variant="contained"
             size="large"
             disabled={status === "loading"}
-            sx={
-              {
-                /* ...sx props... */
-              }
-            }
+            sx={{
+              py: 1.5,
+              fontWeight: 700,
+              fontSize: "1.1rem",
+              background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #004c8b 0%, #003366 100%)",
+              },
+              mb: 2,
+            }}
           >
             {status === "loading" ? (
               <CircularProgress size={24} color="inherit" />
@@ -280,9 +333,54 @@ const AuthModal: React.FC<AuthModalProps> = ({
             )}
           </Button>
 
-          <Divider sx={{ my: 2 }}>...</Divider>
-          <Box sx={{ display: "flex", gap: 2 }}>...</Box>
-          {tab === "login" && <Box>...</Box>}
+          <Divider sx={{ my: 2 }}>
+            <Typography variant="body2" color="text.secondary">
+              Hoặc
+            </Typography>
+          </Divider>
+
+          <Box sx={{ display: "flex", gap: 2 }}>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<Google />}
+              sx={{
+                py: 1.5,
+                borderColor: "#db4437",
+                color: "#db4437",
+                "&:hover": {
+                  borderColor: "#db4437",
+                  backgroundColor: "rgba(219, 68, 55, 0.04)",
+                },
+              }}
+            >
+              Google
+            </Button>
+            <Button
+              fullWidth
+              variant="outlined"
+              startIcon={<Facebook />}
+              sx={{
+                py: 1.5,
+                borderColor: "#1877f2",
+                color: "#1877f2",
+                "&:hover": {
+                  borderColor: "#1877f2",
+                  backgroundColor: "rgba(24, 119, 242, 0.04)",
+                },
+              }}
+            >
+              Facebook
+            </Button>
+          </Box>
+
+          {tab === "login" && (
+            <Box sx={{ textAlign: "center", mt: 2 }}>
+              <Button variant="text" size="small">
+                Quên mật khẩu?
+              </Button>
+            </Box>
+          )}
         </Box>
       </DialogContent>
     </Dialog>

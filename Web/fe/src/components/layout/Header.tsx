@@ -76,11 +76,7 @@ const Header: React.FC<HeaderProps> = ({
     handleUserMenuClose();
   };
 
-  const handleOpenAuth = (tab: "login" | "register") => { 
-    console.log(
-      `[Header] Nút được click. Yêu cầu mở tab: ${tab}. Gọi prop onLogin/onRegister...`
-    );
-
+  const handleOpenAuth = (tab: "login" | "register") => {
     if (tab === "login" && onLogin) {
       onLogin();
     } else if (tab === "register" && onRegister) {
