@@ -92,6 +92,54 @@ export const loadUser = createAsyncThunk(
     }
   }
 );
+export const forgotPassword = createAsyncThunk(
+  "auth/forgotPassword",
+  async (email: string, { rejectWithValue }) => {
+    try {
+      const response = await api.post("/auth/forgot-password", { email });
+      return response.data.message;
+    } catch (error: any) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        const message = Array.isArray(error.response.data.message)
+          ? error.response.data.message.join(", ")
+          : error.response.data.message;
+        return rejectWithValue(message);
+      }
+      return rejectWithValue("Yêu cầu đặt lại mật khẩu không thành công.");
+    }
+  }
+);
+
+export const resetPassword = createAsyncThunk(
+  "auth/resetPassword",
+  async (
+    data: { token: string; newPassword: string; confirmNewPassword: string },
+    { rejectWithValue }
+  ) => {
+    try {
+      const response = await api.post("/auth/reset-password", data);
+      return response.data.message;
+    } catch (error: any) {
+      if (
+        error.response &&
+        error.response.data &&
+        error.response.data.message
+      ) {
+        const message = Array.isArray(error.response.data.message)
+          ? error.response.data.message.join(", ")
+          : error.response.data.message;
+        return rejectWithValue(message);
+      }
+      return rejectWithValue(
+        "Đặt lại mật khẩu không thành công. Token có thể không hợp lệ hoặc đã hết hạn."
+      );
+    }
+  }
+);
 
 const authSlice = createSlice({
   name: "auth",
@@ -103,6 +151,11 @@ const authSlice = createSlice({
       state.status = "idle";
       state.error = null;
       localStorage.removeItem("accessToken");
+    },
+    clearError: (state) => {
+      state.error = null;
+      // Có thể reset status về 'idle' nếu muốn
+      // state.status = 'idle';
     },
     clearAuthError: (state) => {
       state.error = null;
@@ -116,16 +169,11 @@ const authSlice = createSlice({
       })
       .addCase(registerUser.fulfilled, (state) => {
         state.status = "succeeded";
-        // CẢI TIẾN NHỎ: Reset status về 'idle' sau khi đăng ký thành công
-        // để không bị kẹt ở trạng thái 'succeeded' mãi mãi.
-        // Hoặc bạn có thể xử lý trong component để chuyển tab/hiển thị thông báo.
-        // Giữ nguyên là 'succeeded' cũng ổn, tùy vào logic UI.
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.status = "failed";
         state.error = action.payload as string;
       })
-
       .addCase(loginUser.pending, (state) => {
         state.status = "loading";
         state.error = null;
@@ -142,7 +190,6 @@ const authSlice = createSlice({
         state.status = "failed";
         state.error = action.payload as string;
       })
-
       .addCase(loadUser.pending, (state) => {
         state.status = "loading";
       })
@@ -156,10 +203,33 @@ const authSlice = createSlice({
         state.token = null;
         state.error = action.payload as string;
         localStorage.removeItem("accessToken");
+      })
+      .addCase(forgotPassword.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(forgotPassword.fulfilled, (state) => {
+        state.status = "succeeded";
+      })
+      .addCase(forgotPassword.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
+      })
+
+      .addCase(resetPassword.pending, (state) => {
+        state.status = "loading";
+        state.error = null;
+      })
+      .addCase(resetPassword.fulfilled, (state) => {
+        state.status = "succeeded";
+      })
+      .addCase(resetPassword.rejected, (state, action) => {
+        state.status = "failed";
+        state.error = action.payload as string;
       });
   },
 });
 
-export const { logout, clearAuthError } = authSlice.actions;
+export const { logout, clearAuthError, clearError } = authSlice.actions;
 
 export default authSlice.reducer;

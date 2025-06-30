@@ -22,6 +22,8 @@ import CompanyDashboard from "./pages/company/CompanyDashboard";
 import { NotificationProvider } from "./components/common/NotificationProvider";
 import AuthModal from "./components/auth/AuthModal";
 import ProtectedRoute from "./components/common/ProtectedRoute";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 
 function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -66,6 +68,8 @@ function App() {
               <Route path="/trips" element={<TripSearchResults />} />
               <Route path="/trips/:tripId" element={<TripDetails />} />
               <Route path="/payment/status" element={<PaymentStatus />} />
+              <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/reset-password" element={<ResetPassword />} />
 
               {/* Protected Routes */}
               <Route

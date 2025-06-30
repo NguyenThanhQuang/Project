@@ -27,7 +27,7 @@ import {
   Phone,
 } from "@mui/icons-material";
 
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link as RouterLink } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../../store";
 import { loginUser, registerUser } from "../../store/authSlice";
@@ -376,7 +376,13 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
           {tab === "login" && (
             <Box sx={{ textAlign: "center", mt: 2 }}>
-              <Button variant="text" size="small">
+              <Button
+                component={RouterLink}
+                to="/forgot-password"
+                onClick={onClose}
+                variant="text"
+                size="small"
+              >
                 Quên mật khẩu?
               </Button>
             </Box>
