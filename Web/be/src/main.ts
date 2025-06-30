@@ -9,12 +9,14 @@ async function bootstrap() {
 
   const configService = app.get(ConfigService);
 
-  const port = configService.get<number>('PORT') || 3000;
+  const port = configService.get<number>('PORT') ?? 3000;
 
   app.setGlobalPrefix('api');
 
+  const clientUrl = configService.get<string>('CLIENT_URL');
   app.enableCors({
-    origin: 'http://localhost:5173',
+    origin: clientUrl,
+    methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
     credentials: true,
   });
 
@@ -29,6 +31,6 @@ async function bootstrap() {
   );
 
   await app.listen(port);
-  logger.log(`Application is running on: http://localhost:${port}/api`);
+  logger.log(`Ứng dụng đang chạy tại: http://localhost:${port}/api`);
 }
 bootstrap();

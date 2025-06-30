@@ -1,34 +1,49 @@
-import { useState } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import { ThemeProvider } from '@mui/material/styles';
-import CssBaseline from '@mui/material/CssBaseline';
-import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
-import { AdapterDayjs } from '@mui/x-date-pickers/AdapterDayjs';
+import { useState, useEffect } from "react";
+// THAY ĐỔI: Bỏ BrowserRouter vì nó đã được đặt ở main.tsx
+import { Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "@mui/material/styles";
+import CssBaseline from "@mui/material/CssBaseline";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
 
-import { theme } from './theme';
-import Layout from './components/layout/Layout';
-import Homepage from './pages/Homepage';
-import TripSearchResults from './pages/TripSearchResults';
-import TripDetails from './pages/TripDetails';
-import BookingCheckout from './pages/BookingCheckout';
-import PaymentStatus from './pages/PaymentStatus';
-import MyBookings from './pages/MyBookings';
-import { NotificationProvider } from './components/common/NotificationProvider';
-import AuthModal from './components/auth/AuthModal';
+// THAY ĐỔI: Import các thành phần của Redux
+import { useDispatch, useSelector } from "react-redux";
+import type { RootState, AppDispatch } from "./store";
+import { logout, loadUser } from "./store/authSlice";
 
-// Mock user type
-interface User {
-  id: string;
-  name: string;
-  email: string;
-}
+import { theme } from "./theme";
+import Layout from "./components/layout/Layout";
+import Homepage from "./pages/Homepage";
+import TripSearchResults from "./pages/TripSearchResults";
+import TripDetails from "./pages/TripDetails";
+import BookingCheckout from "./pages/BookingCheckout";
+import PaymentStatus from "./pages/PaymentStatus";
+import MyBookings from "./pages/MyBookings";
+import { NotificationProvider } from "./components/common/NotificationProvider";
+import AuthModal from "./components/auth/AuthModal";
+
+// THAY ĐỔI: Không cần mock user type ở đây nữa, đã có trong authSlice
 
 function App() {
   const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<'login' | 'register'>('login');
-  const [user, setUser] = useState<User | null>(null);
+  const [authMode, setAuthMode] = useState<"login" | "register">("login");
 
-  const openAuthModal = (mode: 'login' | 'register') => {
+  // THAY ĐỔI: Lấy state trực tiếp từ Redux store, bỏ useState cho user
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, token } = useSelector((state: RootState) => state.auth);
+
+  // THAY ĐỔI: Thêm useEffect để tự động load thông tin user nếu có token
+  // Điều này giúp duy trì trạng thái đăng nhập khi người dùng refresh trang
+  useEffect(() => {
+    if (token && !user) {
+      dispatch(loadUser());
+    }
+  }, [dispatch, token, user]);
+
+  const openAuthModal = (mode: "login" | "register") => {
+    console.log(
+      `[App] Nhận được yêu cầu từ Header. Đang mở modal với chế độ: ${mode}`
+    );
     setAuthMode(mode);
     setAuthModalOpen(true);
   };
@@ -37,28 +52,9 @@ function App() {
     setAuthModalOpen(false);
   };
 
-  const handleLogin = async (email: string, _password: string) => {
-    // Mock login implementation
-    setUser({
-      id: '1',
-      name: 'User Demo',
-      email: email,
-    });
-    closeAuthModal();
-  };
-
-  const handleRegister = async (userData: any) => {
-    // Mock register implementation
-    setUser({
-      id: '1',
-      name: userData.name || 'User Demo',
-      email: userData.email,
-    });
-    closeAuthModal();
-  };
-
+  // THAY ĐỔI: Hàm logout bây giờ sẽ dispatch action của Redux
   const handleLogout = () => {
-    setUser(null);
+    dispatch(logout());
   };
 
   return (
@@ -66,31 +62,33 @@ function App() {
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <NotificationProvider>
-          <Router>
-            <Layout
-              user={user}
-              onLogin={() => openAuthModal('login')}
-              onRegister={() => openAuthModal('register')}
-              onLogout={handleLogout}
-            >
-              <Routes>
-                <Route path="/" element={<Homepage />} />
-                <Route path="/trips" element={<TripSearchResults />} />
-                <Route path="/trips/:tripId" element={<TripDetails />} />
-                <Route path="/bookings/checkout" element={<BookingCheckout />} />
-                <Route path="/payment/status" element={<PaymentStatus />} />
-                <Route path="/my-bookings" element={<MyBookings />} />
-              </Routes>
-            </Layout>
-            
-            <AuthModal
-              open={authModalOpen}
-              initialTab={authMode}
-              onClose={closeAuthModal}
-              onLogin={handleLogin}
-              onRegister={handleRegister}
-            />
-          </Router>
+          {/* THAY ĐỔI: Component <Router> đã được chuyển ra file main.tsx để sửa lỗi */}
+          <Layout
+            user={user} // Dùng user từ Redux store
+            onLogin={() => openAuthModal("login")}
+            onRegister={() => openAuthModal("register")}
+            onLogout={handleLogout} // Dùng hàm logout đã kết nối Redux
+          >
+            <Routes>
+              <Route path="/" element={<Homepage />} />
+              <Route path="/trips" element={<TripSearchResults />} />
+              <Route path="/trips/:tripId" element={<TripDetails />} />
+              <Route path="/bookings/checkout" element={<BookingCheckout />} />
+              <Route path="/payment/status" element={<PaymentStatus />} />
+              <Route path="/my-bookings" element={<MyBookings />} />
+            </Routes>
+          </Layout>
+
+          {/* 
+            THAY ĐỔI: AuthModal giờ đây tự kết nối với Redux,
+            không cần truyền onLogin và onRegister nữa.
+            Điều này giúp App.tsx gọn gàng hơn.
+          */}
+          <AuthModal
+            open={authModalOpen}
+            initialTab={authMode}
+            onClose={closeAuthModal}
+          />
         </NotificationProvider>
       </LocalizationProvider>
     </ThemeProvider>

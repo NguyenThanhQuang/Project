@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   AppBar,
   Toolbar,
@@ -12,7 +12,7 @@ import {
   TextField,
   InputAdornment,
   Divider,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Search as SearchIcon,
   AccountCircle,
@@ -23,13 +23,12 @@ import {
   Person,
   Logout,
   BookOnline,
-} from '@mui/icons-material';
-import { useNavigate } from 'react-router-dom';
-
+} from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 
 interface HeaderProps {
   user?: {
-    id: string;
+    _id: string;
     name: string;
     email: string;
   } | null;
@@ -38,11 +37,17 @@ interface HeaderProps {
   onRegister?: () => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) => {
+const Header: React.FC<HeaderProps> = ({
+  user,
+  onLogout,
+  onLogin,
+  onRegister,
+}) => {
   const navigate = useNavigate();
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
-  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(null);
-
+  const [mobileMenuAnchor, setMobileMenuAnchor] = useState<null | HTMLElement>(
+    null
+  );
 
   const handleUserMenuOpen = (event: React.MouseEvent<HTMLElement>) => {
     setAnchorEl(event.currentTarget);
@@ -71,42 +76,79 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
     handleUserMenuClose();
   };
 
-  const handleOpenAuth = (tab: 'login' | 'register') => {
-    if (tab === 'login') {
-      onLogin?.();
-    } else {
-      onRegister?.();
+  const handleOpenAuth = (tab: "login" | "register") => { 
+    console.log(
+      `[Header] Nút được click. Yêu cầu mở tab: ${tab}. Gọi prop onLogin/onRegister...`
+    );
+
+    if (tab === "login" && onLogin) {
+      onLogin();
+    } else if (tab === "register" && onRegister) {
+      onRegister();
     }
     handleMobileMenuClose();
   };
 
+  const renderLoggedInMobileMenu = () => [
+    <MenuItem
+      key="my-bookings"
+      onClick={() => handleNavigation("/my-bookings")}
+    >
+      Chuyến xe của tôi
+    </MenuItem>,
+  ];
 
+  const renderGuestMobileMenu = () => [
+    <Divider key="divider" />,
+    <MenuItem key="login" onClick={() => handleOpenAuth("login")}>
+      <AccountCircle sx={{ mr: 1 }} />
+      Đăng nhập
+    </MenuItem>,
+    <MenuItem key="register" onClick={() => handleOpenAuth("register")}>
+      <Person sx={{ mr: 1 }} />
+      Đăng ký
+    </MenuItem>,
+  ];
 
   return (
     <>
-      <AppBar position="sticky" elevation={2} sx={{ backgroundColor: 'white', color: 'text.primary' }}>
-        <Toolbar sx={{ justifyContent: 'space-between', py: 1 }}>
-          {/* Logo */}
-          <Box sx={{ display: 'flex', alignItems: 'center', cursor: 'pointer' }} onClick={() => navigate('/')}>
-            <DirectionsBus sx={{ mr: 1, color: 'primary.main', fontSize: 32 }} />
+      <AppBar
+        position="sticky"
+        elevation={2}
+        sx={{ backgroundColor: "white", color: "text.primary" }}
+      >
+        <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>
+          <Box
+            sx={{ display: "flex", alignItems: "center", cursor: "pointer" }}
+            onClick={() => navigate("/")}
+          >
+            <DirectionsBus
+              sx={{ mr: 1, color: "primary.main", fontSize: 32 }}
+            />
             <Typography
               variant="h6"
               sx={{
                 fontWeight: 700,
-                background: 'linear-gradient(135deg, #0077be 0%, #004c8b 100%)',
-                backgroundClip: 'text',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-                textDecoration: 'none',
-                display: { xs: 'none', sm: 'block' }
+                background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
+                backgroundClip: "text",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                textDecoration: "none",
+                display: { xs: "none", sm: "block" },
               }}
             >
               BusBooking
             </Typography>
           </Box>
 
-          {/* Mini Search Bar */}
-          <Box sx={{ display: { xs: 'none', md: 'block' }, mx: 2, maxWidth: 350, flex: 1 }}>
+          <Box
+            sx={{
+              display: { xs: "none", md: "block" },
+              mx: 2,
+              maxWidth: 350,
+              flex: 1,
+            }}
+          >
             <TextField
               placeholder="Tìm kiếm chuyến đi..."
               size="small"
@@ -119,60 +161,65 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
                 ),
               }}
               sx={{
-                '& .MuiOutlinedInput-root': {
-                  backgroundColor: '#f8fafb',
+                "& .MuiOutlinedInput-root": {
+                  backgroundColor: "#f8fafb",
                   borderRadius: 3,
-                  transition: 'all 0.3s ease',
-                  '&:hover': {
-                    backgroundColor: '#e9ecef',
-                    '& .MuiOutlinedInput-notchedOutline': {
-                      borderColor: 'primary.main',
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    backgroundColor: "#e9ecef",
+                    "& .MuiOutlinedInput-notchedOutline": {
+                      borderColor: "primary.main",
                     },
                   },
-                  '&.Mui-focused': {
-                    backgroundColor: 'white',
-                    boxShadow: '0 0 0 3px rgba(0, 119, 190, 0.1)',
+                  "&.Mui-focused": {
+                    backgroundColor: "white",
+                    boxShadow: "0 0 0 3px rgba(0, 119, 190, 0.1)",
                   },
                 },
               }}
-              onFocus={() => navigate('/trips')}
+              onFocus={() => navigate("/trips")}
             />
           </Box>
 
-          {/* Desktop Navigation */}
-          <Box sx={{ display: { xs: 'none', md: 'flex' }, alignItems: 'center', gap: 1 }}>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/')}
-              sx={{ 
+          <Box
+            sx={{
+              display: { xs: "none", md: "flex" },
+              alignItems: "center",
+              gap: 1,
+            }}
+          >
+            <Button
+              color="inherit"
+              onClick={() => navigate("/")}
+              sx={{
                 fontWeight: 600,
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 119, 190, 0.04)',
-                }
+                "&:hover": {
+                  backgroundColor: "rgba(0, 119, 190, 0.04)",
+                },
               }}
             >
               Trang chủ
             </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/help')}
-              sx={{ 
+            <Button
+              color="inherit"
+              onClick={() => handleNavigation("/help")}
+              sx={{
                 fontWeight: 600,
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 119, 190, 0.04)',
-                }
+                "&:hover": {
+                  backgroundColor: "rgba(0, 119, 190, 0.04)",
+                },
               }}
             >
               Trợ giúp
             </Button>
-            <Button 
-              color="inherit" 
-              onClick={() => navigate('/contact')}
-              sx={{ 
+            <Button
+              color="inherit"
+              onClick={() => handleNavigation("/contact")}
+              sx={{
                 fontWeight: 600,
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 119, 190, 0.04)',
-                }
+                "&:hover": {
+                  backgroundColor: "rgba(0, 119, 190, 0.04)",
+                },
               }}
             >
               Liên hệ
@@ -181,13 +228,13 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
             {user ? (
               <Button
                 color="inherit"
-                onClick={() => navigate('/bookings/my')}
+                onClick={() => handleNavigation("/my-bookings")}
                 startIcon={<BookOnline />}
-                sx={{ 
+                sx={{
                   fontWeight: 600,
-                  '&:hover': {
-                    backgroundColor: 'rgba(0, 119, 190, 0.04)',
-                  }
+                  "&:hover": {
+                    backgroundColor: "rgba(0, 119, 190, 0.04)",
+                  },
                 }}
               >
                 Chuyến xe của tôi
@@ -195,17 +242,17 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
             ) : null}
           </Box>
 
-          {/* User Account Section */}
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
             {user ? (
               <>
                 <IconButton onClick={handleUserMenuOpen} sx={{ p: 0.5 }}>
-                  <Avatar 
-                    sx={{ 
-                      width: 36, 
-                      height: 36, 
-                      background: 'linear-gradient(135deg, #0077be 0%, #004c8b 100%)',
-                      fontWeight: 600
+                  <Avatar
+                    sx={{
+                      width: 36,
+                      height: 36,
+                      background:
+                        "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
+                      fontWeight: 600,
                     }}
                   >
                     {user.name.charAt(0).toUpperCase()}
@@ -216,19 +263,19 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
                   open={Boolean(anchorEl)}
                   onClose={handleUserMenuClose}
                   PaperProps={{
-                    sx: { 
-                      mt: 1, 
+                    sx: {
+                      mt: 1,
                       minWidth: 200,
                       borderRadius: 2,
-                      boxShadow: '0px 4px 20px rgba(0, 119, 190, 0.15)',
-                    }
+                      boxShadow: "0px 4px 20px rgba(0, 119, 190, 0.15)",
+                    },
                   }}
                 >
-                  <MenuItem onClick={() => handleNavigation('/users/me')}>
+                  <MenuItem onClick={() => handleNavigation("/users/me")}>
                     <Person sx={{ mr: 1 }} />
                     Tài khoản của tôi
                   </MenuItem>
-                  <MenuItem onClick={() => handleNavigation('/bookings/my')}>
+                  <MenuItem onClick={() => handleNavigation("/my-bookings")}>
                     <BookOnline sx={{ mr: 1 }} />
                     Chuyến xe của tôi
                   </MenuItem>
@@ -240,31 +287,33 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
                 </Menu>
               </>
             ) : (
-              <Box sx={{ display: { xs: 'none', sm: 'flex' }, gap: 1 }}>
-                <Button 
-                  variant="outlined" 
-                  onClick={() => handleOpenAuth('login')}
+              <Box sx={{ display: { xs: "none", sm: "flex" }, gap: 1 }}>
+                <Button
+                  variant="outlined"
+                  onClick={() => handleOpenAuth("login")}
                   sx={{
                     borderRadius: 3,
                     fontWeight: 600,
                     borderWidth: 2,
-                    '&:hover': {
+                    "&:hover": {
                       borderWidth: 2,
-                    }
+                    },
                   }}
                 >
                   Đăng nhập
                 </Button>
-                <Button 
-                  variant="contained" 
-                  onClick={() => handleOpenAuth('register')}
+                <Button
+                  variant="contained"
+                  onClick={() => handleOpenAuth("register")}
                   sx={{
                     borderRadius: 3,
                     fontWeight: 600,
-                    background: 'linear-gradient(135deg, #ffa726 0%, #ff8f00 100%)',
-                    '&:hover': {
-                      background: 'linear-gradient(135deg, #ff8f00 0%, #e65100 100%)',
-                    }
+                    background:
+                      "linear-gradient(135deg, #ffa726 0%, #ff8f00 100%)",
+                    "&:hover": {
+                      background:
+                        "linear-gradient(135deg, #ff8f00 0%, #e65100 100%)",
+                    },
                   }}
                 >
                   Đăng ký
@@ -272,8 +321,7 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
               </Box>
             )}
 
-            {/* Mobile Menu */}
-            <Box sx={{ display: { xs: 'block', md: 'none' } }}>
+            <Box sx={{ display: { xs: "block", md: "none" } }}>
               <IconButton onClick={handleMobileMenuOpen}>
                 <MenuIcon />
               </IconButton>
@@ -282,50 +330,35 @@ const Header: React.FC<HeaderProps> = ({ user, onLogout, onLogin, onRegister }) 
                 open={Boolean(mobileMenuAnchor)}
                 onClose={handleMobileMenuClose}
                 PaperProps={{
-                  sx: { 
-                    mt: 1, 
-                    minWidth: 200,
+                  sx: {
+                    mt: 1,
+                    minWidth: 220,
                     borderRadius: 2,
-                    boxShadow: '0px 4px 20px rgba(0, 119, 190, 0.15)',
-                  }
+                    boxShadow: "0px 4px 20px rgba(0, 119, 190, 0.15)",
+                  },
                 }}
               >
-                <MenuItem onClick={() => handleNavigation('/')}>
+                <MenuItem onClick={() => handleNavigation("/")}>
                   Trang chủ
                 </MenuItem>
-                {user && (
-                  <MenuItem onClick={() => handleNavigation('/bookings/my')}>
-                    Chuyến xe của tôi
-                  </MenuItem>
-                )}
-                <MenuItem onClick={() => handleNavigation('/help')}>
-                  <Help sx={{ mr: 1 }} />
+
+                <MenuItem onClick={() => handleNavigation("/help")}>
+                  <Help sx={{ mr: 1.5 }} />
                   Trợ giúp
                 </MenuItem>
-                <MenuItem onClick={() => handleNavigation('/contact')}>
-                  <ContactSupport sx={{ mr: 1 }} />
+                <MenuItem onClick={() => handleNavigation("/contact")}>
+                  <ContactSupport sx={{ mr: 1.5 }} />
                   Liên hệ
                 </MenuItem>
-                {!user && (
-                  <>
-                    <Divider />
-                    <MenuItem onClick={() => handleOpenAuth('login')}>
-                      <AccountCircle sx={{ mr: 1 }} />
-                      Đăng nhập
-                    </MenuItem>
-                    <MenuItem onClick={() => handleOpenAuth('register')}>
-                      <Person sx={{ mr: 1 }} />
-                      Đăng ký
-                    </MenuItem>
-                  </>
-                )}
+
+                {user ? renderLoggedInMobileMenu() : renderGuestMobileMenu()}
               </Menu>
             </Box>
           </Box>
-                </Toolbar>
+        </Toolbar>
       </AppBar>
     </>
   );
 };
 
-export default Header; 
+export default Header;
