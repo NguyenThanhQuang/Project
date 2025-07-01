@@ -26,6 +26,8 @@ dist-ssr
 package.json
 package-lock.json
 
+node_modules
+
 .gitinore
 
 .env
