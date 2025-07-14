@@ -6,42 +6,83 @@ import {
   HttpCode,
   HttpStatus,
   Param,
+  Patch,
   Post,
   Put,
   Query,
+  Req,
   UseGuards,
+  ForbiddenException,
 } from '@nestjs/common';
+import { Request } from 'express';
+import { Types } from 'mongoose';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
+import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
+import { TripsService } from './trips.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
-import { TripsService } from './trips.service';
-// import { RolesGuard } from '../auth/guards/roles.guard'; // Phân quyền Roles
-// import { Roles } from '../auth/decorators/roles.decorator';
-// import { UserRole } from '../users/schemas/user.schema';
-import { Types } from 'mongoose';
-import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
+import { UpdateTripStopStatusDto } from './dto/update-trip-stop-status.dto';
+
+interface AuthenticatedRequest extends Request {
+  user: {
+    userId: string;
+    email: string;
+    role: UserRole;
+    companyId?: Types.ObjectId;
+  };
+}
 
 @Controller('trips')
 export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
   /**
-   * @description Tìm kiếm chuyến đi theo điểm đi, điểm đến và ngày đi.
-   * @route GET /api/trips
-   * @access Public
+   * @description [PUBLIC] Tìm kiếm các chuyến đi có sẵn cho người dùng.
+   * Endpoint này công khai, không cần xác thực.
+   * Người dùng cung cấp điểm đi, điểm đến (tên tỉnh/thành) và ngày đi.
+   * @route GET /api/trips?from=...&to=...&date=...
+   * @param {QueryTripsDto} queryTripsDto - DTO chứa các tham số truy vấn.
+   * @returns {Promise<any>} - Danh sách các chuyến đi phù hợp.
    */
   @Get()
-  async findAvailableTrips(@Query() queryTripsDto: QueryTripsDto) {
-    // Frontend sẽ gửi query params: from, to, date
-    // Ví dụ: /api/trips?from=TP.HCM&to=Đà Lạt&date=2024-08-20
-    return this.tripsService.findAll(queryTripsDto);
+  async findPublicTrips(@Query() queryTripsDto: QueryTripsDto) {
+    return this.tripsService.findPublicTrips(queryTripsDto);
   }
 
   /**
-   * @description Xem chi tiết một chuyến đi (bao gồm hành trình và sơ đồ ghế).
+   * @description [MANAGEMENT] Lấy danh sách chuyến đi cho mục đích quản lý.
+   * Dành cho Admin (xem tất cả) và Company Admin (chỉ xem của công ty mình).
+   * @route GET /api/trips/management/all
+   * @param {AuthenticatedRequest} req - Request đã được xác thực, chứa thông tin user.
+   * @returns {Promise<TripDocument[]>} - Danh sách chuyến đi.
+   */
+  @Get('management/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async findTripsForManagement(@Req() req: AuthenticatedRequest) {
+    const user = req.user;
+    if (user.role === UserRole.COMPANY_ADMIN) {
+      if (!user.companyId) {
+        throw new ForbiddenException(
+          'Tài khoản của bạn không được liên kết với nhà xe nào.',
+        );
+      }
+      return this.tripsService.findForManagement(user.companyId);
+    }
+    // Admin sẽ không có companyId trong điều kiện, service sẽ hiểu là lấy tất cả.
+    return this.tripsService.findForManagement();
+  }
+
+  /**
+   * @description [PUBLIC] Lấy thông tin chi tiết của một chuyến đi.
+   * Endpoint này công khai, ai cũng có thể xem để biết chi tiết chuyến đi trước khi đặt vé.
    * @route GET /api/trips/:tripId
-   * @access Public
+   * @param {Types.ObjectId} tripId - ID của chuyến đi.
+   * @returns {Promise<TripDocument>} - Chi tiết chuyến đi.
    */
   @Get(':tripId')
   async findTripById(
@@ -50,64 +91,149 @@ export class TripsController {
     return this.tripsService.findOne(tripId);
   }
 
-  // Hiện tại chỉ bảo vệ bằng JwtAuthGuard, chưa thêm RolesGuard
-
   /**
-   * @description Tạo một chuyến đi mới.
+   * @description [MANAGEMENT] Tạo một chuyến đi mới.
+   * Dành cho Admin và Company Admin.
    * @route POST /api/trips
-   * @access Admin, Company_Admin (cần logic phân quyền cụ thể trong service)
+   * @param {CreateTripDto} createTripDto - Dữ liệu để tạo chuyến đi mới.
+   * @param {AuthenticatedRequest} req - Request đã được xác thực.
+   * @returns {Promise<TripDocument>} - Chuyến đi vừa được tạo.
    */
   @Post()
-  @UseGuards(JwtAuthGuard) // Chỉ người dùng đã đăng nhập mới được tạo
-  // @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN) // Sẽ thêm sau
-  // @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   @HttpCode(HttpStatus.CREATED)
-  async createTrip(@Body() createTripDto: CreateTripDto /*, @Req() req */) {
-    // TODO: Nếu là COMPANY_ADMIN, cần đảm bảo createTripDto.companyId khớp với companyId của user đó
-    // const user = req.user;
-    // if (user.role === UserRole.COMPANY_ADMIN && createTripDto.companyId.toString() !== user.companyId.toString()) {
-    //   throw new ForbiddenException('Bạn không có quyền tạo chuyến đi cho nhà xe này.');
-    // }
+  async createTrip(
+    @Body() createTripDto: CreateTripDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = req.user;
+    // Kiểm tra quyền sở hữu: Company Admin chỉ được tạo chuyến đi cho công ty của mình.
+    if (user.role === UserRole.COMPANY_ADMIN) {
+      if (
+        !user.companyId ||
+        createTripDto.companyId.toString() !== user.companyId.toString()
+      ) {
+        throw new ForbiddenException(
+          'Bạn chỉ có quyền tạo chuyến đi cho công ty của mình.',
+        );
+      }
+    }
     return this.tripsService.create(createTripDto);
   }
 
   /**
-   * @description Cập nhật thông tin một chuyến đi.
+   * @description [MANAGEMENT] Cập nhật thông tin một chuyến đi.
+   * Sử dụng PUT có thể ngụ ý thay thế tài nguyên, nhưng PATCH thường được dùng cho cập nhật một phần.
+   * Trong trường hợp này, ta dùng PUT để thống nhất với code gốc của bạn.
    * @route PUT /api/trips/:tripId
-   * @access Admin, Company_Admin (cần logic phân quyền cụ thể trong service)
+   * @param {Types.ObjectId} tripId - ID của chuyến đi cần cập nhật.
+   * @param {UpdateTripDto} updateTripDto - Dữ liệu cập nhật.
+   * @param {AuthenticatedRequest} req - Request đã được xác thực.
+   * @returns {Promise<TripDocument>} - Chuyến đi sau khi đã cập nhật.
    */
   @Put(':tripId')
-  @UseGuards(JwtAuthGuard)
-  // @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   async updateTrip(
     @Param('tripId', ParseMongoIdPipe) tripId: Types.ObjectId,
     @Body() updateTripDto: UpdateTripDto,
-    /* @Req() req */
+    @Req() req: AuthenticatedRequest,
   ) {
-    // TODO: Nếu là COMPANY_ADMIN, cần đảm bảo họ chỉ cập nhật chuyến đi thuộc nhà xe của họ.
-    // const user = req.user;
-    // const trip = await this.tripsService.findOne(tripId); // Fetch trip to check companyId
-    // if (user.role === UserRole.COMPANY_ADMIN && trip.companyId._id.toString() !== user.companyId.toString()) {
-    //   throw new ForbiddenException('Bạn không có quyền cập nhật chuyến đi này.');
-    // }
+    const user = req.user;
+    // Kiểm tra quyền sở hữu: Company Admin chỉ được cập nhật chuyến đi của công ty mình.
+    if (user.role === UserRole.COMPANY_ADMIN) {
+      const trip = await this.tripsService.findOne(tripId);
+      if (
+        !user.companyId ||
+        trip.companyId._id.toString() !== user.companyId.toString()
+      ) {
+        throw new ForbiddenException(
+          'Bạn không có quyền cập nhật chuyến đi này.',
+        );
+      }
+    }
     return this.tripsService.update(tripId.toString(), updateTripDto);
   }
 
   /**
-   * @description Xóa một chuyến đi.
+   * @description [MANAGEMENT] Cập nhật trạng thái của một điểm dừng trong chuyến đi.
+   * Ví dụ: Đánh dấu là xe "đã đến" trạm nghỉ.
+   * @route PATCH /api/trips/:tripId/stops/:stopLocationId
+   * @param {string} tripId - ID của chuyến đi.
+   * @param {string} stopLocationId - ID của địa điểm dừng.
+   * @param {UpdateTripStopStatusDto} updateDto - Trạng thái mới.
+   * @param {AuthenticatedRequest} req - Request đã được xác thực.
+   * @returns {Promise<TripDocument>} - Chuyến đi sau khi cập nhật trạng thái điểm dừng.
+   */
+  @Patch(':tripId/stops/:stopLocationId')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async updateStopStatus(
+    @Param('tripId', ParseMongoIdPipe) tripId: string,
+    @Param('stopLocationId', ParseMongoIdPipe) stopLocationId: string,
+    @Body() updateDto: UpdateTripStopStatusDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = req.user;
+    // Kiểm tra quyền sở hữu
+    if (user.role === UserRole.COMPANY_ADMIN) {
+      const trip = await this.tripsService.findOne(tripId);
+      if (
+        !user.companyId ||
+        trip.companyId._id.toString() !== user.companyId.toString()
+      ) {
+        throw new ForbiddenException(
+          'Bạn không có quyền cập nhật chuyến đi này.',
+        );
+      }
+    }
+    return this.tripsService.updateTripStopStatus(
+      tripId,
+      stopLocationId,
+      updateDto.status,
+    );
+  }
+
+  /**
+   * @description [MANAGEMENT] Xóa một chuyến đi.
    * @route DELETE /api/trips/:tripId
-   * @access Admin, Company_Admin (chưa có logic phân quyền cụ thể trong service)
+   * @param {Types.ObjectId} tripId - ID của chuyến đi cần xóa.
+   * @param {AuthenticatedRequest} req - Request đã được xác thực.
    */
   @Delete(':tripId')
-  @UseGuards(JwtAuthGuard)
-  // @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   @HttpCode(HttpStatus.NO_CONTENT)
   async removeTrip(
     @Param('tripId', ParseMongoIdPipe) tripId: Types.ObjectId,
-    /* @Req() req */
+    @Req() req: AuthenticatedRequest,
   ) {
+    const user = req.user;
+    // Kiểm tra quyền sở hữu: Company Admin chỉ được xóa chuyến đi của công ty mình.
+    if (user.role === UserRole.COMPANY_ADMIN) {
+      const trip = await this.tripsService.findOne(tripId);
+      if (
+        !user.companyId ||
+        trip.companyId._id.toString() !== user.companyId.toString()
+      ) {
+        throw new ForbiddenException('Bạn không có quyền xóa chuyến đi này.');
+      }
+    }
     await this.tripsService.remove(tripId.toString());
+    // Không trả về nội dung khi thành công.
+  }
+
+  /**
+   * @description [DEV ONLY] Xóa tất cả các chuyến đi.
+   * Chỉ dùng cho mục đích phát triển và dọn dẹp dữ liệu.
+   * Cần được bảo vệ chặt chẽ hoặc xóa đi trong môi trường production.
+   * @route DELETE /api/trips/dev/delete-all
+   */
+  @Delete('dev/delete-all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN) // Chỉ Super Admin mới có quyền này
+  async deleteAll() {
+    return this.tripsService.deleteAll();
   }
 }

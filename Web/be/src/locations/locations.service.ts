@@ -1,0 +1,109 @@
+import {
+  ConflictException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
+import { InjectModel } from '@nestjs/mongoose';
+import { Model } from 'mongoose';
+import { CreateLocationDto } from './dto/create-location.dto';
+import { UpdateLocationDto } from './dto/update-location.dto';
+import { Location, LocationDocument } from './schemas/location.schema';
+
+@Injectable()
+export class LocationsService {
+  constructor(
+    @InjectModel(Location.name) private locationModel: Model<LocationDocument>,
+  ) {}
+
+  async create(
+    createLocationDto: CreateLocationDto,
+  ): Promise<LocationDocument> {
+    // Kiểm tra xem địa điểm với tên và tỉnh đã tồn tại chưa để tránh trùng lặp
+    const existingLocation = await this.locationModel
+      .findOne({
+        name: createLocationDto.name,
+        province: createLocationDto.province,
+      })
+      .exec();
+
+    if (existingLocation) {
+      throw new ConflictException(
+        `Địa điểm "${createLocationDto.name}" tại tỉnh/thành "${createLocationDto.province}" đã tồn tại.`,
+      );
+    }
+
+    // DTO đã bao gồm cả type: 'Point'
+    const newLocation = new this.locationModel(createLocationDto);
+    return newLocation.save();
+  }
+
+  async findAll(query: any = {}): Promise<LocationDocument[]> {
+    // Thêm logic lọc, phân trang nếu cần
+    // Ví dụ: /api/locations?type=bus_station&province=Hồ Chí Minh
+    return this.locationModel.find(query).sort({ province: 1, name: 1 }).exec();
+  }
+
+  // Hàm tìm kiếm gợi ý (autocomplete)
+  async search(keyword: string): Promise<LocationDocument[]> {
+    if (!keyword || keyword.trim().length < 2) {
+      return [];
+    }
+    // Sử dụng text index để tìm kiếm hiệu quả
+    return this.locationModel
+      .find(
+        { $text: { $search: keyword } },
+        { score: { $meta: 'textScore' } }, // Thêm điểm để sắp xếp theo độ liên quan
+      )
+      .sort({ score: { $meta: 'textScore' } })
+      .limit(10)
+      .exec();
+  }
+
+  async findOne(id: string): Promise<LocationDocument> {
+    const location = await this.locationModel.findById(id).exec();
+    if (!location) {
+      throw new NotFoundException(`Không tìm thấy địa điểm với ID: ${id}`);
+    }
+    return location;
+  }
+
+  async update(
+    id: string,
+    updateLocationDto: UpdateLocationDto,
+  ): Promise<LocationDocument> {
+    const updatedLocation = await this.locationModel
+      .findByIdAndUpdate(id, { $set: updateLocationDto }, { new: true })
+      .exec();
+
+    if (!updatedLocation) {
+      throw new NotFoundException(
+        `Không tìm thấy địa điểm với ID: ${id} để cập nhật.`,
+      );
+    }
+    return updatedLocation;
+  }
+
+  async remove(id: string): Promise<LocationDocument> {
+    // TODO: Khi có Trips, cần kiểm tra xem địa điểm có đang được sử dụng không
+    // const tripsUsingLocation = await this.tripModel.countDocuments({
+    //   $or: [
+    //     { 'route.fromLocationId': id },
+    //     { 'route.toLocationId': id },
+    //     { 'route.stopLocationIds': id }
+    //   ]
+    // });
+    // if (tripsUsingLocation > 0) {
+    //   throw new ConflictException('Không thể xóa địa điểm đang được sử dụng trong một chuyến đi.');
+    // }
+
+    const deletedLocation = await this.locationModel
+      .findByIdAndDelete(id)
+      .exec();
+    if (!deletedLocation) {
+      throw new NotFoundException(
+        `Không tìm thấy địa điểm với ID: ${id} để xóa.`,
+      );
+    }
+    return deletedLocation;
+  }
+}
