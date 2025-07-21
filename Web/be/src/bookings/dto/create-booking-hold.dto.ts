@@ -11,7 +11,6 @@ import {
   MaxLength,
   ValidateNested,
 } from 'class-validator';
-import { Types } from 'mongoose';
 
 export class PassengerHoldDto {
   @IsNotEmpty({ message: 'Tên hành khách không được để trống' })
@@ -32,7 +31,7 @@ export class PassengerHoldDto {
 export class CreateBookingHoldDto {
   @IsNotEmpty()
   @IsMongoId()
-  tripId: Types.ObjectId;
+  tripId: string;
 
   @IsNotEmpty({ message: 'Thông tin hành khách không được để trống' })
   @IsArray()

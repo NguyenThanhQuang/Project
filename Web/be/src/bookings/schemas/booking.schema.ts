@@ -29,6 +29,9 @@ export class PassengerInfo {
 
   @Prop({ type: String, required: true })
   seatNumber: string;
+
+  @Prop({ type: Number, required: true })
+  price: number;
 }
 export const PassengerInfoSchema = SchemaFactory.createForClass(PassengerInfo);
 
@@ -52,7 +55,12 @@ export class Booking {
   })
   status: BookingStatus;
 
-  @Prop({ type: Date, index: true })
+  @Prop({
+    type: Date,
+    // TẠO TTL INDEX: MongoDB sẽ tự động xóa document sau khi trường này hết hạn
+    // `expireAfterSeconds: 0` có nghĩa là xóa ngay khi thời gian hiện tại > giá trị của heldUntil.
+    index: { expireAfterSeconds: 0 },
+  })
   heldUntil?: Date;
 
   @Prop({
@@ -86,6 +94,17 @@ export class Booking {
 
   @Prop({ type: String, index: true })
   paymentGatewayTransactionId?: string;
+
+  @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
+  companyId: Types.ObjectId;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);
+
+BookingSchema.index(
+  { heldUntil: 1 },
+  {
+    expireAfterSeconds: 0,
+    partialFilterExpression: { status: BookingStatus.HELD },
+  },
+);

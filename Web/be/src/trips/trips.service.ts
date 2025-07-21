@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   ConflictException,
@@ -5,7 +6,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { CompaniesService } from '../companies/companies.service';
 import { LocationsService } from '../locations/locations.service';
 import { MapsService } from '../maps/maps.service';
@@ -207,7 +208,7 @@ export class TripsService {
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
-    const query: any = {
+    const query: FilterQuery<Trip> = {
       'route.fromLocationId': { $in: fromLocationIds },
       'route.toLocationId': { $in: toLocationIds },
       status: TripStatus.SCHEDULED,
@@ -222,15 +223,13 @@ export class TripsService {
       .populate('route.fromLocationId', 'name fullAddress province')
       .populate('route.toLocationId', 'name fullAddress province')
       .sort({ departureTime: 1 })
-      .lean() // Tăng tốc độ truy vấn bằng cách trả về plain object
+      .lean()
       .exec();
 
-    // Xử lý kết quả trả về: thêm số ghế trống
     return trips.map((trip) => {
       const availableSeatsCount = trip.seats.filter(
         (s) => s.status === SeatStatus.AVAILABLE,
       ).length;
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { seats, ...restOfTrip } = trip;
       return { ...restOfTrip, availableSeatsCount };
     });
@@ -255,7 +254,7 @@ export class TripsService {
       .populate('vehicleId', 'type')
       .populate('route.fromLocationId', 'name')
       .populate('route.toLocationId', 'name')
-      .sort({ departureTime: -1 }) // Sắp xếp theo ngày mới nhất
+      .sort({ departureTime: -1 })
       .exec();
   }
 
@@ -274,10 +273,10 @@ export class TripsService {
       .populate('vehicleId')
       .populate('route.fromLocationId')
       .populate('route.toLocationId')
-      .populate({ path: 'route.stops.locationId', model: 'Location' }) // Populate sâu vào mảng
+      .populate({ path: 'route.stops.locationId', model: 'Location' })
       .exec();
     if (!trip) {
-      throw new NotFoundException(`Không tìm thấy chuyến đi với ID: ${id}`); //Xác định kiểu ID string|Types.ObjectId, database check
+      throw new NotFoundException(`Không tìm thấy chuyến đi với ID: ${id}`);
     }
     return trip;
   }
@@ -395,4 +394,3 @@ export class TripsService {
     return this.tripModel.deleteMany({}).exec();
   }
 }
-//Kiểm tra trùng lặp và tái sử dụng
