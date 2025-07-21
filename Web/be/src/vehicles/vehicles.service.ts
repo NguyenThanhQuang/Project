@@ -9,7 +9,7 @@ import { Model, Types } from 'mongoose';
 import { CompaniesService } from '../companies/companies.service';
 import { CreateVehicleDto } from './dto/create-vehicle.dto';
 import { UpdateVehicleDto } from './dto/update-vehicle.dto';
-import { Vehicle, VehicleDocument } from './schemas/vehicle.schema';
+import { SeatMap, Vehicle, VehicleDocument } from './schemas/vehicle.schema';
 
 @Injectable()
 export class VehiclesService {
@@ -26,13 +26,12 @@ export class VehiclesService {
    * @param seatMap - Đối tượng sơ đồ ghế từ DTO.
    * @param totalSeats - Tổng số ghế đã khai báo.
    */
-  private validateSeatMap(seatMap: any, totalSeats: number): void {
-    if (!seatMap) {
+  private validateSeatMap(seatMap?: SeatMap, totalSeats?: number): void {
+    if (!seatMap || totalSeats === undefined) {
       return;
     }
-    //Hạn chế dùng any
 
-    if (typeof seatMap !== 'object' || !Array.isArray(seatMap.layout)) {
+    if (!seatMap.layout || !Array.isArray(seatMap.layout)) {
       throw new BadRequestException(
         'Sơ đồ ghế (seatMap) không hợp lệ. Cần có thuộc tính "layout" là một mảng.',
       );
@@ -110,18 +109,22 @@ export class VehiclesService {
   ): Promise<VehicleDocument> {
     const existingVehicle = await this.findOne(id);
 
+    // Kiểm tra xung đột nếu type hoặc companyId thay đổi
     if (updateVehicleDto.type || updateVehicleDto.companyId) {
+      // Nếu companyId được cung cấp trong DTO và nó khác với companyId hiện tại,
+      // hãy kiểm tra xem company mới có tồn tại không.
       if (
         updateVehicleDto.companyId &&
         updateVehicleDto.companyId.toString() !==
-          existingVehicle.companyId.toString()
+          existingVehicle.companyId._id.toString()
       ) {
         await this.companiesService.findOne(updateVehicleDto.companyId);
       }
 
       const companyIdForCheck =
-        updateVehicleDto.companyId || existingVehicle.companyId;
-      const typeForCheck = updateVehicleDto.type || existingVehicle.type;
+        updateVehicleDto.companyId ?? existingVehicle.companyId._id;
+
+      const typeForCheck = updateVehicleDto.type ?? existingVehicle.type;
 
       const conflictingVehicle = await this.vehicleModel
         .findOne({
@@ -140,12 +143,14 @@ export class VehiclesService {
 
     const totalSeatsForValidation =
       updateVehicleDto.totalSeats ?? existingVehicle.totalSeats;
+
     const seatMapForValidation =
       updateVehicleDto.seatMap ?? existingVehicle.seatMap;
 
     this.validateSeatMap(seatMapForValidation, totalSeatsForValidation);
 
     Object.assign(existingVehicle, updateVehicleDto);
+
     return existingVehicle.save();
   }
 

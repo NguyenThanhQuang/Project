@@ -4,6 +4,14 @@ import { Company } from '../../companies/schemas/company.schema';
 
 export type VehicleDocument = HydratedDocument<Vehicle>;
 
+export type SeatMapLayout = Array<Array<string | number | null>>;
+
+export interface SeatMap {
+  rows: number;
+  cols: number;
+  layout: SeatMapLayout;
+}
+
 @Schema({ timestamps: true })
 export class Vehicle {
   @Prop({
@@ -21,7 +29,7 @@ export class Vehicle {
   description?: string;
 
   @Prop({ type: Object })
-  seatMap?: Record<string, any>;
+  seatMap?: SeatMap;
 
   @Prop({ type: Number, required: true, min: 1 })
   totalSeats: number;

@@ -230,10 +230,10 @@ export class TripsController {
    * Cần được bảo vệ chặt chẽ hoặc xóa đi trong môi trường production.
    * @route DELETE /api/trips/dev/delete-all
    */
-  @Delete('dev/delete-all')
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN) // Chỉ Super Admin mới có quyền này
-  async deleteAll() {
-    return this.tripsService.deleteAll();
-  }
+  // @Delete('dev/delete-all')
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Roles(UserRole.ADMIN) // Chỉ Super Admin mới có quyền này
+  // async deleteAll() {
+  //   return this.tripsService.deleteAll();
+  // }
 }

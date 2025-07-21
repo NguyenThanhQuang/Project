@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
+import { FilterQuery, Model } from 'mongoose';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
 import { Location, LocationDocument } from './schemas/location.schema';
@@ -36,11 +36,13 @@ export class LocationsService {
     return newLocation.save();
   }
 
-  async findAll(query: any = {}): Promise<LocationDocument[]> {
+  async findAll(
+    query: FilterQuery<Location> = {},
+  ): Promise<LocationDocument[]> {
     // Logic lọc, chưa có phân trang
     // Ví dụ: /api/locations?type=bus_station&province=Hồ Chí Minh
     return this.locationModel.find(query).sort({ province: 1, name: 1 }).exec();
-  } //Xác định kiểu dữ liệu và debug
+  }
 
   // Hàm tìm kiếm gợi ý (autocomplete)
   async search(keyword: string): Promise<LocationDocument[]> {

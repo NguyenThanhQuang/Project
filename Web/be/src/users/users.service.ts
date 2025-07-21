@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   ConflictException,
@@ -105,7 +106,6 @@ export class UsersService {
 
   sanitizeUser(user: UserDocument): SanitizedUser {
     const userObject = user.toObject();
-
     const {
       passwordHash,
       emailVerificationToken,
@@ -155,12 +155,21 @@ export class UsersService {
     return this.sanitizeUser(user);
   }
 
-  private handleMongoError(error: any): void {
-    if (error.code === 11000) {
-      const field = Object.keys(error.keyValue)[0];
-      const value = error.keyValue[field];
+  private handleMongoError(error: unknown): void {
+    if (
+      error &&
+      typeof error === 'object' &&
+      'code' in error &&
+      (error as { code: unknown }).code === 11000 &&
+      'keyValue' in error
+    ) {
+      const mongoError = error as { keyValue: Record<string, unknown> };
+
+      const field = Object.keys(mongoError.keyValue)[0];
+      const value = mongoError.keyValue[field];
+
       throw new ConflictException(
-        `Giá trị '${value}' cho trường '${field}' đã tồn tại.`,
+        `Giá trị '${String(value)}' cho trường '${field}' đã tồn tại.`,
       );
     }
   }
