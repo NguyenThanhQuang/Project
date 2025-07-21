@@ -36,7 +36,6 @@ export class TripsService {
 
   /**
    * @description Tạo một chuyến đi mới.
-   * Hàm này thực hiện nhiều bước:
    * 1. Validate sự tồn tại của các tài nguyên liên quan (công ty, xe, địa điểm).
    * 2. Gọi MapsService để lấy polyline cho tuyến đường.
    * 3. Khởi tạo danh sách ghế từ thông tin xe.
@@ -50,22 +49,29 @@ export class TripsService {
     const { companyId, vehicleId, route } = createTripDto;
     const { fromLocationId, toLocationId, stops: stopDtos } = route;
 
-    // Gom tất cả ID địa điểm lại để validate một lần
     const stopLocationIds = (stopDtos || []).map((s) => s.locationId);
     const allLocationIds = [fromLocationId, toLocationId, ...stopLocationIds];
 
-    // Sử dụng Promise.all để kiểm tra sự tồn tại của các tài nguyên song song, tăng hiệu năng.
     const [company, vehicle, ...locations] = await Promise.all([
       this.companiesService.findOne(companyId),
       this.vehiclesService.findOne(vehicleId),
       ...allLocationIds.map((id) => this.locationsService.findOne(id)),
     ]).catch((err) => {
       // Nếu bất kỳ một ID nào không hợp lệ, ném lỗi ngay lập tức.
-      throw new BadRequestException(`Dữ liệu không hợp lệ: ${err.message}`);
+      throw new BadRequestException(
+        `Dữ liệu không hợp lệ: ${
+          err &&
+          typeof err === 'object' &&
+          err !== null &&
+          'message' in err &&
+          typeof (err as { message?: unknown }).message === 'string'
+            ? (err as { message: string }).message
+            : String(err)
+        }`,
+      );
     });
-
     // Kiểm tra logic nghiệp vụ: Xe phải thuộc về công ty.
-    if (vehicle.companyId.toString() !== company._id.toString()) {
+    if (vehicle.companyId._id.toString() !== company._id.toString()) {
       throw new BadRequestException(
         'Loại xe không thuộc nhà xe được chỉ định.',
       );
@@ -183,13 +189,12 @@ export class TripsService {
     ]);
 
     if (fromLocations.length === 0 || toLocations.length === 0) {
-      return []; // Không có chuyến đi nếu không tìm thấy địa điểm.
+      return [];
     }
 
     const fromLocationIds = fromLocations.map((loc) => loc._id);
     const toLocationIds = toLocations.map((loc) => loc._id);
 
-    // Validate ngày tìm kiếm
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const startDate = new Date(date);
@@ -202,22 +207,21 @@ export class TripsService {
     const endDate = new Date(date);
     endDate.setHours(23, 59, 59, 999);
 
-    // Xây dựng câu truy vấn
     const query: any = {
       'route.fromLocationId': { $in: fromLocationIds },
       'route.toLocationId': { $in: toLocationIds },
-      status: TripStatus.SCHEDULED, // Chỉ tìm các chuyến đi sắp diễn ra
+      status: TripStatus.SCHEDULED,
       departureTime: { $gte: startDate, $lte: endDate },
     };
 
     const trips = await this.tripModel
       .find(query)
-      .select('-seats.bookingId -__v') // Ẩn các trường không cần thiết
+      .select('-seats.bookingId -__v')
       .populate('companyId', 'name code logoUrl')
       .populate('vehicleId', 'type')
       .populate('route.fromLocationId', 'name fullAddress province')
       .populate('route.toLocationId', 'name fullAddress province')
-      .sort({ departureTime: 1 }) // Sắp xếp theo giờ khởi hành sớm nhất
+      .sort({ departureTime: 1 })
       .lean() // Tăng tốc độ truy vấn bằng cách trả về plain object
       .exec();
 
@@ -241,7 +245,7 @@ export class TripsService {
   async findForManagement(
     companyId?: string | Types.ObjectId,
   ): Promise<TripDocument[]> {
-    const query: any = {};
+    const query: Record<string, unknown> = {};
     if (companyId) {
       query.companyId = companyId;
     }
@@ -260,7 +264,7 @@ export class TripsService {
    * @param {string | Types.ObjectId} id - ID của chuyến đi.
    * @returns {Promise<TripDocument>} - Document chi tiết của chuyến đi.
    */
-  async findOne(id: string | Types.ObjectId): Promise<TripDocument> {
+  async findOne(id: string): Promise<TripDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('ID chuyến đi không hợp lệ.');
     }
@@ -273,7 +277,7 @@ export class TripsService {
       .populate({ path: 'route.stops.locationId', model: 'Location' }) // Populate sâu vào mảng
       .exec();
     if (!trip) {
-      throw new NotFoundException(`Không tìm thấy chuyến đi với ID: ${id}`);
+      throw new NotFoundException(`Không tìm thấy chuyến đi với ID: ${id}`); //Xác định kiểu ID string|Types.ObjectId, database check
     }
     return trip;
   }
@@ -288,7 +292,7 @@ export class TripsService {
     id: string,
     updateTripDto: UpdateTripDto,
   ): Promise<TripDocument> {
-    const existingTrip = await this.findOne(id);
+    // const existingTrip = await this.findOne(id);
     // TODO: Thêm logic phức tạp nếu cần, ví dụ: nếu thay đổi xe thì phải tạo lại ghế...
     // Hiện tại, chỉ cập nhật các trường được cung cấp.
     const updatedTrip = await this.tripModel
@@ -358,10 +362,9 @@ export class TripsService {
     const trip = await this.tripModel.findById(tripId).exec();
     if (!trip) {
       throw new NotFoundException(
-        `Không tìm thấy chuyến đi với ID: ${tripId} để cập nhật ghế.`,
+        `Không tìm thấy chuyến đi với ID: ${tripId.toString()} để cập nhật ghế.`,
       );
     }
-    // ... (logic kiểm tra xung đột ghế giữ nguyên như code gốc của bạn)
     for (const seatNumber of seatNumbers) {
       const seat = trip.seats.find((s) => s.seatNumber === seatNumber);
       if (!seat) {
@@ -392,3 +395,4 @@ export class TripsService {
     return this.tripModel.deleteMany({}).exec();
   }
 }
+//Kiểm tra trùng lặp và tái sử dụng

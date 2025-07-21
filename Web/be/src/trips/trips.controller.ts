@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   HttpCode,
   HttpStatus,
@@ -12,20 +13,19 @@ import {
   Query,
   Req,
   UseGuards,
-  ForbiddenException,
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Types } from 'mongoose';
+import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { UserRole } from '../users/schemas/user.schema';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
-import { TripsService } from './trips.service';
+import { UserRole } from '../users/schemas/user.schema';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
-import { UpdateTripDto } from './dto/update-trip.dto';
 import { UpdateTripStopStatusDto } from './dto/update-trip-stop-status.dto';
+import { UpdateTripDto } from './dto/update-trip.dto';
+import { TripsService } from './trips.service';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -88,7 +88,7 @@ export class TripsController {
   async findTripById(
     @Param('tripId', ParseMongoIdPipe) tripId: Types.ObjectId,
   ) {
-    return this.tripsService.findOne(tripId);
+    return this.tripsService.findOne(tripId.toString());
   }
 
   /**
@@ -143,7 +143,7 @@ export class TripsController {
     const user = req.user;
     // Kiểm tra quyền sở hữu: Company Admin chỉ được cập nhật chuyến đi của công ty mình.
     if (user.role === UserRole.COMPANY_ADMIN) {
-      const trip = await this.tripsService.findOne(tripId);
+      const trip = await this.tripsService.findOne(tripId.toString());
       if (
         !user.companyId ||
         trip.companyId._id.toString() !== user.companyId.toString()
@@ -212,7 +212,7 @@ export class TripsController {
     const user = req.user;
     // Kiểm tra quyền sở hữu: Company Admin chỉ được xóa chuyến đi của công ty mình.
     if (user.role === UserRole.COMPANY_ADMIN) {
-      const trip = await this.tripsService.findOne(tripId);
+      const trip = await this.tripsService.findOne(tripId.toString());
       if (
         !user.companyId ||
         trip.companyId._id.toString() !== user.companyId.toString()

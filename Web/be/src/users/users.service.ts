@@ -147,7 +147,6 @@ export class UsersService {
       await user.save();
     } catch (error) {
       this.handleMongoError(error);
-      // Fallback error nếu handleMongoError không throw
       throw new BadRequestException(
         'Không thể cập nhật thông tin người dùng. Vui lòng thử lại.',
       );
@@ -164,6 +163,5 @@ export class UsersService {
         `Giá trị '${value}' cho trường '${field}' đã tồn tại.`,
       );
     }
-    //Xử lý cho các mã lỗi MongoDB khác
   }
 }

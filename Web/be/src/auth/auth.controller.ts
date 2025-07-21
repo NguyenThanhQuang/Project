@@ -4,6 +4,7 @@ import {
   Controller,
   Get,
   HttpCode,
+  HttpException,
   HttpStatus,
   Logger,
   NotFoundException,
@@ -65,20 +66,35 @@ export class AuthController {
       return res.redirect(successUrl);
     } catch (error) {
       let errorMessageKey = 'VerificationFailed';
-      if (error instanceof UnauthorizedException) {
-        errorMessageKey = error.message.includes('hết hạn')
-          ? 'TokenExpired'
-          : 'TokenInvalidOrUsed';
-      } else if (error instanceof BadRequestException) {
-        errorMessageKey = 'InvalidTokenFormat';
-      } else if (error instanceof NotFoundException) {
-        errorMessageKey = 'UserNotFoundWithToken';
+      let logMessage = 'An unknown error occurred';
+      let errorStack: string | undefined;
+
+      if (error instanceof HttpException) {
+        errorStack = error.stack;
+        const response = error.getResponse();
+        logMessage =
+          typeof response === 'string' ? response : JSON.stringify(response);
+
+        if (error instanceof UnauthorizedException) {
+          errorMessageKey = logMessage.includes('hết hạn')
+            ? 'TokenExpired'
+            : 'TokenInvalidOrUsed';
+        } else if (error instanceof BadRequestException) {
+          errorMessageKey = 'InvalidTokenFormat';
+        } else if (error instanceof NotFoundException) {
+          errorMessageKey = 'UserNotFoundWithToken';
+        }
+      } else if (error instanceof Error) {
+        logMessage = error.message;
+        errorStack = error.stack;
       }
 
       this.logger.error(
-        `Email verification failed for token (first 10 chars: ${token.substring(0, 10)}...): ${error.message}`,
-        error.stack,
+        `Email verification failed: ${logMessage}`,
+        errorStack,
+        `TokenPrefix: ${token.substring(0, 10)}...`,
       );
+
       const failureUrl = `${clientBaseUrl}${verificationResultPath}?success=false&message=${errorMessageKey}`;
       return res.redirect(failureUrl);
     }

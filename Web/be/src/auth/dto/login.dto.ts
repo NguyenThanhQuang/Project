@@ -1,7 +1,6 @@
-import { IsNotEmpty, IsString, MinLength, ValidateIf } from 'class-validator';
+import { IsNotEmpty, IsString, MinLength } from 'class-validator';
 
 export class LoginDto {
-  @ValidateIf((o) => !o.phone)
   @IsNotEmpty({ message: 'Email hoặc Số điện thoại không được để trống' })
   @IsString()
   identifier: string;

@@ -37,7 +37,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  private async generateSecureToken(length: number = 32): Promise<string> {
+  private generateSecureToken(length: number = 32): string {
     return randomBytes(length).toString('hex');
   }
 
@@ -56,7 +56,7 @@ export class AuthService {
           existingUserByEmail.emailVerificationExpires.getTime() < Date.now()
         ) {
           existingUserByEmail.emailVerificationToken =
-            await this.generateSecureToken();
+            this.generateSecureToken();
           const expiresInMs = parseInt(
             this.configService.get<string>(
               'EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_MS',
@@ -116,7 +116,7 @@ export class AuthService {
       throw new ConflictException('Số điện thoại này đã được sử dụng.');
     }
 
-    const emailVerificationToken = await this.generateSecureToken();
+    const emailVerificationToken = this.generateSecureToken();
     const expiresInMsDefault = 86400000;
     const expiresInMs = parseInt(
       this.configService.get<string>(
@@ -139,18 +139,28 @@ export class AuthService {
     try {
       newUser = await this.usersService.create(createUserPayload);
     } catch (error) {
-      this.logger.error('Error creating user during registration:', error);
-      if (error instanceof ConflictException) throw error;
-      if (error.code === 11000) {
+      if (error instanceof ConflictException) {
+        throw error;
+      }
+
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        (error as { code: any }).code === 11000
+      ) {
         this.logger.warn(
-          `MongoDB duplicate key error during user creation for email ${emailLower} or phone ${registerDto.phone}. Error: ${error.message}`,
+          `MongoDB duplicate key error on user creation: ${(error as Error).message}`,
         );
         throw new ConflictException(
-          'Không thể tạo tài khoản do lỗi dữ liệu trùng lặp. Vui lòng thử lại.',
+          'Thông tin cung cấp bị trùng lặp. Vui lòng kiểm tra lại.',
         );
       }
+
+      this.logger.error('Unhandled error during user creation:', error);
+
       throw new InternalServerErrorException(
-        'Không thể tạo tài khoản. Vui lòng thử lại sau.',
+        'Không thể tạo tài khoản do lỗi hệ thống. Vui lòng thử lại sau.',
       );
     }
 
@@ -317,7 +327,7 @@ export class AuthService {
       throw new BadRequestException('Email này đã được xác thực trước đó.');
     }
 
-    user.emailVerificationToken = await this.generateSecureToken();
+    user.emailVerificationToken = this.generateSecureToken();
     const expiresInMsDefault = 86400000;
     const expiresInMs = parseInt(
       this.configService.get<string>(
@@ -378,7 +388,7 @@ export class AuthService {
       return { message: generalSuccessMessage };
     }
 
-    user.passwordResetToken = await this.generateSecureToken();
+    user.passwordResetToken = this.generateSecureToken();
     const expiresInMs = parseInt(
       this.configService.get<string>(
         'PASSWORD_RESET_TOKEN_EXPIRES_IN_MS',

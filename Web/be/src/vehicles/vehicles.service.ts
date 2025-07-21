@@ -30,6 +30,7 @@ export class VehiclesService {
     if (!seatMap) {
       return;
     }
+    //Hạn chế dùng any
 
     if (typeof seatMap !== 'object' || !Array.isArray(seatMap.layout)) {
       throw new BadRequestException(

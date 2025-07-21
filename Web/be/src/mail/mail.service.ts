@@ -6,10 +6,11 @@ import {
 import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
+import SMTPTransport from 'nodemailer/lib/smtp-transport';
 
 @Injectable()
 export class MailService {
-  private transporter: Transporter;
+  private transporter: Transporter<SMTPTransport.SentMessageInfo>;
   private readonly logger = new Logger(MailService.name);
 
   constructor(private configService: ConfigService) {
@@ -113,6 +114,7 @@ export class MailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
+
       this.logger.log(
         `Verification email sent to ${email}. Message ID: ${info.messageId}, Preview URL: ${nodemailer.getTestMessageUrl(info)}`,
       );
@@ -180,6 +182,7 @@ export class MailService {
 
     try {
       const info = await this.transporter.sendMail(mailOptions);
+
       this.logger.log(
         `Password reset email sent to ${email}. Message ID: ${info.messageId}, Preview URL: ${nodemailer.getTestMessageUrl(info)}`,
       );

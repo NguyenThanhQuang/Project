@@ -32,23 +32,21 @@ export class LocationsService {
       );
     }
 
-    // DTO đã bao gồm cả type: 'Point'
     const newLocation = new this.locationModel(createLocationDto);
     return newLocation.save();
   }
 
   async findAll(query: any = {}): Promise<LocationDocument[]> {
-    // Thêm logic lọc, phân trang nếu cần
+    // Logic lọc, chưa có phân trang
     // Ví dụ: /api/locations?type=bus_station&province=Hồ Chí Minh
     return this.locationModel.find(query).sort({ province: 1, name: 1 }).exec();
-  }
+  } //Xác định kiểu dữ liệu và debug
 
   // Hàm tìm kiếm gợi ý (autocomplete)
   async search(keyword: string): Promise<LocationDocument[]> {
     if (!keyword || keyword.trim().length < 2) {
       return [];
     }
-    // Sử dụng text index để tìm kiếm hiệu quả
     return this.locationModel
       .find(
         { $text: { $search: keyword } },
@@ -89,11 +87,13 @@ export class LocationsService {
     //   $or: [
     //     { 'route.fromLocationId': id },
     //     { 'route.toLocationId': id },
-    //     { 'route.stopLocationIds': id }
-    //   ]
+    //     { 'route.stopLocationIds': id },
+    //   ],
     // });
     // if (tripsUsingLocation > 0) {
-    //   throw new ConflictException('Không thể xóa địa điểm đang được sử dụng trong một chuyến đi.');
+    //   throw new ConflictException(
+    //     'Không thể xóa địa điểm đang được sử dụng trong một chuyến đi.',
+    //   );
     // }
 
     const deletedLocation = await this.locationModel

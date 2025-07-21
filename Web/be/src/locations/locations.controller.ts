@@ -34,7 +34,7 @@ export class LocationsController {
   }
 
   /**
-   * [PUBLIC] Lấy danh sách địa điểm (có thể dùng để đổ dữ liệu cho dropdown)
+   * [PUBLIC] Lấy danh sách địa điểm (đổ dữ liệu cho dropdown)
    * @route GET /api/locations
    */
   @Get()

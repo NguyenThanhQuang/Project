@@ -45,17 +45,12 @@ export class UsersController {
     return this.usersService.updateProfile(userId, updateUserDto);
   }
 
-  // Endpoint để lấy thông tin người dùng theo ID
-  // Cần phân quyền cẩn thận cho endpoint này
-  @UseGuards(JwtAuthGuard) // Chỉ cần đăng nhập là có thể gọi, cần thêm RolesGuard nếu muốn giới hạn
+  @UseGuards(JwtAuthGuard)
   @Get(':userId')
   async getUserProfile(
     @Param('userId') targetUserId: string,
-    @Req() req: AuthenticatedRequest, // Thêm @Req() để có thể kiểm tra quyền của người gọi
+    @Req() req: AuthenticatedRequest,
   ): Promise<SanitizedUser> {
-    // Cập nhật kiểu trả về
-    // Kiểm tra quyền: Chỉ admin hoặc chính người dùng đó mới được xem thông tin chi tiết
-    // Hoặc nếu bạn muốn endpoint này chỉ dành cho Admin, thì dùng RolesGuard và @Roles(UserRole.ADMIN)
     if (req.user.role !== UserRole.ADMIN && req.user.userId !== targetUserId) {
       throw new ForbiddenException(
         'Bạn không có quyền truy cập thông tin này.',
@@ -66,7 +61,6 @@ export class UsersController {
       throw new NotFoundException('ID người dùng không hợp lệ.');
     }
     const user = await this.usersService.findById(targetUserId);
-    // findById đã xử lý NotFoundException
     return this.usersService.sanitizeUser(user);
   }
 
