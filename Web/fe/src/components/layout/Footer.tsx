@@ -120,7 +120,7 @@ const Footer: React.FC = () => {
               <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 1 }}>
                 <LocationOn sx={{ color: 'rgba(255, 255, 255, 0.8)', fontSize: 20, mt: 0.5 }} />
                 <Typography variant="body2" sx={{ color: 'rgba(255, 255, 255, 0.8)' }}>
-                  Tầng 8, Tòa nhà Cornerstone, 16 Phan Chu Trinh, Hoàn Kiếm, Hà Nội
+                  T
                 </Typography>
               </Box>
             </Box>

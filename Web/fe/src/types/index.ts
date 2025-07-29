@@ -1,12 +1,15 @@
+export type Role = "user" | "company_admin" | "admin";
 // User types
 export interface User {
-  id: string;
+  _id: string;
+  name: string;
   email: string;
   phone: string;
-  name: string;
-  role: 'user' | 'admin';
-  isVerified: boolean;
+  roles: Role[];
+  isEmailVerified: boolean;
+  companyId?: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 // Company types
@@ -72,7 +75,7 @@ export interface Trip {
   departureTime: string;
   expectedArrivalTime: string;
   price: number;
-  status: 'scheduled' | 'in_progress' | 'completed' | 'cancelled';
+  status: "scheduled" | "in_progress" | "completed" | "cancelled";
   recurringPattern?: string;
 }
 
@@ -81,7 +84,7 @@ export interface Seat {
   id: string;
   tripId: string;
   seatNumber: string;
-  status: 'available' | 'held' | 'booked';
+  status: "available" | "held" | "booked";
   heldBy?: string;
   heldUntil?: string;
   price: number;
@@ -102,8 +105,8 @@ export interface Booking {
   tripId: string;
   passengers: Passenger[];
   totalAmount: number;
-  status: 'held' | 'confirmed' | 'cancelled' | 'expired';
-  paymentStatus: 'pending' | 'completed' | 'failed' | 'refunded';
+  status: "held" | "confirmed" | "cancelled" | "expired";
+  paymentStatus: "pending" | "completed" | "failed" | "refunded";
   paymentMethod?: string;
   paymentTransactionId?: string;
   ticketCode?: string;
@@ -139,14 +142,14 @@ export interface SearchResult {
 export interface PaymentMethod {
   id: string;
   name: string;
-  type: 'vnpay' | 'momo' | 'bank_transfer' | 'cash';
+  type: "vnpay" | "momo" | "bank_transfer" | "cash";
   isEnabled: boolean;
 }
 
 // Notification types
 export interface Notification {
   id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: "success" | "error" | "warning" | "info";
   title: string;
   message: string;
   duration?: number;
@@ -158,4 +161,4 @@ export interface ApiResponse<T> {
   data?: T;
   message?: string;
   error?: string;
-} 
+}

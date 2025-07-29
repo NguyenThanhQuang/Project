@@ -6,7 +6,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import * as bcrypt from 'bcrypt';
 import { Model, Types } from 'mongoose';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import {
@@ -153,6 +155,55 @@ export class UsersService {
     }
 
     return this.sanitizeUser(user);
+  }
+
+  async changePassword(
+    userId: string | Types.ObjectId,
+    changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    const { currentPassword, newPassword, confirmNewPassword } =
+      changePasswordDto as {
+        currentPassword: string;
+        newPassword: string;
+        confirmNewPassword: string;
+      };
+
+    if (newPassword !== confirmNewPassword) {
+      throw new BadRequestException(
+        'Mật khẩu mới và xác nhận mật khẩu không khớp.',
+      );
+    }
+
+    const user = await this.userModel
+      .findById(userId)
+      .select('+passwordHash')
+      .exec();
+
+    if (!user) {
+      throw new NotFoundException('Không tìm thấy người dùng.');
+    }
+
+    const isPasswordMatch = await bcrypt.compare(
+      currentPassword,
+      user.passwordHash,
+    );
+
+    if (!isPasswordMatch) {
+      throw new BadRequestException('Mật khẩu hiện tại không chính xác.');
+    }
+
+    if (currentPassword === newPassword) {
+      throw new BadRequestException(
+        'Mật khẩu mới không được trùng với mật khẩu cũ.',
+      );
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    user.passwordHash = await bcrypt.hash(newPassword, salt);
+
+    await user.save();
+
+    return { message: 'Đổi mật khẩu thành công.' };
   }
 
   private handleMongoError(error: unknown): void {

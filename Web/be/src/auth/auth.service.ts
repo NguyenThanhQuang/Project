@@ -247,7 +247,7 @@ export class AuthService {
     const payload: JwtPayload = {
       email: user.email,
       sub: user._id.toString(),
-      role: user.role,
+      roles: user.roles,
       companyId: user.companyId?.toString(),
     };
     const accessToken = this.jwtService.sign(payload);
@@ -301,7 +301,7 @@ export class AuthService {
     const payload: JwtPayload = {
       email: user.email,
       sub: user._id.toString(),
-      role: user.role,
+      roles: user.roles,
       companyId: user.companyId?.toString(),
     };
     const accessToken = this.jwtService.sign(payload);

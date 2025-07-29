@@ -1,128 +1,168 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "@mui/material/styles";
 import CssBaseline from "@mui/material/CssBaseline";
 import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
 import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
-
 import { useDispatch, useSelector } from "react-redux";
-import type { RootState, AppDispatch } from "./store";
-import { logout, loadUser } from "./store/authSlice";
-
 import { theme } from "./theme";
 import Layout from "./components/layout/Layout";
-import Homepage from "./pages/Homepage";
-import TripSearchResults from "./pages/TripSearchResults";
-import TripDetails from "./pages/TripDetails";
-import BookingCheckout from "./pages/BookingCheckout";
-import PaymentStatus from "./pages/PaymentStatus";
-import MyBookings from "./pages/MyBookings";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import CompanyDashboard from "./pages/company/CompanyDashboard";
-import { NotificationProvider } from "./components/common/NotificationProvider";
-import AuthModal from "./components/auth/AuthModal";
+import AdminLayout from "./components/layout/AdminLayout";
 import ProtectedRoute from "./components/common/ProtectedRoute";
-import ForgotPassword from "./pages/ForgotPassword";
-import ResetPassword from "./pages/ResetPassword";
+import { NotificationProvider } from "./components/common/NotificationProvider";
+import type { AppDispatch, RootState } from "./store";
+import { loadUser } from "./store/authSlice";
+import Homepage from "./features/trips/pages/Homepage";
+import TripSearchResults from "./features/trips/pages/TripSearchResults";
+import TripDetails from "./features/trips/pages/TripDetails";
+import Policies from "./features/core/pages/Policies";
+import CompanyRegistration from "./features/company/pages/CompanyRegistration";
+import CompanyRegistrationSuccess from "./features/company/pages/CompanyRegistrationSuccess";
+import ForgotPassword from "./features/auth/pages/ForgotPassword";
+import PasswordReset from "./features/auth/pages/PasswordReset";
+import MyBookings from "./features/profile/pages/MyBookings";
+import LoyaltyProgram from "./features/profile/pages/LoyaltyProgram";
+import ChangePassword from "./features/profile/pages/ChangePassword";
+import PaymentStatus from "./features/bookings/pages/PaymentStatus";
+import BookingCheckout from "./features/bookings/pages/BookingCheckout";
+import AddTrip from "./features/company/pages/AddTrip";
+import ManageTrips from "./features/company/pages/ManageTrips";
+import { BusTracking } from "./features/tracking/pages/BusTracking";
+import AdminDashboardContent from "./features/admin/pages/AdminDashboardContent";
+import ManageCompanies from "./features/admin/pages/ManageCompanies";
+import ManageUsers from "./features/admin/pages/ManageUsers";
+import FinanceReports from "./features/admin/pages/FinanceReports";
+import SystemSettings from "./features/admin/pages/SystemSettings";
+import NotificationManagement from "./features/admin/pages/NotificationManagement";
+import { NotificationProvider as AdminNotificationProvider } from "./contexts/NotificationContext";
+import AdminLoginPage from "./features/admin/pages/AdminLoginPage";
 
 function App() {
-  const [authModalOpen, setAuthModalOpen] = useState(false);
-  const [authMode, setAuthMode] = useState<"login" | "register">("login");
-
   const dispatch = useDispatch<AppDispatch>();
-  const { user, token } = useSelector((state: RootState) => state.auth);
+  const { token } = useSelector((state: RootState) => state.auth);
 
   useEffect(() => {
-    if (token && !user) {
+    if (token) {
       dispatch(loadUser());
     }
-  }, [dispatch, token, user]);
-
-  const openAuthModal = (mode: "login" | "register") => {
-    setAuthMode(mode);
-    setAuthModalOpen(true);
-  };
-
-  const closeAuthModal = () => {
-    setAuthModalOpen(false);
-  };
-
-  const handleLogout = () => {
-    dispatch(logout());
-  };
+  }, [token, dispatch]);
 
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <LocalizationProvider dateAdapter={AdapterDayjs}>
         <NotificationProvider>
-          <Layout
-            user={user}
-            onLogin={() => openAuthModal("login")}
-            onRegister={() => openAuthModal("register")}
-            onLogout={handleLogout}
-          >
+          <AdminNotificationProvider>
             <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Homepage />} />
-              <Route path="/trips" element={<TripSearchResults />} />
-              <Route path="/trips/:tripId" element={<TripDetails />} />
-              <Route path="/payment/status" element={<PaymentStatus />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/auth/reset-password" element={<ResetPassword />} />
+              <Route path="/admin/login" element={<AdminLoginPage />} />
+              <Route path="/" element={<Layout />}>
+                {/* Trang public */}
+                <Route index element={<Homepage />} />
+                <Route path="trips" element={<TripSearchResults />} />
+                <Route path="trips/:tripId" element={<TripDetails />} />
+                <Route path="policies" element={<Policies />} />
+                <Route
+                  path="company-registration"
+                  element={<CompanyRegistration />}
+                />
+                <Route
+                  path="company-registration-success"
+                  element={<CompanyRegistrationSuccess />}
+                />
+                <Route path="forgot-password" element={<ForgotPassword />} />
+                <Route path="reset-password" element={<PasswordReset />} />
 
-              {/* Protected Routes */}
+                {/* Trang được bảo vệ */}
+                <Route
+                  path="my-bookings"
+                  element={
+                    <ProtectedRoute allowedRoles={["user", "company_admin"]}>
+                      <MyBookings />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="loyalty-program"
+                  element={
+                    <ProtectedRoute allowedRoles={["user", "company_admin"]}>
+                      <LoyaltyProgram />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="change-password"
+                  element={
+                    <ProtectedRoute allowedRoles={["user", "company_admin"]}>
+                      <ChangePassword />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="payment/status"
+                  element={
+                    <ProtectedRoute allowedRoles={["user", "company_admin"]}>
+                      <PaymentStatus />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="bookings/checkout"
+                  element={
+                    <ProtectedRoute allowedRoles={["user", "company_admin"]}>
+                      <BookingCheckout />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="add-trip"
+                  element={
+                    <ProtectedRoute allowedRoles={["company_admin"]}>
+                      <AddTrip />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="manage-trips"
+                  element={
+                    <ProtectedRoute allowedRoles={["company_admin"]}>
+                      <ManageTrips />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="bus-tracking"
+                  element={
+                    <ProtectedRoute allowedRoles={["company_admin"]}>
+                      <BusTracking />
+                    </ProtectedRoute>
+                  }
+                />
+              </Route>
+
+              {/* Cấu trúc route lồng nhau cho Admin Layout */}
               <Route
-                path="/my-bookings"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={["user", "admin", "company_admin"]}
-                  >
-                    <MyBookings />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/bookings/checkout"
-                element={
-                  <ProtectedRoute
-                    allowedRoles={["user", "admin", "company_admin"]}
-                  >
-                    <BookingCheckout />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin/dashboard"
+                path="/admin"
                 element={
                   <ProtectedRoute allowedRoles={["admin"]}>
-                    <AdminDashboard />
+                    <AdminLayout />
                   </ProtectedRoute>
                 }
-              />
-              <Route
-                path="/company/dashboard"
-                element={
-                  <ProtectedRoute allowedRoles={["company_admin"]}>
-                    <CompanyDashboard />
-                  </ProtectedRoute>
-                }
-              />
+              >
+                <Route index element={<AdminDashboardContent />} />
+                <Route path="companies" element={<ManageCompanies />} />
+                <Route path="users" element={<ManageUsers />} />
+                <Route path="finance" element={<FinanceReports />} />
+                <Route path="settings" element={<SystemSettings />} />
+                <Route
+                  path="notifications"
+                  element={<NotificationManagement />}
+                />
+              </Route>
 
-              {/* Fallback/Utility Routes */}
-              <Route
-                path="/unauthorized"
-                element={<h1>Không có quyền truy cập</h1>}
-              />
-              <Route path="*" element={<h1>404 - Trang không tồn tại</h1>} />
+              {/* Route cho trang không tìm thấy */}
+              {/* <Route path="*" element={<NotFoundPage />} /> */}
             </Routes>
-          </Layout>
-
-          <AuthModal
-            open={authModalOpen}
-            initialTab={authMode}
-            onClose={closeAuthModal}
-          />
+          </AdminNotificationProvider>
         </NotificationProvider>
       </LocalizationProvider>
     </ThemeProvider>

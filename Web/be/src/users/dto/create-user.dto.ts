@@ -30,7 +30,10 @@ export class CreateUserDto {
   name: string;
 
   @IsOptional()
-  @IsEnum(UserRole, { message: 'Vai trò không hợp lệ' })
+  @IsEnum(UserRole, {
+    each: true,
+    message: 'Một hoặc nhiều vai trò không hợp lệ',
+  })
   role?: UserRole;
 
   @IsOptional()

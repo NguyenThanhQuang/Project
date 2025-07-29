@@ -16,6 +16,7 @@ import { Types } from 'mongoose';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SanitizedUser, UserRole } from './schemas/user.schema';
 import { UsersService } from './users.service';
@@ -100,4 +101,15 @@ export class UsersController {
   //   // thông qua DTO chung này. Xem xét việc tạo AdminUpdateUserDto.
   //   return this.usersService.updateProfile(targetUserId, updateUserDto);
   // }
+
+  @Patch('me/change-password')
+  @UseGuards(JwtAuthGuard)
+  @HttpCode(HttpStatus.OK)
+  async changeMyPassword(
+    @Req() req: AuthenticatedRequest,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ) {
+    const userId = req.user.userId;
+    return this.usersService.changePassword(userId, changePasswordDto);
+  }
 }

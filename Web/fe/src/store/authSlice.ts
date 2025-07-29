@@ -1,48 +1,62 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   createAsyncThunk,
   createSlice,
   type PayloadAction,
 } from "@reduxjs/toolkit";
+import axios from "axios";
 import api from "../services/api";
-
-interface User {
-  _id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: "user" | "company_admin" | "admin";
-  companyId?: string;
-}
+import type { User } from "../types";
 
 interface AuthState {
   user: User | null;
   token: string | null;
   status: "idle" | "loading" | "succeeded" | "failed";
   error: string | null;
+  successMessage: string | null;
 }
+
+const token = localStorage.getItem("accessToken");
 
 const initialState: AuthState = {
   user: null,
-  token: localStorage.getItem("accessToken") || null,
+  token: token,
   status: "idle",
   error: null,
+  successMessage: null,
 };
 
+interface KnownError {
+  message: string | string[];
+}
+/**
+ * Đăng ký người dùng mới.
+ * Backend sẽ gửi email xác thực và trả về một message.
+ */
 export const registerUser = createAsyncThunk(
   "auth/registerUser",
   async (
-    userData: Omit<User, "_id" | "role" | "companyId"> & { password: string },
+    userData: Omit<
+      User,
+      | "_id"
+      | "roles"
+      | "companyId"
+      | "isEmailVerified"
+      | "createdAt"
+      | "updatedAt"
+    > & {
+      password: string;
+    },
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post("/auth/register", userData);
-      return response.data;
-    } catch (error: any) {
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+      const response = await api.post<{ message: string }>(
+        "/auth/register",
+        userData
+      );
+      return response.data.message;
+    } catch (error: unknown) {
+      if (axios.isAxiosError<KnownError>(error) && error.response) {
         const message = Array.isArray(error.response.data.message)
           ? error.response.data.message.join(", ")
           : error.response.data.message;
@@ -53,22 +67,29 @@ export const registerUser = createAsyncThunk(
   }
 );
 
-export const loginUser = createAsyncThunk(
+/**
+ * Đăng nhập người dùng.
+ * Backend trả về accessToken và thông tin user.
+ */
+export const loginUser = createAsyncThunk<
+  { accessToken: string; user: User },
+  { identifier: string; password: string },
+  { rejectValue: string }
+>(
   "auth/loginUser",
   async (
     credentials: { identifier: string; password: string },
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post("/auth/login", credentials);
+      const response = await api.post<{ accessToken: string; user: User }>(
+        "/auth/login",
+        credentials
+      );
       localStorage.setItem("accessToken", response.data.accessToken);
       return response.data;
-    } catch (error: any) {
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError<KnownError>(error) && error.response) {
         const message = Array.isArray(error.response.data.message)
           ? error.response.data.message.join(", ")
           : error.response.data.message;
@@ -81,29 +102,43 @@ export const loginUser = createAsyncThunk(
   }
 );
 
+/**
+ * Lấy thông tin người dùng đang đăng nhập (dựa trên token).
+ * Dùng để xác thực lại phiên làm việc khi tải lại trang.
+ */
 export const loadUser = createAsyncThunk(
   "auth/loadUser",
   async (_, { rejectWithValue }) => {
     try {
-      const response = await api.get("/users/me");
+      const response = await api.get<User>("/users/me");
       return response.data;
-    } catch (error: any) {
-      return rejectWithValue("Phiên đăng nhập đã hết hạn hoặc không hợp lệ.");
+    } catch (error: unknown) {
+      localStorage.removeItem("accessToken");
+      if (axios.isAxiosError(error)) {
+        return rejectWithValue("Phiên đăng nhập đã hết hạn hoặc không hợp lệ.");
+      }
+      return rejectWithValue(
+        "Lỗi không xác định khi tải thông tin người dùng."
+      );
     }
   }
 );
+
+/**
+ * Gửi yêu cầu quên mật khẩu.
+ * Backend gửi mail và trả về message.
+ */
 export const forgotPassword = createAsyncThunk(
   "auth/forgotPassword",
   async (email: string, { rejectWithValue }) => {
     try {
-      const response = await api.post("/auth/forgot-password", { email });
+      const response = await api.post<{ message: string }>(
+        "/auth/forgot-password",
+        { email }
+      );
       return response.data.message;
-    } catch (error: any) {
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError<KnownError>(error) && error.response) {
         const message = Array.isArray(error.response.data.message)
           ? error.response.data.message.join(", ")
           : error.response.data.message;
@@ -114,6 +149,9 @@ export const forgotPassword = createAsyncThunk(
   }
 );
 
+/**
+ * Đặt lại mật khẩu mới bằng token.
+ */
 export const resetPassword = createAsyncThunk(
   "auth/resetPassword",
   async (
@@ -121,14 +159,13 @@ export const resetPassword = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post("/auth/reset-password", data);
+      const response = await api.post<{ message: string }>(
+        "/auth/reset-password",
+        data
+      );
       return response.data.message;
-    } catch (error: any) {
-      if (
-        error.response &&
-        error.response.data &&
-        error.response.data.message
-      ) {
+    } catch (error: unknown) {
+      if (axios.isAxiosError<KnownError>(error) && error.response) {
         const message = Array.isArray(error.response.data.message)
           ? error.response.data.message.join(", ")
           : error.response.data.message;
@@ -141,6 +178,43 @@ export const resetPassword = createAsyncThunk(
   }
 );
 
+/**
+ * Thay đổi mật khẩu cho người dùng đã đăng nhập.
+ * Yêu cầu mật khẩu hiện tại và mật khẩu mới.
+ * CHỨC NĂNG MỚI
+ */
+export const changePassword = createAsyncThunk(
+  "auth/changePassword",
+  async (
+    data: {
+      currentPassword: string;
+      newPassword: string;
+      confirmNewPassword: string;
+    },
+    { rejectWithValue }
+  ) => {
+    try {
+      //PATCH /api/users/me/change-password
+      const response = await api.patch<{ message: string }>(
+        "/users/me/change-password",
+        data
+      );
+      return response.data.message;
+    } catch (error: unknown) {
+      if (axios.isAxiosError<KnownError>(error) && error.response) {
+        const message = Array.isArray(error.response.data.message)
+          ? error.response.data.message.join(", ")
+          : error.response.data.message;
+        return rejectWithValue(message);
+      }
+      return rejectWithValue(
+        "Đổi mật khẩu không thành công. Vui lòng kiểm tra lại mật khẩu hiện tại."
+      );
+    }
+  }
+);
+
+// --- SLICE ---
 const authSlice = createSlice({
   name: "auth",
   initialState,
@@ -150,34 +224,24 @@ const authSlice = createSlice({
       state.token = null;
       state.status = "idle";
       state.error = null;
+      state.successMessage = null;
       localStorage.removeItem("accessToken");
     },
-    clearError: (state) => {
+    clearAuthStatus: (state) => {
       state.error = null;
-      // Có thể reset status về 'idle' nếu muốn
-      // state.status = 'idle';
-    },
-    clearAuthError: (state) => {
-      state.error = null;
+      state.successMessage = null;
+      state.status = "idle";
     },
   },
   extraReducers: (builder) => {
     builder
-      .addCase(registerUser.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(registerUser.fulfilled, (state) => {
-        state.status = "succeeded";
-      })
-      .addCase(registerUser.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload as string;
-      })
-      .addCase(loginUser.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
+      .addCase(
+        registerUser.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.status = "succeeded";
+          state.successMessage = action.payload;
+        }
+      )
       .addCase(
         loginUser.fulfilled,
         (state, action: PayloadAction<{ accessToken: string; user: User }>) => {
@@ -186,13 +250,6 @@ const authSlice = createSlice({
           state.user = action.payload.user;
         }
       )
-      .addCase(loginUser.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload as string;
-      })
-      .addCase(loadUser.pending, (state) => {
-        state.status = "loading";
-      })
       .addCase(loadUser.fulfilled, (state, action: PayloadAction<User>) => {
         state.status = "succeeded";
         state.user = action.payload;
@@ -201,35 +258,47 @@ const authSlice = createSlice({
         state.status = "failed";
         state.user = null;
         state.token = null;
-        state.error = action.payload as string;
-        localStorage.removeItem("accessToken");
-      })
-      .addCase(forgotPassword.pending, (state) => {
-        state.status = "loading";
         state.error = null;
       })
-      .addCase(forgotPassword.fulfilled, (state) => {
-        state.status = "succeeded";
-      })
-      .addCase(forgotPassword.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload as string;
-      })
-
-      .addCase(resetPassword.pending, (state) => {
-        state.status = "loading";
-        state.error = null;
-      })
-      .addCase(resetPassword.fulfilled, (state) => {
-        state.status = "succeeded";
-      })
-      .addCase(resetPassword.rejected, (state, action) => {
-        state.status = "failed";
-        state.error = action.payload as string;
-      });
+      .addCase(
+        forgotPassword.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.status = "succeeded";
+          state.successMessage = action.payload;
+        }
+      )
+      .addCase(
+        resetPassword.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.status = "succeeded";
+          state.successMessage = action.payload;
+        }
+      )
+      .addCase(
+        changePassword.fulfilled,
+        (state, action: PayloadAction<string>) => {
+          state.status = "succeeded";
+          state.successMessage = action.payload;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith("/pending"),
+        (state) => {
+          state.status = "loading";
+          state.error = null;
+          state.successMessage = null;
+        }
+      )
+      .addMatcher(
+        (action) => action.type.endsWith("/rejected"),
+        (state, action: PayloadAction<string>) => {
+          state.status = "failed";
+          state.error = action.payload;
+        }
+      );
   },
 });
 
-export const { logout, clearAuthError, clearError } = authSlice.actions;
+export const { logout, clearAuthStatus } = authSlice.actions;
 
 export default authSlice.reducer;

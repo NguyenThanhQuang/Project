@@ -53,3 +53,25 @@ body {
 .form-input {
   @apply block w-full rounded-md border-gray-300 shadow-sm focus:border-primary-500 focus:ring-primary-500;
 }
+
+/* Mapbox CSS animations */
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Mapbox container improvements */
+.mapboxgl-map {
+  font: 12px/20px 'Helvetica Neue', Arial, Helvetica, sans-serif;
+}
+
+.mapboxgl-canvas {
+  position: absolute;
+  left: 0;
+  top: 0;
+}
+
+/* Ensure Mapbox loads properly */
+.mapboxgl-missing-css {
+  display: none;
+}
