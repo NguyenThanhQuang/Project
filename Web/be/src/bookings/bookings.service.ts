@@ -8,7 +8,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { SeatStatus, TripStatus } from '../trips/schemas/trip.schema';
 import { TripsService } from '../trips/trips.service';
 import { UserDocument } from '../users/schemas/user.schema';
@@ -140,7 +140,7 @@ export class BookingsService {
    * Bước 2 (Giả lập): Xác nhận thanh toán và hoàn tất booking
    */
   async confirmBooking(bookingId: string): Promise<BookingDocument> {
-    const booking = await this.bookingModel.findById(bookingId).exec();
+    const booking = await this.findOne(bookingId);
     if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt vé.');
     if (booking.status !== BookingStatus.HELD) {
       throw new BadRequestException(
@@ -180,7 +180,7 @@ export class BookingsService {
     bookingId: string,
     user?: UserDocument,
   ): Promise<BookingDocument> {
-    const booking = await this.bookingModel.findById(bookingId).exec();
+    const booking = await this.findOne(bookingId, user);
     if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt vé.');
 
     if (
@@ -220,8 +220,8 @@ export class BookingsService {
     if (lookupDto.ticketCode) {
       query.ticketCode = lookupDto.ticketCode;
     } else if (lookupDto.bookingId) {
-      query._id = lookupDto.bookingId; //as any dto string
-      query.contactPhone = lookupDto.contactPhone; // Thêm điều kiện an toàn
+      query._id = lookupDto.bookingId;
+      query.contactPhone = lookupDto.contactPhone;
     } else {
       throw new BadRequestException(
         'Cần cung cấp mã vé hoặc ID đơn đặt vé để tra cứu.',
@@ -262,5 +262,35 @@ export class BookingsService {
       }
     }
     return result;
+  }
+  /**
+   * Hàm này dành cho việc tra cứu nội bộ giữa các service, bỏ qua kiểm tra quyền.
+   * Chỉ nên được gọi từ các service đáng tin cậy khác như ReviewsService.
+   */
+  async findOne(
+    id: string | Types.ObjectId,
+    user?: UserDocument,
+  ): Promise<BookingDocument> {
+    const booking = await this.bookingModel.findById(id).exec();
+
+    if (!booking) {
+      throw new NotFoundException(
+        `Không tìm thấy đơn đặt vé với ID: ${id.toString()}`,
+      );
+    }
+
+    // Nếu có user được truyền vào, thực hiện kiểm tra quyền
+    if (
+      user &&
+      booking.userId &&
+      user._id.toString() !== booking.userId.toString()
+    ) {
+      // Chỉ kiểm tra quyền nếu booking này có userId (không phải guest booking)
+      throw new ForbiddenException(
+        'Bạn không có quyền truy cập đơn đặt vé này.',
+      );
+    }
+
+    return booking;
   }
 }

@@ -61,7 +61,6 @@ const AdminLoginPage = () => {
     e.preventDefault();
     setAuthError(null);
     dispatch(clearAuthStatus());
-
     dispatch(
       loginUser({
         credentials,

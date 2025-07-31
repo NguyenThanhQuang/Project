@@ -71,21 +71,30 @@ export const registerUser = createAsyncThunk(
  * Đăng nhập người dùng.
  * Backend trả về accessToken và thông tin user.
  */
-export const loginUser = createAsyncThunk<
-  { accessToken: string; user: User },
-  { identifier: string; password: string },
-  { rejectValue: string }
->(
+export const loginUser = createAsyncThunk(
   "auth/loginUser",
   async (
-    credentials: { identifier: string; password: string },
+    loginData: {
+      credentials: { identifier: string; password: string };
+      source?: string;
+    },
     { rejectWithValue }
   ) => {
     try {
-      const response = await api.post<{ accessToken: string; user: User }>(
+      const config = {
+        headers: {} as Record<string, string>,
+      };
+
+      if (loginData.source === "admin-portal") {
+        config.headers["X-Request-Source"] = "admin-portal";
+      }
+
+      const response = await api.post(
         "/auth/login",
-        credentials
+        loginData.credentials,
+        config
       );
+
       localStorage.setItem("accessToken", response.data.accessToken);
       return response.data;
     } catch (error: unknown) {

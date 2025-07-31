@@ -6,14 +6,9 @@ export class AdminLoginLoggerMiddleware implements NestMiddleware {
   private readonly logger = new Logger('AdminLoginAttempt');
 
   use(req: Request, res: Response, next: NextFunction) {
-    const referer = req.headers.referer;
+    const sourceHeader = req.headers['x-request-source'];
 
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const origin = req.headers.origin;
-
-    const adminLoginUrlPart = '/admin/login';
-
-    if (referer && referer.includes(adminLoginUrlPart)) {
+    if (sourceHeader === 'admin-portal') {
       this.logger.log(
         `[ADMIN PORTAL] Login attempt received. IP: ${req.ip}, User-Agent: ${req.headers['user-agent']}`,
       );
