@@ -7,6 +7,24 @@ import { ConfigService } from '@nestjs/config';
 import * as nodemailer from 'nodemailer';
 import { Transporter } from 'nodemailer';
 import SMTPTransport from 'nodemailer/lib/smtp-transport';
+import { BookingDocument } from 'src/bookings/schemas/booking.schema';
+import { LocationDocument } from 'src/locations/schemas/location.schema';
+import { TripDocument } from 'src/trips/schemas/trip.schema';
+import { UserDocument } from 'src/users/schemas/user.schema';
+
+type PopulatedTrip = Omit<TripDocument, 'route' | 'companyId'> & {
+  route: {
+    fromLocationId: LocationDocument;
+    toLocationId: LocationDocument;
+  };
+  companyId: {
+    name: string;
+  };
+};
+type PopulatedBooking = Omit<BookingDocument, 'tripId' | 'userId'> & {
+  tripId: PopulatedTrip;
+  userId?: UserDocument;
+};
 
 @Injectable()
 export class MailService {
@@ -193,6 +211,65 @@ export class MailService {
       );
       throw new InternalServerErrorException(
         'Không thể gửi email đặt lại mật khẩu. Vui lòng thử lại sau.',
+      );
+    }
+  }
+  async sendBookingConfirmationEmail(booking: BookingDocument) {
+    const populatedBooking = booking as unknown as PopulatedBooking;
+
+    const {
+      contactEmail,
+      contactName,
+      ticketCode,
+      passengers,
+      totalAmount,
+      tripId: tripInfo,
+    } = populatedBooking;
+
+    const mailFromName = this.configService.get<string>(
+      'MAIL_FROM_NAME',
+      'Your App',
+    );
+    const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
+
+    if (!mailFromAddress) {
+      this.logger.error(
+        'MAIL_FROM_ADDRESS is not configured. Cannot send email.',
+      );
+      return;
+    }
+
+    const mailOptions = {
+      from: `"${mailFromName}" <${mailFromAddress}>`,
+      to: contactEmail,
+      subject: `[${mailFromName}] Xác nhận đặt vé thành công - Mã vé: ${ticketCode}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; line-height: 1.6;">
+          <h1>Cảm ơn bạn đã đặt vé!</h1>
+          <p>Chào <strong>${contactName}</strong>,</p>
+          <p>Đơn đặt vé của bạn đã được xác nhận thành công. Dưới đây là thông tin chi tiết:</p>
+          <ul style="list-style-type: none; padding: 0;">
+            <li style="margin-bottom: 10px;"><strong>Mã vé:</strong> <span style="font-size: 1.2em; color: #d9534f; font-weight: bold;">${ticketCode}</span></li>
+            <li style="margin-bottom: 10px;"><strong>Hành trình:</strong> ${tripInfo.route.fromLocationId.name} → ${tripInfo.route.toLocationId.name}</li>
+            <li style="margin-bottom: 10px;"><strong>Nhà xe:</strong> ${tripInfo.companyId.name}</li>
+            <li style="margin-bottom: 10px;"><strong>Thời gian khởi hành:</strong> ${new Date(tripInfo.departureTime).toLocaleString('vi-VN', { dateStyle: 'full', timeStyle: 'short' })}</li>
+            <li style="margin-bottom: 10px;"><strong>Số ghế:</strong> ${passengers.map((p) => p.seatNumber).join(', ')}</li>
+            <li style="margin-bottom: 10px;"><strong>Tổng tiền:</strong> ${totalAmount.toLocaleString('vi-VN')} VNĐ</li>
+          </ul>
+          <p>Vui lòng có mặt tại điểm đi trước 30 phút. Cảm ơn bạn đã sử dụng dịch vụ của chúng tôi!</p>
+          <hr>
+          <p style="font-size: 0.8em; color: #777;">Đây là email tự động, vui lòng không trả lời.</p>
+        </div>
+      `,
+    };
+
+    try {
+      await this.transporter.sendMail(mailOptions);
+      this.logger.log(`Booking confirmation email sent to ${contactEmail}`);
+    } catch (error) {
+      this.logger.error(
+        `Error sending booking confirmation email to ${contactEmail}`,
+        error,
       );
     }
   }

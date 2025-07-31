@@ -7,6 +7,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { SeatStatus, TripStatus } from '../trips/schemas/trip.schema';
@@ -28,6 +29,7 @@ export class BookingsService {
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     private readonly tripsService: TripsService,
     private readonly configService: ConfigService,
+    private readonly eventEmitter: EventEmitter2,
   ) {}
 
   /**
@@ -36,7 +38,7 @@ export class BookingsService {
    */
   async createHold(
     createDto: CreateBookingHoldDto,
-    user?: UserDocument, // User có thể không đăng nhập
+    user?: UserDocument,
   ): Promise<BookingDocument> {
     const trip = await this.tripsService.findOne(createDto.tripId);
     if (!trip) throw new NotFoundException('Không tìm thấy chuyến đi.');
@@ -113,7 +115,6 @@ export class BookingsService {
     });
 
     try {
-      // Cập nhật trạng thái ghế, truyền vào bookingId
       await this.tripsService.updateSeatStatuses(
         trip._id,
         seatNumbersToHold,
@@ -122,7 +123,6 @@ export class BookingsService {
       );
       return await newBooking.save();
     } catch (error) {
-      // Nếu có lỗi, cố gắng giải phóng lại ghế (rollback)
       console.error('Error creating hold, attempting to release seats:', error);
       await this.tripsService.updateSeatStatuses(
         trip._id,
@@ -160,15 +160,16 @@ export class BookingsService {
 
       booking.status = BookingStatus.CONFIRMED;
       booking.paymentStatus = PaymentStatus.PAID;
-      booking.paymentMethod = 'mock_payment'; // Đánh dấu là thanh toán giả lập
-      booking.heldUntil = undefined; // Xóa thời gian hết hạn để TTL index không ảnh hưởng
+      booking.paymentMethod = 'mock_payment';
+      booking.heldUntil = undefined;
       booking.ticketCode = await this.generateTicketCode();
       booking.paymentGatewayTransactionId = `MOCK_${Date.now()}`;
+      const savedBooking = await booking.save();
+      this.eventEmitter.emit('booking.confirmed', savedBooking);
 
-      return await booking.save();
+      return savedBooking;
     } catch (error) {
       console.error('Error confirming booking:', error);
-      // Cân nhắc logic rollback nếu cần (ví dụ: chuyển ghế về lại HELD)
       throw new InternalServerErrorException('Lỗi khi xác nhận đơn đặt vé.');
     }
   }
@@ -208,8 +209,12 @@ export class BookingsService {
     );
 
     booking.status = BookingStatus.CANCELLED;
+
+    const savedBooking = await booking.save();
+    this.eventEmitter.emit('booking.cancelled', savedBooking);
+
     // Cân nhắc logic hoàn tiền "ở đây"
-    return await booking.save();
+    return savedBooking;
   }
 
   /**
