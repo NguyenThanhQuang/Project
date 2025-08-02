@@ -33,6 +33,10 @@
     "class-validator": "^0.14.2",
     "mongoose": "^8.15.1",
 <<<<<<< Updated upstream
+<<<<<<< Updated upstream
+=======
+    "nodemailer": "^7.0.5",
+>>>>>>> Stashed changes
 =======
     "nodemailer": "^7.0.5",
 >>>>>>> Stashed changes
