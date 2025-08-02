@@ -32,6 +32,10 @@
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.2",
     "mongoose": "^8.15.1",
+<<<<<<< Updated upstream
+=======
+    "nodemailer": "^7.0.5",
+>>>>>>> Stashed changes
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
     "reflect-metadata": "^0.2.2",
