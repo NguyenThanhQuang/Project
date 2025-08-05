@@ -18,7 +18,7 @@ export class Location {
   @Prop({ type: String, required: true, trim: true, index: 'text' })
   name: string;
 
-  @Prop({ type: String, trim: true, unique: true })
+  @Prop({ type: String, trim: true, unique: true, sparse: true })
   slug: string;
 
   @Prop({ type: String, required: true, trim: true, index: true })

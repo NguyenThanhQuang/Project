@@ -7,7 +7,11 @@ import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model } from 'mongoose';
 import { CreateLocationDto } from './dto/create-location.dto';
 import { UpdateLocationDto } from './dto/update-location.dto';
-import { Location, LocationDocument } from './schemas/location.schema';
+import {
+  Location,
+  LocationDocument,
+  LocationType,
+} from './schemas/location.schema';
 
 @Injectable()
 export class LocationsService {
@@ -107,5 +111,15 @@ export class LocationsService {
       );
     }
     return deletedLocation;
+  }
+  async findPopularLocations(limit = 10): Promise<LocationDocument[]> {
+    return this.locationModel
+      .find({
+        type: { $in: [LocationType.BUS_STATION, LocationType.CITY] },
+        isActive: true,
+      })
+      .sort({ province: 1 }) // Sắp xếp theo alphabet
+      .limit(limit)
+      .exec();
   }
 }

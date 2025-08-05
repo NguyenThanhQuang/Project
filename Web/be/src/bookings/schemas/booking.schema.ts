@@ -59,7 +59,6 @@ export class Booking {
     type: Date,
     // TẠO TTL INDEX: MongoDB sẽ tự động xóa document sau khi trường này hết hạn
     // `expireAfterSeconds: 0` có nghĩa là xóa ngay khi thời gian hiện tại > giá trị của heldUntil.
-    index: { expireAfterSeconds: 0 },
   })
   heldUntil?: Date;
 

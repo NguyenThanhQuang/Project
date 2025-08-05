@@ -270,7 +270,10 @@ export class TripsService {
     const trip = await this.tripModel
       .findById(id)
       .populate('companyId')
-      .populate('vehicleId')
+      .populate(
+        'vehicleId',
+        'type seatMap seatMapFloor2 floors aisleAfterColumn totalSeats description',
+      )
       .populate('route.fromLocationId')
       .populate('route.toLocationId')
       .populate({ path: 'route.stops.locationId', model: 'Location' })

@@ -14,7 +14,7 @@ import type { AppDispatch, RootState } from "./store";
 import { loadUser } from "./store/authSlice";
 import Homepage from "./features/trips/pages/Homepage";
 import TripSearchResults from "./features/trips/pages/TripSearchResults";
-import TripDetails from "./features/trips/pages/TripDetails";
+import TripDetails from "./features/trips/pages/TripDetailsPage";
 import Policies from "./features/core/pages/Policies";
 import CompanyRegistration from "./features/company/pages/CompanyRegistration";
 import CompanyRegistrationSuccess from "./features/company/pages/CompanyRegistrationSuccess";
@@ -58,7 +58,10 @@ function App() {
               <Route path="/" element={<Layout />}>
                 {/* Trang public */}
                 <Route index element={<Homepage />} />
-                <Route path="trips" element={<TripSearchResults />} />
+                <Route
+                  path="/trips/search-results"
+                  element={<TripSearchResults />}
+                />
                 <Route path="trips/:tripId" element={<TripDetails />} />
                 <Route path="policies" element={<Policies />} />
                 <Route

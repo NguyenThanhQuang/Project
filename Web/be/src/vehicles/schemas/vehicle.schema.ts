@@ -31,6 +31,15 @@ export class Vehicle {
   @Prop({ type: Object })
   seatMap?: SeatMap;
 
+  @Prop({ type: Object })
+  seatMapFloor2?: SeatMap;
+
+  @Prop({ type: Number, required: true, min: 1 })
+  floors: number;
+
+  @Prop({ type: Number })
+  aisleAfterColumn?: number;
+
   @Prop({ type: Number, required: true, min: 1 })
   totalSeats: number;
 }

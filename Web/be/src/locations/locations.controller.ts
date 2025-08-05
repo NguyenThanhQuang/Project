@@ -25,6 +25,14 @@ export class LocationsController {
   constructor(private readonly locationsService: LocationsService) {}
 
   /**
+   * [PUBLIC] Lấy danh sách địa điểm phổ biến
+   * @route GET /api/locations/popular
+   */
+  @Get('popular')
+  findPopularLocations() {
+    return this.locationsService.findPopularLocations();
+  }
+  /**
    * [PUBLIC] API tìm kiếm gợi ý địa điểm
    * @route GET /api/locations/search?q=keyword
    */
