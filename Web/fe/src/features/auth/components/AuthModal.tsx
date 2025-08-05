@@ -167,7 +167,12 @@ const AuthModal: React.FC<AuthModalProps> = ({
 
     if (tab === "login") {
       dispatch(
-        loginUser({ identifier: formData.email, password: formData.password })
+        loginUser({
+          credentials: {
+            identifier: formData.email,
+            password: formData.password,
+          },
+        })
       );
     } else {
       if (formData.password !== formData.confirmPassword) {
