@@ -1,4 +1,5 @@
 import type dayjs from "dayjs";
+import type { Dayjs } from "dayjs";
 
 export type UserRole = "user" | "company_admin" | "admin";
 export type LocationType =
@@ -260,3 +261,18 @@ export type SearchState = {
   date: dayjs.Dayjs;
   passengers: number;
 };
+
+export interface SearchData {
+  from: Location | null;
+  to: Location | null;
+  date: Dayjs;
+  passengers: number;
+}
+
+// Định nghĩa kiểu dữ liệu cho state của các bộ lọc
+export interface Filters {
+  companies: string[]; // Mảng các companyId
+  timeSlots: string[]; // 'morning', 'afternoon', etc.
+  vehicleTypes: string[];
+  priceRange: number[];
+}

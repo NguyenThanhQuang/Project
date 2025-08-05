@@ -16,6 +16,7 @@ import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import {
+  PopulatedTripForFiltering,
   Seat,
   SeatStatus,
   Trip,
@@ -35,6 +36,31 @@ export class TripsService {
     private readonly mapsService: MapsService,
   ) {}
 
+  private extractFilterOptions(trips: PopulatedTripForFiltering[]) {
+    const companies = new Map<string, { _id: string; name: string }>();
+    const vehicleTypes = new Set<string>();
+    let maxPrice = 0;
+
+    trips.forEach((trip) => {
+      const companyIdStr = trip.companyId._id.toString();
+      if (!companies.has(companyIdStr)) {
+        companies.set(companyIdStr, {
+          _id: companyIdStr,
+          name: trip.companyId.name,
+        });
+      }
+      vehicleTypes.add(trip.vehicleId.type);
+      if (trip.price > maxPrice) {
+        maxPrice = trip.price;
+      }
+    });
+
+    return {
+      companies: Array.from(companies.values()),
+      vehicleTypes: Array.from(vehicleTypes),
+      maxPrice,
+    };
+  }
   /**
    * @description Tạo một chuyến đi mới.
    * 1. Validate sự tồn tại của các tài nguyên liên quan (công ty, xe, địa điểm).
@@ -180,8 +206,10 @@ export class TripsService {
    * @param {QueryTripsDto} queryTripsDto - Dữ liệu tìm kiếm.
    * @returns {Promise<any[]>} - Danh sách các chuyến đi phù hợp, đã được xử lý để hiển thị.
    */
-  async findPublicTrips(queryTripsDto: QueryTripsDto): Promise<any[]> {
-    const { from, to, date } = queryTripsDto;
+  async findPublicTrips(
+    queryTripsDto: QueryTripsDto,
+  ): Promise<{ trips: any[]; filters: any }> {
+    const { from, to, date, passengers = 1 } = queryTripsDto;
 
     // Tìm các địa điểm thuộc tỉnh/thành phố `from` và `to`.
     const [fromLocations, toLocations] = await Promise.all([
@@ -190,7 +218,10 @@ export class TripsService {
     ]);
 
     if (fromLocations.length === 0 || toLocations.length === 0) {
-      return [];
+      return {
+        trips: [],
+        filters: { companies: [], vehicleTypes: [], maxPrice: 0 },
+      };
     }
 
     const fromLocationIds = fromLocations.map((loc) => loc._id);
@@ -215,24 +246,42 @@ export class TripsService {
       departureTime: { $gte: startDate, $lte: endDate },
     };
 
-    const trips = await this.tripModel
+    const allTripsFromDb = await this.tripModel
       .find(query)
       .select('-seats.bookingId -__v')
-      .populate('companyId', 'name code logoUrl')
-      .populate('vehicleId', 'type')
-      .populate('route.fromLocationId', 'name fullAddress province')
-      .populate('route.toLocationId', 'name fullAddress province')
+      .populate([
+        { path: 'companyId', select: 'name code logoUrl' },
+        { path: 'vehicleId', select: 'type' },
+        { path: 'route.fromLocationId', select: 'name fullAddress province' },
+        { path: 'route.toLocationId', select: 'name fullAddress province' },
+      ])
       .sort({ departureTime: 1 })
       .lean()
       .exec();
+    const filters = this.extractFilterOptions(
+      trips as PopulatedTripForFiltering[],
+    );
 
-    return trips.map((trip) => {
+    const availableTrips = tripsFromDb.filter((trip) => {
       const availableSeatsCount = trip.seats.filter(
         (s) => s.status === SeatStatus.AVAILABLE,
       ).length;
+      return availableSeatsCount >= passengers;
+    });
+
+    const mappedTrips = availableTrips.map((trip) => {
+      const availableSeatsCount = trip.seats.filter(
+        (s) => s.status === SeatStatus.AVAILABLE,
+      ).length;
+
       const { seats, ...restOfTrip } = trip;
       return { ...restOfTrip, availableSeatsCount };
     });
+
+    return {
+      trips: mappedTrips,
+      filters: filters,
+    };
   }
 
   /**

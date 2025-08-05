@@ -1,8 +1,14 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
-import { Company } from '../../companies/schemas/company.schema';
+import {
+  Company,
+  CompanyDocument,
+} from '../../companies/schemas/company.schema';
 import { Location } from '../../locations/schemas/location.schema';
-import { Vehicle } from '../../vehicles/schemas/vehicle.schema';
+import {
+  Vehicle,
+  VehicleDocument,
+} from '../../vehicles/schemas/vehicle.schema';
 
 export type TripDocument = HydratedDocument<Trip>;
 
@@ -146,3 +152,11 @@ TripSchema.index({
   'route.toLocationId': 1,
   departureTime: 1,
 });
+
+export type PopulatedTripForFiltering = Omit<
+  TripDocument,
+  'companyId' | 'vehicleId'
+> & {
+  companyId: Pick<CompanyDocument, '_id' | 'name'>;
+  vehicleId: Pick<VehicleDocument, 'type'>;
+};

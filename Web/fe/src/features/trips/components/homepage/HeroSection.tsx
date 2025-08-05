@@ -30,7 +30,7 @@ export const HeroSection: React.FC = () => {
           <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ mb: 4 }}>
               <Chip
-                label="hi"
+                label="Viết vào đây một thứ gì đó hay ho"
                 sx={{
                   backgroundColor: "rgba(255, 167, 38, 0.2)",
                   color: "white",
@@ -61,7 +61,7 @@ export const HeroSection: React.FC = () => {
                   backgroundClip: "text",
                   WebkitBackgroundClip: "text",
                   WebkitTextFillColor: "transparent",
-                  fontSize: { xs: "2.5rem", md: "3.5rem" },
+                  fontSize: { xs: "2.4rem", md: "3.4rem" },
                 }}
               >
                 thông minh & tiện lợi
@@ -71,7 +71,7 @@ export const HeroSection: React.FC = () => {
               variant="h5"
               sx={{ mb: 4, opacity: 0.95, fontWeight: 400 }}
             >
-              ######################################################
+              _____________________________________________________________________
             </Typography>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>

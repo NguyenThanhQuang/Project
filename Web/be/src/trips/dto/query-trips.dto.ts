@@ -12,4 +12,6 @@ export class QueryTripsDto {
   @IsNotEmpty({ message: 'Ngày đi không được để trống' })
   @IsDateString({}, { message: 'Ngày đi không đúng định dạng YYYY-MM-DD' })
   date: string;
+
+  passengers?: number;
 }

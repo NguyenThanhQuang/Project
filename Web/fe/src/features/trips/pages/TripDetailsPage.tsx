@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Container, Grid, CircularProgress, Alert } from "@mui/material";
-import { useParams, useNavigate } from "react-router-dom"; // Giữ lại useNavigate vì sẽ dùng
+import { useParams, useNavigate } from "react-router-dom";
 import {
   TripInfoHeader,
   SeatMap,
@@ -9,15 +9,14 @@ import {
 } from "../components/trip-details";
 
 import { getTripDetails } from "../../../services/tripService";
-import type { TripDetailView, FrontendSeat, SeatStatus } from "../../../types"; // Bỏ FrontendRouteStop nếu không dùng trực tiếp
+import type { TripDetailView, FrontendSeat, SeatStatus } from "../../../types";
 
-const SEAT_HOLD_DURATION = 15 * 60; // 15 phút
+const SEAT_HOLD_DURATION = 15 * 60;
 
 const TripDetailsPage: React.FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
-  const navigate = useNavigate(); // Giữ lại useNavigate để dùng trong handleContinue
+  const navigate = useNavigate();
 
-  // --- STATE MANAGEMENT ---
   const [trip, setTrip] = useState<TripDetailView | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +25,6 @@ const TripDetailsPage: React.FC = () => {
   const [showRouteModal, setShowRouteModal] = useState<boolean>(false);
   const [holdTimer, setHoldTimer] = useState<number>(SEAT_HOLD_DURATION);
 
-  // --- DATA FETCHING ---
   useEffect(() => {
     if (!tripId) {
       setError("Không tìm thấy ID chuyến đi trong URL.");
@@ -65,7 +63,7 @@ const TripDetailsPage: React.FC = () => {
       setHoldTimer((prev) => {
         if (prev <= 1) {
           setSelectedSeats([]);
-          // Cân nhắc dùng một thư viện thông báo (toast) thay vì alert
+          // Cân nhắc: dùng một thư viện thông báo (toast) thay vì alert
           alert("Thời gian giữ ghế đã hết hạn. Vui lòng chọn lại.");
           return SEAT_HOLD_DURATION;
         }
@@ -76,7 +74,6 @@ const TripDetailsPage: React.FC = () => {
     return () => clearInterval(timerId);
   }, [selectedSeats]);
 
-  // --- EVENT HANDLERS ---
   const handleSeatSelect = (seatId: string, seatStatus: SeatStatus) => {
     if (seatStatus !== "available" || !trip) return;
 
@@ -107,7 +104,7 @@ const TripDetailsPage: React.FC = () => {
         seatNumber: s.seatNumber,
         name: "Hành khách",
         phone: "0123456789",
-      })), // Dữ liệu mẫu
+      })),
       totalPrice: selectedSeats.reduce((total, seat) => total + seat.price, 0),
     });
 
