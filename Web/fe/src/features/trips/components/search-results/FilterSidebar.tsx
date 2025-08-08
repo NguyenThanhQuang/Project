@@ -9,16 +9,8 @@ import {
   FormControlLabel,
 } from "@mui/material";
 import { FilterList } from "@mui/icons-material";
-import type { Company, Filters } from "../../../../types";
+import type { FilterOptions, Filters } from "../../../../types";
 
-// Định nghĩa kiểu dữ liệu cho các tùy chọn bộ lọc được truyền từ trang cha
-export interface FilterOptions {
-  companies: Company[];
-  vehicleTypes: string[];
-  maxPrice: number;
-}
-
-// Định nghĩa props
 interface FilterSidebarProps {
   filters: Filters;
   onFiltersChange: (newFilters: Filters) => void;

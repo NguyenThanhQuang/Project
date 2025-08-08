@@ -32,7 +32,6 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     VehiclesModule,
     TripsModule,
     MailModule,
-    VehiclesModule,
     LocationsModule,
     MapsModule,
     BookingsModule,

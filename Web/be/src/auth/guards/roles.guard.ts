@@ -24,18 +24,20 @@ export class RolesGuard implements CanActivate {
     }
 
     interface RequestWithUser extends Request {
-      user?: { role?: UserRole };
+      user?: { roles?: UserRole };
     }
     const request = context.switchToHttp().getRequest<RequestWithUser>();
     const user = request.user;
 
-    if (!user || !user.role) {
+    if (!user || !user.roles || !Array.isArray(user.roles)) {
       throw new UnauthorizedException(
         'Yêu cầu chưa được xác thực hoặc không có thông tin người dùng.',
       );
     }
 
-    const hasPermission = requiredRoles.some((role) => user.role === role);
+    const hasPermission = user.roles.some((role) =>
+      requiredRoles.includes(role),
+    );
 
     if (hasPermission) {
       return true;

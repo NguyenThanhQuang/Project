@@ -77,19 +77,21 @@ export class MailService {
   }
 
   async sendVerificationEmail(email: string, name: string, token: string) {
-    const clientUrl = this.configService.get<string>(
-      'CLIENT_URL',
-      'http://localhost:3001',
-    );
-    const verificationPath = this.configService.get<string>(
-      'CLIENT_EMAIL_VERIFICATION_PATH',
-      '/auth/verify-email',
-    );
-    const verificationUrl = `${clientUrl}${verificationPath}?token=${token}`;
+    const apiBaseUrl = this.configService.get<string>('API_BASE_URL');
 
+    if (!apiBaseUrl) {
+      this.logger.error(
+        'API_BASE_URL is not configured in .env. Cannot send verification email.',
+      );
+      throw new InternalServerErrorException(
+        'Lỗi cấu hình hệ thống, không thể gửi email.',
+      );
+    }
+
+    const verificationUrl = `${apiBaseUrl}/auth/verify-email?token=${token}`;
     const mailFromName = this.configService.get<string>(
       'MAIL_FROM_NAME',
-      'Your Awesome App',
+      'Online Bus Ticket Platform',
     );
     const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
     const tokenExpiresText = this.configService.get<string>(

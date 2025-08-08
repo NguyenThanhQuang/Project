@@ -6,12 +6,13 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
+import { UserRole } from 'src/users/schemas/user.schema';
 import { UsersService } from '../../users/users.service';
 
 export interface JwtPayload {
   sub: string;
   email: string;
-  roles: string[];
+  roles: UserRole[];
   companyId?: string;
 }
 
@@ -49,7 +50,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return {
       userId: payload.sub,
       email: payload.email,
-      roles: payload.roles,
+      roles: user.roles,
       companyId: user.companyId,
     };
   }

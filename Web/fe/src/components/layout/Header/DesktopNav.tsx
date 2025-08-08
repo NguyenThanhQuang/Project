@@ -14,6 +14,16 @@ const DesktopNav = () => {
   const navigate = useNavigate();
   const { user } = useSelector((state: RootState) => state.auth);
 
+  // Thêm hàm xử lý cuộn trang mượt mà
+  const scrollToSection = (sectionId: string) => {
+    // Tìm phần tử theo ID
+    const sectionElement = document.getElementById(sectionId);
+    // Nếu tìm thấy, cuộn đến phần tử đó
+    if (sectionElement) {
+      sectionElement.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+  };
+
   return (
     <Box
       sx={{ display: { xs: "none", md: "flex" }, alignItems: "center", gap: 1 }}
@@ -27,14 +37,14 @@ const DesktopNav = () => {
       </Button>
       <Button
         color="inherit"
-        onClick={() => navigate("/help")}
+        onClick={() => scrollToSection("footer")}
         sx={{ fontWeight: 600 }}
       >
         Trợ giúp
       </Button>
       <Button
         color="inherit"
-        onClick={() => navigate("/contact")}
+        onClick={() => scrollToSection("contact-section")}
         sx={{ fontWeight: 600 }}
       >
         Liên hệ

@@ -9,7 +9,6 @@ import {
   WhyChooseUs,
   CustomerReviews,
   HowItWorks,
-  PoliciesSection,
   ContactSection,
 } from "../components/homepage";
 
@@ -23,7 +22,6 @@ const Homepage: React.FC = () => {
         <CustomerReviews />
         <HowItWorks />
         {/* Phần thống kê chung (500+ Tuyến đường...) có thể là một component riêng hoặc để trong ContactSection */}
-        <PoliciesSection />
         <ContactSection />
       </Box>
     </LocalizationProvider>

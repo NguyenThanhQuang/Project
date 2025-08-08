@@ -15,7 +15,9 @@ interface HeaderProps {
 }
 
 const Header: React.FC<HeaderProps> = ({ onOpenAuthModal }) => {
-  const { user } = useSelector((state: RootState) => state.auth);
+  const { user } = useSelector(
+    (state: RootState) => state.auth as RootState["auth"]
+  );
   const navigate = useNavigate();
 
   return (

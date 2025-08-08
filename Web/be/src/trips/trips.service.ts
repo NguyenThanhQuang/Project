@@ -6,6 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import * as dayjs from 'dayjs';
+import * as utc from 'dayjs/plugin/utc';
 import { FilterQuery, Model, Types } from 'mongoose';
 import { CompaniesService } from '../companies/companies.service';
 import { LocationsService } from '../locations/locations.service';
@@ -21,11 +23,10 @@ import {
   SeatStatus,
   Trip,
   TripDocument,
-  TripStatus,
   TripStopInfo,
   TripStopStatus,
 } from './schemas/trip.schema';
-
+dayjs.extend(utc);
 @Injectable()
 export class TripsService {
   constructor(
@@ -43,11 +44,14 @@ export class TripsService {
 
     trips.forEach((trip) => {
       const companyIdStr = trip.companyId._id.toString();
-      if (!companies.has(companyIdStr)) {
-        companies.set(companyIdStr, {
-          _id: companyIdStr,
-          name: trip.companyId.name,
-        });
+      if (trip.companyId && typeof trip.companyId === 'object') {
+        const companyIdStr = trip.companyId._id.toString();
+        if (!companies.has(companyIdStr)) {
+          companies.set(companyIdStr, {
+            _id: companyIdStr,
+            name: trip.companyId.name,
+          });
+        }
       }
       vehicleTypes.add(trip.vehicleId.type);
       if (trip.price > maxPrice) {
@@ -209,13 +213,19 @@ export class TripsService {
   async findPublicTrips(
     queryTripsDto: QueryTripsDto,
   ): Promise<{ trips: any[]; filters: any }> {
-    const { from, to, date, passengers = 1 } = queryTripsDto;
+    const { from, to, passengers = 1 } = queryTripsDto;
 
-    // Tìm các địa điểm thuộc tỉnh/thành phố `from` và `to`.
+    console.log('--- [DEBUG] STARTING SIMPLIFIED findPublicTrips ---');
+    console.log(`[DEBUG] Input: from="${from}", to="${to}"`);
+
     const [fromLocations, toLocations] = await Promise.all([
-      this.locationsService.findAll({ province: new RegExp(`^${from}$`, 'i') }),
-      this.locationsService.findAll({ province: new RegExp(`^${to}$`, 'i') }),
+      this.locationsService.findAll({ province: new RegExp(from, 'i') }),
+      this.locationsService.findAll({ province: new RegExp(to, 'i') }),
     ]);
+
+    console.log(
+      `[DEBUG] Found ${fromLocations.length} 'from' locations and ${toLocations.length} 'to' locations.`,
+    );
 
     if (fromLocations.length === 0 || toLocations.length === 0) {
       return {
@@ -227,27 +237,23 @@ export class TripsService {
     const fromLocationIds = fromLocations.map((loc) => loc._id);
     const toLocationIds = toLocations.map((loc) => loc._id);
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const startDate = new Date(date);
-    startDate.setHours(0, 0, 0, 0);
-    if (startDate < today) {
-      throw new BadRequestException(
-        'Không thể tìm kiếm các chuyến đi trong quá khứ.',
-      );
-    }
-    const endDate = new Date(date);
-    endDate.setHours(23, 59, 59, 999);
-
+    // SỬA: TẠO CÂU TRUY VẤN TỐI GIẢN NHẤT
+    // =================================================================
+    // Chúng ta chỉ tìm kiếm dựa trên điểm đi và điểm đến.
+    // Mọi điều kiện về ngày tháng và trạng thái chuyến đi đều được BỎ QUA.
     const query: FilterQuery<Trip> = {
       'route.fromLocationId': { $in: fromLocationIds },
       'route.toLocationId': { $in: toLocationIds },
-      status: TripStatus.SCHEDULED,
-      departureTime: { $gte: startDate, $lte: endDate },
     };
+    // =================================================================
+
+    console.log(
+      '[DEBUG] SIMPLIFIED Final MongoDB Query:',
+      JSON.stringify(query, null, 2),
+    );
 
     const allTripsFromDb = await this.tripModel
-      .find(query)
+      .find(query) // Dùng câu truy vấn siêu đơn giản
       .select('-seats.bookingId -__v')
       .populate([
         { path: 'companyId', select: 'name code logoUrl' },
@@ -258,30 +264,37 @@ export class TripsService {
       .sort({ departureTime: 1 })
       .lean()
       .exec();
-    const filters = this.extractFilterOptions(
-      trips as PopulatedTripForFiltering[],
-    );
 
-    const availableTrips = tripsFromDb.filter((trip) => {
+    console.log(
+      `[DEBUG] Found ${allTripsFromDb.length} trips from database with simplified query.`,
+    );
+    console.log('--- [DEBUG] ENDING SIMPLIFIED findPublicTrips ---');
+
+    if (!allTripsFromDb || allTripsFromDb.length === 0) {
+      return {
+        trips: [],
+        filters: { companies: [], vehicleTypes: [], maxPrice: 0 },
+      };
+    }
+
+    const filters = this.extractFilterOptions(
+      allTripsFromDb as unknown as PopulatedTripForFiltering[],
+    );
+    const availableTrips = allTripsFromDb.filter((trip) => {
       const availableSeatsCount = trip.seats.filter(
         (s) => s.status === SeatStatus.AVAILABLE,
       ).length;
-      return availableSeatsCount >= passengers;
+      return availableSeatsCount >= (passengers || 1);
     });
-
     const mappedTrips = availableTrips.map((trip) => {
       const availableSeatsCount = trip.seats.filter(
         (s) => s.status === SeatStatus.AVAILABLE,
       ).length;
-
       const { seats, ...restOfTrip } = trip;
       return { ...restOfTrip, availableSeatsCount };
     });
 
-    return {
-      trips: mappedTrips,
-      filters: filters,
-    };
+    return { trips: mappedTrips, filters: filters };
   }
 
   /**

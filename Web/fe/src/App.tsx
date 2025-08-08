@@ -13,13 +13,12 @@ import { NotificationProvider } from "./components/common/NotificationProvider";
 import type { AppDispatch, RootState } from "./store";
 import { loadUser } from "./store/authSlice";
 import Homepage from "./features/trips/pages/Homepage";
-import TripSearchResults from "./features/trips/pages/TripSearchResults";
+import TripSearchResults from "./features/trips/pages/TripSearchResultsPage";
 import TripDetails from "./features/trips/pages/TripDetailsPage";
 import Policies from "./features/core/pages/Policies";
 import CompanyRegistration from "./features/company/pages/CompanyRegistration";
 import CompanyRegistrationSuccess from "./features/company/pages/CompanyRegistrationSuccess";
 import ForgotPassword from "./features/auth/pages/ForgotPassword";
-import PasswordReset from "./features/auth/pages/PasswordReset";
 import MyBookings from "./features/profile/pages/MyBookings";
 import LoyaltyProgram from "./features/profile/pages/LoyaltyProgram";
 import ChangePassword from "./features/profile/pages/ChangePassword";
@@ -36,10 +35,15 @@ import SystemSettings from "./features/admin/pages/SystemSettings";
 import NotificationManagement from "./features/admin/pages/NotificationManagement";
 import { NotificationProvider as AdminNotificationProvider } from "./contexts/NotificationContext";
 import AdminLoginPage from "./features/admin/pages/AdminLoginPage";
+import VerificationResultPage from "./features/auth/pages/VerificationResultPage";
+import ResetPassword from "./features/auth/pages/ResetPassword";
+import { useTabSync } from "./hooks/useTabSync";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
   const { token } = useSelector((state: RootState) => state.auth);
+
+  useTabSync();
 
   useEffect(() => {
     if (token) {
@@ -73,8 +77,11 @@ function App() {
                   element={<CompanyRegistrationSuccess />}
                 />
                 <Route path="forgot-password" element={<ForgotPassword />} />
-                <Route path="reset-password" element={<PasswordReset />} />
-
+                <Route path="reset-password" element={<ResetPassword />} />
+                <Route
+                  path="/auth/verification-result"
+                  element={<VerificationResultPage />}
+                />
                 {/* Trang được bảo vệ */}
                 <Route
                   path="my-bookings"

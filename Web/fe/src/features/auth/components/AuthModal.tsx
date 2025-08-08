@@ -95,6 +95,17 @@ const AuthModal: React.FC<AuthModalProps> = ({
     confirmPassword: "",
   });
 
+  const getMailServiceUrl = (email: string): string | null => {
+    const domain = email.substring(email.lastIndexOf("@") + 1);
+    if (domain === "gmail.com") {
+      return "https://mail.google.com";
+    }
+    if (domain === "outlook.com" || domain === "hotmail.com") {
+      return "https://outlook.live.com/";
+    }
+    return null;
+  };
+
   // Reset state khi modal đóng hoặc mở/chuyển tab
   useEffect(() => {
     if (open) {
@@ -189,7 +200,18 @@ const AuthModal: React.FC<AuthModalProps> = ({
           password: formData.password,
           phone: formData.phone,
         })
-      );
+      )
+        .unwrap()
+        .then(() => {
+          const mailUrl = getMailServiceUrl(formData.email);
+          if (mailUrl) {
+            window.open(mailUrl, "_blank");
+          }
+          onClose();
+        })
+        .catch((error) => {
+          console.error("Registration failed in component:", error);
+        });
     }
   };
 

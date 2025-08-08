@@ -37,6 +37,7 @@ const UserMenu = () => {
 
   const handleLogout = () => {
     dispatch(logout());
+    navigate("/");
     handleMenuClose();
   };
 
@@ -56,7 +57,10 @@ const UserMenu = () => {
 
     // --- Mục chung ---
     menuItems.push(
-      <MenuItem key="profile" onClick={() => handleNavigation("/profile")}>
+      <MenuItem
+        key="profile"
+        onClick={() => handleNavigation("/loyalty-program")}
+      >
         <Person sx={{ mr: 1.5 }} /> Tài khoản của tôi
       </MenuItem>,
       <MenuItem

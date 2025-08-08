@@ -122,4 +122,8 @@ export class LocationsService {
       .limit(limit)
       .exec();
   }
+
+  // async deleteAll(): Promise<any> {
+  //   return this.locationModel.deleteMany({}).exec();
+  // }
 }

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import {
@@ -11,46 +11,54 @@ import {
   Alert,
 } from "@mui/material";
 import type { AppDispatch, RootState } from "../../../store";
-import { forgotPassword } from "../../../store/authSlice.ts";
+import { clearAuthStatus, forgotPassword } from "../../../store/authSlice.ts";
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState("");
-  const [submitted, setSubmitted] = useState(false);
+  // const [submitted, setSubmitted] = useState(false);
   const dispatch = useDispatch<AppDispatch>();
-  const { status, error } = useSelector((state: RootState) => state.auth);
+  const { status, error, successMessage } = useSelector(
+    (state: RootState) => state.auth
+  );
   const navigate = useNavigate();
+
+  useEffect(() => {
+    return () => {
+      dispatch(clearAuthStatus());
+    };
+  }, [dispatch]);
+
+  const getMailProviderLink = (email: string): string => {
+    const domain = email.split("@")[1];
+    if (domain.includes("gmail")) return "https://mail.google.com";
+    if (domain.includes("outlook") || domain.includes("hotmail"))
+      return "https://outlook.live.com";
+    return "about:blank";
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     dispatch(forgotPassword(email))
       .unwrap()
       .then(() => {
-        setSubmitted(true); // Hiển thị thông báo thành công
+        window.open(getMailProviderLink(email), "_blank");
+        navigate("/");
       })
       .catch(() => {
-        // Lỗi đã được lưu trong Redux state, không cần làm gì thêm
+        // []
       });
   };
 
-  if (submitted) {
+  if (status === "succeeded" && successMessage) {
     return (
       <Container maxWidth="sm">
-        <Box
-          sx={{
-            mt: 8,
-            display: "flex",
-            flexDirection: "column",
-            alignItems: "center",
-          }}
-        >
-          <Typography variant="h4" gutterBottom>
-            Kiểm tra Email
-          </Typography>
-          <Alert severity="success" sx={{ width: "100%", mb: 2 }}>
-            Nếu địa chỉ email của bạn tồn tại trong hệ thống, bạn sẽ nhận được
-            một email hướng dẫn đặt lại mật khẩu trong vài phút nữa.
-          </Alert>
-          <Button variant="contained" onClick={() => navigate("/")}>
+        <Box sx={{ mt: 8, textAlign: "center" }}>
+          <Alert severity="success">{successMessage}</Alert>
+          <Button
+            variant="contained"
+            onClick={() => navigate("/")}
+            sx={{ mt: 2 }}
+          >
             Quay về Trang chủ
           </Button>
         </Box>

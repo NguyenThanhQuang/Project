@@ -3,9 +3,9 @@ import duration from "dayjs/plugin/duration";
 import type {
   FrontendSeat,
   PopulatedTrip,
+  SearchTripsResponse,
   SeatStatus,
   TripDetailView,
-  TripSearchResult,
 } from "../types";
 import api from "./api";
 dayjs.extend(duration);
@@ -19,13 +19,20 @@ interface SearchTripsParams {
 
 export const searchTrips = async (
   params: SearchTripsParams
-): Promise<TripSearchResult[]> => {
+): Promise<SearchTripsResponse> => {
   try {
-    const response = await api.get<TripSearchResult[]>("/trips", { params });
+    const response = await api.get<SearchTripsResponse>("/trips", { params });
     return response.data;
   } catch (error) {
     console.error("Error searching trips:", error);
-    return [];
+    return {
+      trips: [],
+      filters: {
+        companies: [],
+        vehicleTypes: [],
+        maxPrice: 0,
+      },
+    };
   }
 };
 

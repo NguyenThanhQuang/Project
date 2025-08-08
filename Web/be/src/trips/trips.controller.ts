@@ -31,7 +31,7 @@ interface AuthenticatedRequest extends Request {
   user: {
     userId: string;
     email: string;
-    role: UserRole;
+    roles: UserRole[];
     companyId?: Types.ObjectId;
   };
 }
@@ -65,7 +65,7 @@ export class TripsController {
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   async findTripsForManagement(@Req() req: AuthenticatedRequest) {
     const user = req.user;
-    if (user.role === UserRole.COMPANY_ADMIN) {
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       if (!user.companyId) {
         throw new ForbiddenException(
           'Tài khoản của bạn không được liên kết với nhà xe nào.',
@@ -109,7 +109,7 @@ export class TripsController {
   ) {
     const user = req.user;
     // Kiểm tra quyền sở hữu: Company Admin chỉ được tạo chuyến đi cho công ty của mình.
-    if (user.role === UserRole.COMPANY_ADMIN) {
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       if (
         !user.companyId ||
         createTripDto.companyId.toString() !== user.companyId.toString()
@@ -119,6 +119,7 @@ export class TripsController {
         );
       }
     }
+    // Nếu user là ADMIN, không cần kiểm tra gì thêm, RolesGuard đã cho phép
     return this.tripsService.create(createTripDto);
   }
 
@@ -142,7 +143,7 @@ export class TripsController {
   ) {
     const user = req.user;
     // Kiểm tra quyền sở hữu: Company Admin chỉ được cập nhật chuyến đi của công ty mình.
-    if (user.role === UserRole.COMPANY_ADMIN) {
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       const trip = await this.tripsService.findOne(tripId.toString());
       if (
         !user.companyId ||
@@ -177,7 +178,7 @@ export class TripsController {
   ) {
     const user = req.user;
     // Kiểm tra quyền sở hữu
-    if (user.role === UserRole.COMPANY_ADMIN) {
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       const trip = await this.tripsService.findOne(tripId);
       if (
         !user.companyId ||
@@ -211,7 +212,7 @@ export class TripsController {
   ) {
     const user = req.user;
     // Kiểm tra quyền sở hữu: Company Admin chỉ được xóa chuyến đi của công ty mình.
-    if (user.role === UserRole.COMPANY_ADMIN) {
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       const trip = await this.tripsService.findOne(tripId.toString());
       if (
         !user.companyId ||

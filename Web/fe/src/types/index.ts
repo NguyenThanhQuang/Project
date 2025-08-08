@@ -271,8 +271,23 @@ export interface SearchData {
 
 // Định nghĩa kiểu dữ liệu cho state của các bộ lọc
 export interface Filters {
-  companies: string[]; // Mảng các companyId
-  timeSlots: string[]; // 'morning', 'afternoon', etc.
+  companies: string[];
+  timeSlots: string[];
   vehicleTypes: string[];
   priceRange: number[];
+}
+
+export interface FilterOptions {
+  companies: Company[];
+  vehicleTypes: string[];
+  maxPrice: number;
+}
+
+export interface SearchTripsResponse {
+  trips: TripSearchResult[];
+  filters: {
+    companies: Pick<Company, "_id" | "name">[];
+    vehicleTypes: string[];
+    maxPrice: number;
+  };
 }

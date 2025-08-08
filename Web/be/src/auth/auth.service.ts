@@ -4,16 +4,21 @@ import {
   Injectable,
   InternalServerErrorException,
   Logger,
+  NotFoundException,
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
+import { InjectModel } from '@nestjs/mongoose';
+import * as bcrypt from 'bcrypt';
 import { isEmail } from 'class-validator';
 import { randomBytes } from 'crypto';
+import { Model } from 'mongoose';
 import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import {
   SanitizedUser,
+  User,
   UserDocument,
   UserRole,
 } from '../users/schemas/user.schema';
@@ -31,6 +36,7 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService: MailService,
@@ -375,10 +381,9 @@ export class AuthService {
       'Nếu địa chỉ email của bạn tồn tại trong hệ thống và đã được xác thực, bạn sẽ nhận được một email hướng dẫn đặt lại mật khẩu trong vài phút nữa.';
 
     if (!user) {
-      this.logger.warn(
-        `Password reset requested for non-existent email: ${email}`,
+      throw new NotFoundException(
+        'Không tìm thấy tài khoản nào được liên kết với địa chỉ email này.',
       );
-      return { message: generalSuccessMessage };
     }
 
     if (!user.isEmailVerified) {
@@ -421,6 +426,9 @@ export class AuthService {
         `Error during password reset process for ${user.email}:`,
         error,
       );
+      throw new InternalServerErrorException(
+        'Không thể gửi email đặt lại mật khẩu vào lúc này.',
+      );
     }
     return { message: generalSuccessMessage };
   }
@@ -455,6 +463,23 @@ export class AuthService {
       throw new BadRequestException(
         'Token đặt lại mật khẩu đã hết hạn. Vui lòng yêu cầu lại.',
       );
+    }
+
+    const userWithPassword = await this.userModel
+      .findById(user._id)
+      .select('+passwordHash')
+      .exec();
+
+    if (userWithPassword && userWithPassword.passwordHash) {
+      const isSameAsOldPassword = await bcrypt.compare(
+        newPassword,
+        userWithPassword.passwordHash,
+      );
+      if (isSameAsOldPassword) {
+        throw new BadRequestException(
+          'Mật khẩu mới không được trùng với mật khẩu cũ.',
+        );
+      }
     }
 
     user.passwordHash = newPassword;
