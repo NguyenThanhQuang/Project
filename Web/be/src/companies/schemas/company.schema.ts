@@ -1,6 +1,12 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument } from 'mongoose';
 
+export enum CompanyStatus {
+  ACTIVE = 'active',
+  PENDING = 'pending',
+  SUSPENDED = 'suspended',
+}
+
 export type CompanyDocument = HydratedDocument<Company>;
 
 @Schema({ timestamps: true })
@@ -32,8 +38,13 @@ export class Company {
   @Prop({ type: String, trim: true })
   logoUrl?: string;
 
-  @Prop({ type: Boolean, default: true })
-  isActive: boolean;
+  @Prop({
+    type: String,
+    enum: Object.values(CompanyStatus),
+    default: CompanyStatus.ACTIVE,
+    index: true,
+  })
+  status: CompanyStatus;
 }
 
 export const CompanySchema = SchemaFactory.createForClass(Company);

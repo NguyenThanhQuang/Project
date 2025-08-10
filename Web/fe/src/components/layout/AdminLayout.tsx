@@ -147,10 +147,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
   const getBreadcrumbs = () => {
     const pathSegments = location.pathname.split("/").filter(Boolean);
-    const breadcrumbs = [
-      { title: "Trang chủ", path: "/" },
-      { title: "Admin", path: "/admin" },
-    ];
+    const breadcrumbs = [{ title: "Admin", path: "/admin" }];
 
     if (pathSegments.length > 1) {
       const currentItem = menuItems.find(

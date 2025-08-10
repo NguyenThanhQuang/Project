@@ -1,6 +1,6 @@
 import {
-  IsBoolean,
   IsEmail,
+  IsEnum,
   IsNotEmpty,
   IsOptional,
   IsString,
@@ -8,6 +8,7 @@ import {
   MaxLength,
   MinLength,
 } from 'class-validator';
+import { CompanyStatus } from '../schemas/company.schema';
 
 export class CreateCompanyDto {
   @IsNotEmpty({ message: 'Tên nhà xe không được để trống' })
@@ -50,6 +51,6 @@ export class CreateCompanyDto {
   logoUrl?: string;
 
   @IsOptional()
-  @IsBoolean()
-  isActive?: boolean;
+  @IsEnum(CompanyStatus, { message: 'Trạng thái không hợp lệ.' })
+  status?: CompanyStatus;
 }

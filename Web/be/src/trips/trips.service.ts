@@ -9,6 +9,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
 import { FilterQuery, Model, Types } from 'mongoose';
+import { CompanyStatus } from 'src/companies/schemas/company.schema';
 import { CompaniesService } from '../companies/companies.service';
 import { LocationsService } from '../locations/locations.service';
 import { MapsService } from '../maps/maps.service';
@@ -88,7 +89,6 @@ export class TripsService {
       this.vehiclesService.findOne(vehicleId),
       ...allLocationIds.map((id) => this.locationsService.findOne(id)),
     ]).catch((err) => {
-      // Nếu bất kỳ một ID nào không hợp lệ, ném lỗi ngay lập tức.
       throw new BadRequestException(
         `Dữ liệu không hợp lệ: ${
           err &&
@@ -101,7 +101,11 @@ export class TripsService {
         }`,
       );
     });
-    // Kiểm tra logic nghiệp vụ: Xe phải thuộc về công ty.
+    if (company.status !== CompanyStatus.ACTIVE) {
+      throw new BadRequestException(
+        `Không thể tạo chuyến đi cho nhà xe đang ở trạng thái "${company.status}".`,
+      );
+    }
     if (vehicle.companyId._id.toString() !== company._id.toString()) {
       throw new BadRequestException(
         'Loại xe không thuộc nhà xe được chỉ định.',
@@ -215,17 +219,10 @@ export class TripsService {
   ): Promise<{ trips: any[]; filters: any }> {
     const { from, to, passengers = 1 } = queryTripsDto;
 
-    console.log('--- [DEBUG] STARTING SIMPLIFIED findPublicTrips ---');
-    console.log(`[DEBUG] Input: from="${from}", to="${to}"`);
-
     const [fromLocations, toLocations] = await Promise.all([
       this.locationsService.findAll({ province: new RegExp(from, 'i') }),
       this.locationsService.findAll({ province: new RegExp(to, 'i') }),
     ]);
-
-    console.log(
-      `[DEBUG] Found ${fromLocations.length} 'from' locations and ${toLocations.length} 'to' locations.`,
-    );
 
     if (fromLocations.length === 0 || toLocations.length === 0) {
       return {
@@ -237,66 +234,89 @@ export class TripsService {
     const fromLocationIds = fromLocations.map((loc) => loc._id);
     const toLocationIds = toLocations.map((loc) => loc._id);
 
-    // SỬA: TẠO CÂU TRUY VẤN TỐI GIẢN NHẤT
-    // =================================================================
-    // Chúng ta chỉ tìm kiếm dựa trên điểm đi và điểm đến.
-    // Mọi điều kiện về ngày tháng và trạng thái chuyến đi đều được BỎ QUA.
     const query: FilterQuery<Trip> = {
       'route.fromLocationId': { $in: fromLocationIds },
       'route.toLocationId': { $in: toLocationIds },
     };
-    // =================================================================
 
-    console.log(
-      '[DEBUG] SIMPLIFIED Final MongoDB Query:',
-      JSON.stringify(query, null, 2),
-    );
+    const allTripsFromDb = (await this.tripModel.aggregate([
+      { $match: query },
 
-    const allTripsFromDb = await this.tripModel
-      .find(query) // Dùng câu truy vấn siêu đơn giản
-      .select('-seats.bookingId -__v')
-      .populate([
-        { path: 'companyId', select: 'name code logoUrl' },
-        { path: 'vehicleId', select: 'type' },
-        { path: 'route.fromLocationId', select: 'name fullAddress province' },
-        { path: 'route.toLocationId', select: 'name fullAddress province' },
-      ])
-      .sort({ departureTime: 1 })
-      .lean()
-      .exec();
+      {
+        $lookup: {
+          from: 'companies',
+          localField: 'companyId',
+          foreignField: '_id',
+          as: 'companyDetails',
+        },
+      },
+      { $unwind: '$companyDetails' },
 
-    console.log(
-      `[DEBUG] Found ${allTripsFromDb.length} trips from database with simplified query.`,
-    );
-    console.log('--- [DEBUG] ENDING SIMPLIFIED findPublicTrips ---');
+      {
+        $match: {
+          'companyDetails.status': CompanyStatus.ACTIVE,
+        },
+      },
 
-    if (!allTripsFromDb || allTripsFromDb.length === 0) {
-      return {
-        trips: [],
-        filters: { companies: [], vehicleTypes: [], maxPrice: 0 },
-      };
-    }
+      {
+        $lookup: {
+          from: 'vehicles',
+          localField: 'vehicleId',
+          foreignField: '_id',
+          as: 'vehicleDetails',
+        },
+      },
+      { $unwind: '$vehicleDetails' },
+      {
+        $lookup: {
+          from: 'locations',
+          localField: 'route.fromLocationId',
+          foreignField: '_id',
+          as: 'fromLocationDetails',
+        },
+      },
+      { $unwind: '$fromLocationDetails' },
+      {
+        $lookup: {
+          from: 'locations',
+          localField: 'route.toLocationId',
+          foreignField: '_id',
+          as: 'toLocationDetails',
+        },
+      },
+      { $unwind: '$toLocationDetails' },
 
-    const filters = this.extractFilterOptions(
-      allTripsFromDb as unknown as PopulatedTripForFiltering[],
-    );
-    const availableTrips = allTripsFromDb.filter((trip) => {
-      const availableSeatsCount = trip.seats.filter(
-        (s) => s.status === SeatStatus.AVAILABLE,
-      ).length;
-      return availableSeatsCount >= (passengers || 1);
-    });
-    const mappedTrips = availableTrips.map((trip) => {
-      const availableSeatsCount = trip.seats.filter(
-        (s) => s.status === SeatStatus.AVAILABLE,
-      ).length;
-      const { seats, ...restOfTrip } = trip;
-      return { ...restOfTrip, availableSeatsCount };
-    });
+      {
+        $project: {
+          _id: 1,
+          departureTime: 1,
+          expectedArrivalTime: 1,
+          price: 1,
+          seats: 1,
+          companyId: {
+            _id: '$companyDetails._id',
+            name: '$companyDetails.name',
+            logoUrl: '$companyDetails.logoUrl',
+          },
+          vehicleId: {
+            _id: '$vehicleDetails._id',
+            type: '$vehicleDetails.type',
+          },
+          route: {
+            fromLocationId: '$fromLocationDetails',
+            toLocationId: '$toLocationDetails',
+          },
+        },
+      },
+    ])) as unknown as PopulatedTripForFiltering[];
 
-    return { trips: mappedTrips, filters: filters };
+    const filters = this.extractFilterOptions(allTripsFromDb);
+
+    return {
+      trips: allTripsFromDb,
+      filters,
+    };
   }
-
   /**
    * @description Tìm kiếm chuyến đi cho mục đích quản lý.
    * Có thể lọc theo công ty.

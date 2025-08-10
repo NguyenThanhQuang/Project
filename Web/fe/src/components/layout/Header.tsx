@@ -2,12 +2,12 @@ import React from "react";
 import { AppBar, Toolbar, Box, TextField, InputAdornment } from "@mui/material";
 import { Search as SearchIcon } from "@mui/icons-material";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../store";
+import type { RootState } from "../../fe/src/store";
 import { useNavigate } from "react-router-dom";
 
-import Logo from "../layout/Header/Logo";
-import DesktopNav from "../layout/Header/DesktopNav";
-import AuthButtons from "../layout/Header/AuthButtons";
+import Logo from "./Header/Logo";
+import DesktopNav from "./Header/DesktopNav";
+import AuthButtons from "./Header/AuthButtons";
 import UserAccountMenu from "./Header/UserMenu";
 
 interface HeaderProps {

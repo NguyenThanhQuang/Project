@@ -14,6 +14,11 @@ import * as bcrypt from 'bcrypt';
 import { isEmail } from 'class-validator';
 import { randomBytes } from 'crypto';
 import { Model } from 'mongoose';
+import {
+  Company,
+  CompanyDocument,
+  CompanyStatus,
+} from 'src/companies/schemas/company.schema';
 import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import {
@@ -37,6 +42,7 @@ export class AuthService {
 
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
+    @InjectModel(Company.name) private companyModel: Model<CompanyDocument>,
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService: MailService,
@@ -248,6 +254,23 @@ export class AuthService {
       throw new UnauthorizedException(
         'Tài khoản của bạn chưa được xác thực qua email. Vui lòng kiểm tra email hoặc yêu cầu gửi lại liên kết xác thực.',
       );
+    }
+
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
+      if (!user.companyId) {
+        throw new UnauthorizedException(
+          'Tài khoản quản trị viên này không được liên kết với nhà xe nào.',
+        );
+      }
+      const company = await this.companyModel
+        .findById(user.companyId)
+        .select('status')
+        .exec();
+      if (!company || company.status !== CompanyStatus.ACTIVE) {
+        throw new UnauthorizedException(
+          `Không thể đăng nhập. Nhà xe đang ở trạng thái "${company?.status || 'không tồn tại'}".`,
+        );
+      }
     }
 
     const payload: JwtPayload = {

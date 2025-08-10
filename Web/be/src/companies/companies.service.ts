@@ -104,6 +104,50 @@ export class CompaniesService {
     return existingCompany.save();
   }
 
+  async findAllWithStats(): Promise<any[]> {
+    return this.companyModel.aggregate([
+      {
+        $lookup: {
+          from: 'trips',
+          localField: '_id',
+          foreignField: 'companyId',
+          as: 'trips',
+        },
+      },
+      {
+        $lookup: {
+          from: 'bookings',
+          localField: '_id',
+          foreignField: 'companyId',
+          pipeline: [{ $match: { status: 'confirmed' } }],
+          as: 'bookings',
+        },
+      },
+      {
+        $lookup: {
+          from: 'reviews',
+          localField: '_id',
+          foreignField: 'companyId',
+          as: 'reviews',
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          logoUrl: 1,
+          email: 1,
+          phone: 1,
+          address: 1,
+          createdAt: 1,
+          status: 1,
+          totalTrips: { $size: '$trips' },
+          totalRevenue: { $sum: '$bookings.totalAmount' },
+          averageRating: { $avg: '$reviews.rating' },
+        },
+      },
+    ]);
+  }
+
   async remove(id: string): Promise<CompanyDocument> {
     const company = await this.findOne(id);
 

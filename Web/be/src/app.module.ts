@@ -7,6 +7,7 @@ import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
 import { BookingsModule } from './bookings/bookings.module';
 import { CompaniesModule } from './companies/companies.module';
+import { DashboardModule } from './dashboard/dashboard.module';
 import { LocationsModule } from './locations/locations.module';
 import { MailModule } from './mail/mail.module';
 import { MapsModule } from './maps/maps.module';
@@ -36,6 +37,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     MapsModule,
     BookingsModule,
     NotificationsModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

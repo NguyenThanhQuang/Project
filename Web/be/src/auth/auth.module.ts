@@ -10,6 +10,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { MongooseModule } from '@nestjs/mongoose';
 import { PassportModule } from '@nestjs/passport';
 import { AdminLoginLoggerMiddleware } from 'src/common/middleware/admin-login-logger.middleware';
+import { Company, CompanySchema } from 'src/companies/schemas/company.schema';
 import { User, UserSchema } from 'src/users/schemas/user.schema';
 import { UsersModule } from '../users/users.module';
 import { AuthController } from './auth.controller';
@@ -19,7 +20,10 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
+    MongooseModule.forFeature([
+      { name: User.name, schema: UserSchema },
+      { name: Company.name, schema: CompanySchema },
+    ]),
     forwardRef(() => UsersModule),
     PassportModule.register({ defaultStrategy: 'jwt' }),
     JwtModule.registerAsync({

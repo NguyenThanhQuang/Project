@@ -12,8 +12,8 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import type { AppDispatch, RootState } from "../../../store";
-import { logout } from "../../../store/authSlice";
+import type { AppDispatch, RootState } from "../../../fe/src/store";
+import { logout } from "../../../fe/src/store/authSlice";
 
 const UserMenu = () => {
   const navigate = useNavigate();

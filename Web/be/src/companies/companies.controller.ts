@@ -50,7 +50,7 @@ export class CompaniesController {
   @Get()
   @Roles(UserRole.ADMIN)
   findAll() {
-    return this.companiesService.findAll();
+    return this.companiesService.findAllWithStats();
   }
 
   /**
