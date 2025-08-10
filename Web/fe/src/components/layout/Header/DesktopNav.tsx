@@ -8,7 +8,7 @@ import {
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
-import type { RootState } from "../../../fe/src/store";
+import type { RootState } from "../../../store";
 
 const DesktopNav = () => {
   const navigate = useNavigate();

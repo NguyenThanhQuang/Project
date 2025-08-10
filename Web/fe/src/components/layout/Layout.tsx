@@ -5,8 +5,8 @@ import { useSelector } from "react-redux";
 
 import Header from "./Header";
 import Footer from "./Footer";
-import AuthModal from "../../fe/src/features/auth/components/AuthModal";
-import type { RootState } from "../../fe/src/store";
+import AuthModal from "../../features/auth/components/AuthModal";
+import type { RootState } from "../../store";
 
 const Layout: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
