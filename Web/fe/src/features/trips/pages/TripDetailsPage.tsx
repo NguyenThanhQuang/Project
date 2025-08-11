@@ -8,7 +8,7 @@ import {
   RouteStepperModal,
 } from "../components/trip-details";
 
-import { getTripDetails } from "../../../services/tripService";
+import { getTripDetails } from "../services/tripService";
 import type { TripDetailView, FrontendSeat, SeatStatus } from "../../../types";
 
 const SEAT_HOLD_DURATION = 15 * 60;

@@ -24,7 +24,7 @@ import {
   FilterSidebar,
   TripCard,
 } from "../components/search-results";
-import { searchTrips } from "../../../services/tripService";
+import { searchTrips } from "../services/tripService";
 import {
   getPopularLocations,
   searchLocations,

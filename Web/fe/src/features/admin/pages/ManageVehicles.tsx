@@ -50,7 +50,8 @@ import {
 import { useParams, useNavigate } from "react-router-dom";
 
 import api from "../../../services/api";
-import type { Company, Vehicle } from "../../../types";
+import type { Company } from "../../admin/types/company";
+import type { Vehicle } from "../../admin/types/vehicle";
 
 export interface VehiclePayload {
   companyId: string;

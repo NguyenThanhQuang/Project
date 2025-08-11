@@ -1,13 +1,13 @@
 import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
+import api from "../../../services/api";
 import type {
   FrontendSeat,
   PopulatedTrip,
   SearchTripsResponse,
   SeatStatus,
   TripDetailView,
-} from "../types";
-import api from "./api";
+} from "../../../types";
 dayjs.extend(duration);
 
 interface SearchTripsParams {

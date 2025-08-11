@@ -1,5 +1,3 @@
-// fe/src/hooks/useTabSync.ts
-
 import { useEffect } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch, RootState } from "../store";
@@ -11,7 +9,6 @@ export const useTabSync = () => {
 
   useEffect(() => {
     const syncSession = (event: StorageEvent) => {
-      // Chỉ xử lý khi có sự thay đổi trên key 'accessToken'
       if (event.key === "accessToken") {
         const newToken = event.newValue;
 
@@ -26,16 +23,13 @@ export const useTabSync = () => {
         // Nếu tab này đang có token, nhưng localStorage đã bị xóa
         if (!newToken && token) {
           console.log("[Tab Sync] Detected logout in another tab. Syncing...");
-          // Dùng dispatch logout của Redux để xóa state ở tab này
           dispatch(logout());
         }
       }
     };
 
-    // Lắng nghe sự kiện 'storage'
     window.addEventListener("storage", syncSession);
 
-    // Dọn dẹp listener khi component unmount
     return () => {
       window.removeEventListener("storage", syncSession);
     };

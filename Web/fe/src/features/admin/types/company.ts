@@ -1,5 +1,16 @@
 export type CompanyStatus = "active" | "pending" | "suspended";
 
+export interface Company {
+  _id: string;
+  name: string;
+  code: string;
+  address?: string;
+  phone?: string;
+  email?: string;
+  description?: string;
+  logoUrl?: string;
+  status: CompanyStatus;
+}
 export interface CompanyWithStats {
   _id: string;
   name: string;
@@ -9,10 +20,10 @@ export interface CompanyWithStats {
   address: string;
   createdAt: string;
   status: CompanyStatus;
+  code: string;
   totalTrips: number;
   totalRevenue: number;
   averageRating: number | null;
-  code: string;
 }
 
 export interface CreateCompanyPayload {
