@@ -134,6 +134,7 @@ export class CompaniesService {
       {
         $project: {
           name: 1,
+          code: 1,
           logoUrl: 1,
           email: 1,
           phone: 1,

@@ -25,7 +25,6 @@ interface ScheduleStepProps {
     field: keyof RouteStopFormState,
     value: any
   ) => void;
-  // Props giả định
   searchedLocations: Location[];
   onLocationSearch: (query: string) => void;
 }

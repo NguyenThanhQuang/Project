@@ -30,7 +30,7 @@ export const HeroSection: React.FC = () => {
           <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ mb: 4 }}>
               <Chip
-                label="Viết vào đây một thứ gì đó hay ho"
+                label="Không rõ mục đích của dòng này là gì, có thể xóa"
                 sx={{
                   backgroundColor: "rgba(255, 167, 38, 0.2)",
                   color: "white",

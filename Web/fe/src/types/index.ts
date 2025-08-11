@@ -53,10 +53,20 @@ export interface SeatMap {
 export interface Vehicle {
   _id: string;
   companyId: string;
+  companyName: string;
+  vehicleNumber: string;
   type: string;
   description?: string;
   seatMap?: SeatMap;
   totalSeats: number;
+  status: "active" | "maintenance" | "inactive";
+  yearOfManufacture?: number;
+  fuel?: "Diesel" | "Gasoline" | "Electric";
+  lastMaintenanceDate?: string;
+  totalTrips?: number;
+  totalRevenue?: number;
+  rating?: number;
+  floors: number;
 }
 
 export interface Location {

@@ -19,7 +19,6 @@ import type { Vehicle, Location } from "../../../../types";
 
 interface PreviewStepProps {
   formData: AddTripFormState;
-  // Dữ liệu đã được fetch để hiển thị tên thay vì ID
   vehicleData?: Vehicle;
   fromLocationData?: Location;
   toLocationData?: Location;

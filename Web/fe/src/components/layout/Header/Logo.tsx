@@ -24,7 +24,7 @@ const Logo = () => {
           display: { xs: "none", sm: "block" },
         }}
       >
-        BusBooking
+        Online Bus Ticket Platform
       </Typography>
     </Box>
   );

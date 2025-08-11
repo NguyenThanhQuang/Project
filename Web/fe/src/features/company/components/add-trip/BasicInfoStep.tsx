@@ -5,8 +5,10 @@ import type { Vehicle, Location } from "../../../../types";
 
 interface BasicInfoStepProps {
   formData: AddTripFormState;
-  onFormChange: (field: keyof AddTripFormState, value: any) => void;
-  // Giả sử có các props này được truyền từ page sau khi fetch dữ liệu
+  onFormChange: <K extends keyof AddTripFormState>(
+    field: K,
+    value: AddTripFormState[K]
+  ) => void;
   companyVehicles: Vehicle[];
   searchedLocations: Location[];
   onLocationSearch: (query: string) => void;
@@ -23,7 +25,6 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   loadingVehicles,
   loadingLocations,
 }) => {
-  // Tìm object đầy đủ của vehicle và location đã chọn để hiển thị
   const selectedVehicle = companyVehicles.find(
     (v) => v._id === formData.vehicleId
   );

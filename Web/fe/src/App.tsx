@@ -38,6 +38,7 @@ import AdminLoginPage from "./features/admin/pages/AdminLoginPage";
 import VerificationResultPage from "./features/auth/pages/VerificationResultPage";
 import ResetPassword from "./features/auth/pages/ResetPassword";
 import { useTabSync } from "./hooks/useTabSync";
+import ManageVehicles from "./features/admin/pages/ManageVehicles";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -160,6 +161,12 @@ function App() {
               >
                 <Route index element={<AdminDashboardContent />} />
                 <Route path="companies" element={<ManageCompanies />} />
+                <Route path="vehicles" element={<ManageVehicles />} />
+                {/* Route chi tiết cho từng nhà xe */}
+                <Route
+                  path="companies/:companyId/vehicles"
+                  element={<ManageVehicles />}
+                />
                 <Route path="users" element={<ManageUsers />} />
                 <Route path="finance" element={<FinanceReports />} />
                 <Route path="settings" element={<SystemSettings />} />

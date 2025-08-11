@@ -4,7 +4,10 @@ import type { AddTripFormState } from "../../types/trip";
 
 interface PricingStepProps {
   formData: AddTripFormState;
-  onFormChange: (field: keyof AddTripFormState, value: any) => void;
+  onFormChange: <K extends keyof AddTripFormState>(
+    field: K,
+    value: AddTripFormState[K]
+  ) => void;
 }
 
 const PricingStep: React.FC<PricingStepProps> = ({

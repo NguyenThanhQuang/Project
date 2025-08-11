@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import {
   Box,
@@ -12,8 +11,6 @@ import {
   ListItemIcon,
   ListItemText,
   IconButton,
-  Badge,
-  Avatar,
   Divider,
   useTheme,
   useMediaQuery,
@@ -22,6 +19,7 @@ import {
   Button,
   MenuItem,
   Menu,
+  Avatar,
 } from "@mui/material";
 import {
   Dashboard,
@@ -30,11 +28,10 @@ import {
   Assessment,
   Settings,
   Menu as MenuIcon,
-  AccountCircle,
   Logout,
-  Home,
   NavigateNext,
   Notifications,
+  AirportShuttle,
 } from "@mui/icons-material";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
 import NotificationDropdown from "../common/NotificationDropdown";
@@ -44,6 +41,7 @@ import type { AppDispatch, RootState } from "../../store";
 import { logout } from "../../store/authSlice";
 
 const DRAWER_WIDTH = 280;
+const COLLAPSED_DRAWER_WIDTH = 88;
 
 interface AdminLayoutProps {
   children?: React.ReactNode;
@@ -54,7 +52,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
   const location = useLocation();
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("md"));
+
+  // State cho drawer trên mobile
   const [mobileOpen, setMobileOpen] = useState(false);
+  // State cho drawer trên desktop
+  const [isDrawerOpen, setIsDrawerOpen] = useState(true);
+
   const { notifications, markAsRead, markAllAsRead, deleteNotification } =
     useNotifications();
   const dispatch = useDispatch<AppDispatch>();
@@ -91,6 +94,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       description: "Quản lý các nhà xe đăng ký",
     },
     {
+      id: "vehicles",
+      title: "Quản lý Xe",
+      icon: <AirportShuttle />,
+      path: "/admin/vehicles",
+      description: "Quản lý các loại xe của nhà xe",
+    },
+    {
       id: "users",
       title: "Quản lý Người dùng",
       icon: <People />,
@@ -124,6 +134,11 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     setMobileOpen(!mobileOpen);
   };
 
+  // Hàm mới để toggle sidebar trên desktop
+  const handleDesktopDrawerToggle = () => {
+    setIsDrawerOpen(!isDrawerOpen);
+  };
+
   const handleMenuClick = (path: string) => {
     navigate(path);
     if (isMobile) {
@@ -138,6 +153,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     return currentItem?.title || "Admin Panel";
   };
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const getCurrentPageDescription = () => {
     const currentItem = menuItems.find(
       (item) => item.path === location.pathname
@@ -161,30 +177,25 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     return breadcrumbs;
   };
 
-  const drawer = (
+  const drawerContent = (
     <Box sx={{ height: "100%", display: "flex", flexDirection: "column" }}>
-      {/* Admin Header */}
+      {/* Admin Header - SỬA LỖI 2 */}
       <Box
         sx={{
           p: 3,
-          textAlign: "center",
+          display: "flex",
+          flexDirection: "column",
+          alignItems: "center",
+          justifyContent: "center",
           background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
           color: "white",
           position: "relative",
           overflow: "hidden",
-          "&::before": {
-            content: '""',
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background:
-              "radial-gradient(circle at 20% 50%, rgba(255,255,255,0.1) 0%, transparent 50%)",
-          },
+          transition: "opacity 0.3s",
+          opacity: isDrawerOpen || isMobile ? 1 : 0,
         }}
       >
-        <Box sx={{ position: "relative", zIndex: 1 }}>
+        <Box sx={{ position: "relative", zIndex: 1, textAlign: "center" }}>
           <Typography variant="h5" sx={{ fontWeight: 700, mb: 1 }}>
             Admin Panel
           </Typography>
@@ -196,7 +207,7 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
 
       {/* Navigation Menu */}
       <Box sx={{ flex: 1, px: 2, py: 2 }}>
-        <List sx={{ gap: 1 }}>
+        <List>
           {menuItems.map((item) => {
             const isSelected = location.pathname === item.path;
             return (
@@ -207,9 +218,9 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                   sx={{
                     borderRadius: 3,
                     py: 1.5,
+                    px: isDrawerOpen ? 2 : 3,
+                    justifyContent: isDrawerOpen ? "initial" : "center",
                     transition: "all 0.3s ease",
-                    position: "relative",
-                    overflow: "hidden",
                     "&.Mui-selected": {
                       background:
                         "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
@@ -222,67 +233,33 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
                       "& .MuiListItemIcon-root": {
                         color: "white",
                       },
-                      "&::before": {
-                        content: '""',
-                        position: "absolute",
-                        top: 0,
-                        left: 0,
-                        right: 0,
-                        bottom: 0,
-                        background:
-                          "radial-gradient(circle at 10% 20%, rgba(255,255,255,0.2) 0%, transparent 50%)",
-                      },
                     },
                     "&:hover": {
-                      bgcolor: isSelected
-                        ? undefined
-                        : "rgba(0, 119, 190, 0.08)",
-                      transform: "translateX(4px)",
-                      "& .MuiListItemIcon-root": {
-                        color: isSelected ? "white" : "primary.main",
-                      },
+                      bgcolor: "rgba(0, 119, 190, 0.08)",
                     },
                   }}
                 >
                   <ListItemIcon
                     sx={{
-                      minWidth: 48,
-                      transition: "color 0.3s ease",
+                      minWidth: 0,
+                      mr: isDrawerOpen ? 3 : "auto",
+                      justifyContent: "center",
+                      color: isSelected ? "white" : "inherit",
                     }}
                   >
                     {item.icon}
                   </ListItemIcon>
                   <ListItemText
                     primary={item.title}
-                    secondary={!isSelected ? item.description : undefined}
                     primaryTypographyProps={{
                       fontSize: "0.95rem",
                       fontWeight: isSelected ? 600 : 500,
                     }}
-                    secondaryTypographyProps={{
-                      fontSize: "0.75rem",
-                      sx: {
-                        opacity: 0.7,
-                        mt: 0.5,
-                        display: { xs: "none", lg: "block" },
-                      },
-                    }}
+                    sx={{
+                      opacity: isDrawerOpen ? 1 : 0,
+                      transition: "opacity 0.2s",
+                    }} // Ẩn text khi thu gọn
                   />
-                  {isSelected && (
-                    <Box
-                      sx={{
-                        position: "absolute",
-                        right: 8,
-                        top: "50%",
-                        transform: "translateY(-50%)",
-                        width: 4,
-                        height: 20,
-                        bgcolor: "white",
-                        borderRadius: 2,
-                        opacity: 0.8,
-                      }}
-                    />
-                  )}
                 </ListItemButton>
               </ListItem>
             );
@@ -291,36 +268,15 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       </Box>
 
       {/* Footer */}
-      <Box sx={{ p: 2 }}>
+      <Box
+        sx={{
+          p: 2,
+          opacity: isDrawerOpen || isMobile ? 1 : 0,
+          transition: "opacity 0.3s",
+        }}
+      >
         <Divider sx={{ mb: 2 }} />
-        <ListItem disablePadding>
-          <ListItemButton
-            onClick={() => navigate("/")}
-            sx={{
-              borderRadius: 3,
-              py: 1.5,
-              color: "text.secondary",
-              "&:hover": {
-                bgcolor: "grey.100",
-                "& .MuiListItemIcon-root": {
-                  color: "primary.main",
-                },
-              },
-            }}
-          >
-            <ListItemIcon sx={{ minWidth: 40 }}>
-              <Home />
-            </ListItemIcon>
-            <ListItemText
-              primary="Về trang chủ"
-              primaryTypographyProps={{
-                fontSize: "0.9rem",
-                fontWeight: 500,
-              }}
-            />
-          </ListItemButton>
-        </ListItem>
-
+        {/* YÊU CẦU 1: Đã xóa ListItem "Về trang chủ" */}
         <Box
           sx={{
             mt: 2,
@@ -338,77 +294,91 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
     </Box>
   );
 
+  const currentDrawerWidth = isDrawerOpen
+    ? DRAWER_WIDTH
+    : COLLAPSED_DRAWER_WIDTH;
+
   return (
     <Box sx={{ display: "flex", minHeight: "100vh" }}>
       {/* App Bar */}
       <AppBar
         position="fixed"
         sx={{
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
-          ml: { md: `${DRAWER_WIDTH}px` },
+          width: { md: `calc(100% - ${currentDrawerWidth}px)` }, // YÊU CẦU 3
+          ml: { md: `${currentDrawerWidth}px` }, // YÊU CẦU 3
           bgcolor: "white",
           color: "text.primary",
           boxShadow: "0 2px 12px rgba(0,0,0,0.08)",
           borderBottom: "1px solid rgba(0,0,0,0.08)",
+          transition: theme.transitions.create(["margin", "width"], {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
         }}
       >
         <Toolbar sx={{ justifyContent: "space-between" }}>
-          {/* Mobile Menu Button */}
-          <IconButton
-            color="inherit"
-            aria-label="open drawer"
-            edge="start"
-            onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { md: "none" } }}
-          >
-            <MenuIcon />
-          </IconButton>
+          <Box sx={{ display: "flex", alignItems: "center" }}>
+            {/* Mobile Menu Button */}
+            <IconButton
+              color="inherit"
+              aria-label="open drawer"
+              edge="start"
+              onClick={handleDrawerToggle}
+              sx={{ mr: 2, display: { md: "none" } }}
+            >
+              <MenuIcon />
+            </IconButton>
+            {/* Desktop Toggle Button - YÊU CẦU 3 */}
+            <IconButton
+              color="inherit"
+              aria-label="toggle drawer"
+              edge="start"
+              onClick={handleDesktopDrawerToggle}
+              sx={{ mr: 2, display: { xs: "none", md: "block" } }}
+            >
+              <MenuIcon />
+            </IconButton>
 
-          {/* Page Title & Breadcrumbs */}
-          <Box sx={{ flex: 1 }}>
-            <Breadcrumbs
-              separator={<NavigateNext fontSize="small" />}
-              sx={{ mb: 0.5 }}
-            >
-              {getBreadcrumbs().map((crumb, index) => (
-                <Link
-                  key={crumb.path}
-                  color={
-                    index === getBreadcrumbs().length - 1
-                      ? "text.primary"
-                      : "inherit"
-                  }
-                  href={crumb.path}
-                  onClick={(e) => {
-                    e.preventDefault();
-                    navigate(crumb.path);
-                  }}
-                  sx={{
-                    textDecoration: "none",
-                    fontSize: "0.875rem",
-                    fontWeight:
-                      index === getBreadcrumbs().length - 1 ? 600 : 400,
-                    "&:hover": {
-                      textDecoration: "underline",
-                    },
-                  }}
-                >
-                  {crumb.title}
-                </Link>
-              ))}
-            </Breadcrumbs>
-            <Typography
-              variant="h6"
-              sx={{ fontWeight: 700, color: "text.primary" }}
-            >
-              {getCurrentPageTitle()}
-            </Typography>
-            <Typography
-              variant="body2"
-              sx={{ color: "text.secondary", fontSize: "0.85rem" }}
-            >
-              {getCurrentPageDescription()}
-            </Typography>
+            {/* Page Title & Breadcrumbs */}
+            <Box>
+              <Breadcrumbs
+                separator={<NavigateNext fontSize="small" />}
+                sx={{ mb: 0.5 }}
+              >
+                {getBreadcrumbs().map((crumb, index) => (
+                  <Link
+                    key={crumb.path}
+                    color={
+                      index === getBreadcrumbs().length - 1
+                        ? "text.primary"
+                        : "inherit"
+                    }
+                    href={crumb.path}
+                    onClick={(e) => {
+                      e.preventDefault();
+                      navigate(crumb.path);
+                    }}
+                    sx={{
+                      textDecoration: "none",
+                      fontSize: "0.875rem",
+                      fontWeight:
+                        index === getBreadcrumbs().length - 1 ? 600 : 400,
+                      "&:hover": {
+                        textDecoration: "underline",
+                      },
+                    }}
+                  >
+                    {crumb.title}
+                  </Link>
+                ))}
+              </Breadcrumbs>
+              <Typography
+                variant="h6"
+                sx={{ fontWeight: 700, color: "text.primary" }}
+              >
+                {getCurrentPageTitle()}
+              </Typography>
+            </Box>
           </Box>
 
           {/* Header Actions */}
@@ -478,7 +448,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       {/* Drawer */}
       <Box
         component="nav"
-        sx={{ width: { md: DRAWER_WIDTH }, flexShrink: { md: 0 } }}
+        sx={{
+          width: { md: currentDrawerWidth },
+          flexShrink: { md: 0 },
+          transition: theme.transitions.create("width", {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
+        }} // YÊU CẦU 3
       >
         {/* Mobile Drawer */}
         <Drawer
@@ -494,11 +471,10 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
               boxSizing: "border-box",
               width: DRAWER_WIDTH,
               border: "none",
-              boxShadow: "0 8px 40px rgba(0,0,0,0.12)",
             },
           }}
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
 
         {/* Desktop Drawer */}
@@ -508,14 +484,18 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
             display: { xs: "none", md: "block" },
             "& .MuiDrawer-paper": {
               boxSizing: "border-box",
-              width: DRAWER_WIDTH,
+              width: currentDrawerWidth, // YÊU CẦU 3
               border: "none",
-              boxShadow: "0 0 20px rgba(0,0,0,0.08)",
+              overflowX: "hidden", // Ngăn thanh cuộn ngang khi thu gọn
+              transition: theme.transitions.create("width", {
+                easing: theme.transitions.easing.sharp,
+                duration: theme.transitions.duration.leavingScreen,
+              }),
             },
           }}
           open
         >
-          {drawer}
+          {drawerContent}
         </Drawer>
       </Box>
 
@@ -524,10 +504,14 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
         component="main"
         sx={{
           flexGrow: 1,
-          width: { md: `calc(100% - ${DRAWER_WIDTH}px)` },
+          width: { md: `calc(100% - ${currentDrawerWidth}px)` }, // YÊU CẦU 3
           bgcolor: "#f8fafc",
           minHeight: "100vh",
           position: "relative",
+          transition: theme.transitions.create("width", {
+            easing: theme.transitions.easing.sharp,
+            duration: theme.transitions.duration.leavingScreen,
+          }),
         }}
       >
         <Toolbar />
