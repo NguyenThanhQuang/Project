@@ -68,7 +68,6 @@ const ResetPassword: React.FC = () => {
       try {
         await api.get(`/auth/validate-reset-token?token=${token}`);
         setIsTokenValid(true);
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       } catch (err: any) {
         setIsTokenValid(false);
         setValidationError(

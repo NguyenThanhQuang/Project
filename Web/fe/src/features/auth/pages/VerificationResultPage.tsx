@@ -2,8 +2,6 @@ import React, { useEffect, useState } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { useDispatch } from "react-redux";
 import {
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  Box,
   Container,
   Typography,
   Paper,

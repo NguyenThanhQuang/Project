@@ -1,7 +1,8 @@
 import React from "react";
 import { Grid, TextField, Autocomplete, Box, Typography } from "@mui/material";
 import type { AddTripFormState } from "../../types/trip";
-import type { Vehicle, Location } from "../../../../types";
+import type { Location } from "../../../../types";
+import type { Vehicle } from "../../../admin/types/vehicle";
 
 interface BasicInfoStepProps {
   formData: AddTripFormState;

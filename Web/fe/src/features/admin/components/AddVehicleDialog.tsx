@@ -1,5 +1,3 @@
-// File: fe/src/features/admin/components/AddVehicleDialog.tsx
-
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   Dialog,
@@ -165,7 +163,6 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
   const handleSave = async () => {
     setValidationError(null);
 
-    // FIX: Thêm validation phía client
     if (!formData.type.trim() || !formData.vehicleNumber.trim()) {
       setValidationError("Loại xe và Biển số xe là các trường bắt buộc.");
       return;
@@ -174,10 +171,8 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
     setIsSaving(true);
     try {
       const payload: VehiclePayload = { ...formData, ...seatParams };
-      // Hàm onSave giờ là async và có thể ném lỗi
       await onSave(payload, vehicleToEdit?._id);
     } catch (err: unknown) {
-      // Bắt lỗi được ném ra từ hook và hiển thị trong dialog
       if (err instanceof Error) {
         setValidationError(err.message);
       }

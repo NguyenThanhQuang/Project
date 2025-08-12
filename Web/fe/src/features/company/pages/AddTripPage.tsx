@@ -13,11 +13,9 @@ import {
 import { Save } from "@mui/icons-material";
 import useAddTripForm from "../hooks/useAddTripForm";
 
-// Import các component con
 import BasicInfoStep from "../components/add-trip/BasicInfoStep";
 import ScheduleStep from "../components/add-trip/ScheduleStep";
 import PricingStep from "../components/add-trip/PricingStep";
-// ... và các step khác
 
 const steps = ["Thông tin cơ bản", "Lịch trình", "Giá vé", "Lưu chuyến xe"];
 
@@ -30,7 +28,6 @@ const AddTripPage: React.FC = () => {
     handleBack,
     handleSave,
     handleFormChange,
-    // ... các hàm khác từ hook
   } = useAddTripForm();
 
   const renderStepContent = (step: number) => {

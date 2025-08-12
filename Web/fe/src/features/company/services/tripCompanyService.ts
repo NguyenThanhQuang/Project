@@ -1,5 +1,6 @@
 import api from "../../../services/api";
-import type { Location, Trip, Vehicle } from "../../../types";
+import type { Location, Trip } from "../../../types";
+import type { Vehicle } from "../../admin/types/vehicle";
 import type { CreateTripPayload } from "../types/trip";
 
 export const createTrip = async (payload: CreateTripPayload): Promise<Trip> => {
@@ -14,7 +15,6 @@ export const getVehiclesByCompany = async (
   return response.data;
 };
 
-// đã có ở locationService, tạo ở đây để tập trung)
 export const searchTripLocations = async (
   query: string
 ): Promise<Location[]> => {
