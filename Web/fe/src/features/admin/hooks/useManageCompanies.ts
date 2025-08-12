@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   createCompany,
   getCompaniesWithStats,
@@ -65,11 +66,13 @@ export interface UseManageCompaniesResult {
     companyData: CreateCompanyPayload | UpdateCompanyPayload,
     companyId?: string
   ) => void;
+  handleNavigateToVehicles: () => void;
   setCompanyDialogOpen: (open: boolean) => void;
   setActionDialogOpen: (open: boolean) => void;
 }
 
 export const useManageCompanies = (): UseManageCompaniesResult => {
+  const navigate = useNavigate();
   const [companies, setCompanies] = useState<CompanyWithStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -153,6 +156,13 @@ export const useManageCompanies = (): UseManageCompaniesResult => {
 
   const handleMenuClose = () => {
     setAnchorEl(null);
+  };
+
+  const handleNavigateToVehicles = () => {
+    if (selectedCompany) {
+      navigate(`/admin/companies/${selectedCompany._id}/vehicles`);
+    }
+    handleMenuClose();
   };
 
   const handleOpenCreateDialog = () => {
@@ -239,6 +249,7 @@ export const useManageCompanies = (): UseManageCompaniesResult => {
     handleChangeRowsPerPage,
     handleMenuOpen,
     handleMenuClose,
+    handleNavigateToVehicles,
     handleAction,
     confirmAction,
     handleOpenCreateDialog,

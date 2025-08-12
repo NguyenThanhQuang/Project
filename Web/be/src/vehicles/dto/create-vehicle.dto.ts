@@ -1,35 +1,18 @@
-import { Type } from 'class-transformer';
 import {
+  ArrayMaxSize,
   IsArray,
   IsEnum,
   IsInt,
   IsMongoId,
   IsNotEmpty,
-  IsObject,
+  IsNumber,
   IsOptional,
   IsString,
   MaxLength,
   Min,
-  ValidateNested,
 } from 'class-validator';
 import { Types } from 'mongoose';
-import { SeatMapLayout, VehicleStatus } from '../schemas/vehicle.schema';
-
-class SeatMapDto {
-  @IsNotEmpty({ message: 'Số hàng ghế (rows) không được để trống.' })
-  @IsInt({ message: 'Số hàng ghế phải là số nguyên.' })
-  @Min(1, { message: 'Số hàng ghế phải lớn hơn 0.' })
-  rows: number;
-
-  @IsNotEmpty({ message: 'Số cột ghế (cols) không được để trống.' })
-  @IsInt({ message: 'Số cột ghế phải là số nguyên.' })
-  @Min(1, { message: 'Số cột ghế phải lớn hơn 0.' })
-  cols: number;
-
-  @IsNotEmpty({ message: 'Sơ đồ ghế (layout) không được để trống.' })
-  @IsArray({ message: 'Sơ đồ ghế phải là một mảng.' })
-  layout: SeatMapLayout;
-}
+import { VehicleStatus } from '../schemas/vehicle.schema';
 
 export class CreateVehicleDto {
   @IsNotEmpty({ message: 'ID Nhà xe không được để trống.' })
@@ -52,22 +35,30 @@ export class CreateVehicleDto {
   description?: string;
 
   @IsOptional()
-  @IsObject({ message: 'Sơ đồ ghế phải là một đối tượng.' })
-  @ValidateNested()
-  @Type(() => SeatMapDto)
-  seatMap?: SeatMapDto;
-
-  @IsNotEmpty({ message: 'Tổng số ghế không được để trống.' })
-  @IsInt({ message: 'Tổng số ghế phải là một số nguyên.' })
-  @Min(1, { message: 'Tổng số ghế phải lớn hơn 0.' })
-  totalSeats: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  floors?: number;
-
-  @IsOptional()
   @IsEnum(VehicleStatus, { message: 'Trạng thái không hợp lệ.' })
   status?: VehicleStatus;
+
+  @IsNotEmpty({ message: 'Số tầng không được để trống.' })
+  @IsInt({ message: 'Số tầng phải là số nguyên.' })
+  @Min(1, { message: 'Phải có ít nhất 1 tầng.' })
+  floors: number;
+
+  @IsNotEmpty({ message: 'Số cột ghế không được để trống.' })
+  @IsInt({ message: 'Số cột ghế phải là số nguyên.' })
+  @Min(1, { message: 'Phải có ít nhất 1 cột ghế.' })
+  seatColumns: number;
+
+  @IsNotEmpty({ message: 'Số hàng ghế không được để trống.' })
+  @IsInt({ message: 'Số hàng ghế phải là số nguyên.' })
+  @Min(1, { message: 'Phải có ít nhất 1 hàng ghế.' })
+  seatRows: number;
+
+  @IsOptional()
+  @IsArray({ message: 'Vị trí lối đi phải là một mảng.' })
+  @IsNumber(
+    {},
+    { each: true, message: 'Mỗi vị trí lối đi phải là một con số.' },
+  )
+  @ArrayMaxSize(5)
+  aislePositions?: number[];
 }

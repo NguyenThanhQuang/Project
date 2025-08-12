@@ -161,8 +161,6 @@ function App() {
               >
                 <Route index element={<AdminDashboardContent />} />
                 <Route path="companies" element={<ManageCompanies />} />
-                <Route path="vehicles" element={<ManageVehicles />} />
-                {/* Route chi tiết cho từng nhà xe */}
                 <Route
                   path="companies/:companyId/vehicles"
                   element={<ManageVehicles />}

@@ -11,7 +11,6 @@ export enum VehicleStatus {
 export type VehicleDocument = HydratedDocument<Vehicle>;
 
 export type SeatMapLayout = Array<Array<string | number | null>>;
-
 export interface SeatMap {
   rows: number;
   cols: number;
@@ -37,15 +36,6 @@ export class Vehicle {
   @Prop({ type: String, trim: true })
   description?: string;
 
-  @Prop({ type: Object })
-  seatMap?: SeatMap;
-
-  @Prop({ type: Number, default: 1, min: 1 })
-  floors: number;
-
-  @Prop({ type: Number, required: true, min: 1 })
-  totalSeats: number;
-
   @Prop({
     type: String,
     enum: Object.values(VehicleStatus),
@@ -53,6 +43,27 @@ export class Vehicle {
     index: true,
   })
   status: VehicleStatus;
+
+  @Prop({ type: Number, required: true, min: 1, default: 1 })
+  floors: number; // Số tầng
+
+  @Prop({ type: Number, required: true, min: 1 })
+  seatColumns: number; // Tổng số cột trên sơ đồ (bao gồm cả lối đi)
+
+  @Prop({ type: Number, required: true, min: 1 })
+  seatRows: number; // Số hàng ghế
+
+  @Prop({ type: [Number], required: true, default: [] })
+  aislePositions: number[]; // Vị trí các cột là lối đi. Ví dụ: [2] nghĩa là cột thứ 2 là lối đi.
+
+  @Prop({ type: Number, required: true, min: 1 })
+  totalSeats: number; // Tổng số ghế thực tế, được tính từ các tham số trên
+
+  @Prop({ type: Object })
+  seatMap?: SeatMap; // Sơ đồ ghế tầng 1, được tạo tự động
+
+  @Prop({ type: Object })
+  seatMapFloor2?: SeatMap; // Sơ đồ ghế tầng 2 (nếu floors > 1), được tạo tự động
 }
 
 export const VehicleSchema = SchemaFactory.createForClass(Vehicle);

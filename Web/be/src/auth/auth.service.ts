@@ -176,15 +176,15 @@ export class AuthService {
       );
     }
 
-    if (newUser && newUser.emailVerificationToken) {
-      this.logger.log(
-        `[TESTING] New user ${newUser.email} created. Verification Token: ${newUser.emailVerificationToken}`,
-      );
-    } else {
-      this.logger.error(
-        `[CRITICAL] New user ${newUser?.email} created BUT emailVerificationToken is MISSING.`,
-      );
-    }
+    // if (newUser && newUser.emailVerificationToken) {
+    //   this.logger.log(
+    //     `[TESTING] New user ${newUser.email} created. Verification Token: ${newUser.emailVerificationToken}`,
+    //   );
+    // } else {
+    //   this.logger.error(
+    //     `[CRITICAL] New user ${newUser?.email} created BUT emailVerificationToken is MISSING.`,
+    //   );
+    // }
 
     try {
       if (!newUser.emailVerificationToken) {

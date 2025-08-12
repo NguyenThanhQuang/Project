@@ -20,6 +20,7 @@ import {
   Block,
   CheckCircle,
   Close,
+  AirportShuttle,
 } from "@mui/icons-material";
 import { useManageCompanies } from "../hooks/useManageCompanies";
 import CompanyStatsCards from "../components/CompanyStatsCards";
@@ -50,6 +51,7 @@ const ManageCompaniesPage: React.FC = () => {
     handleChangeRowsPerPage,
     handleMenuOpen,
     handleMenuClose,
+    handleNavigateToVehicles,
     handleAction,
     confirmAction,
     handleOpenCreateDialog,
@@ -72,7 +74,7 @@ const ManageCompaniesPage: React.FC = () => {
     loading &&
     !companyDialogOpen &&
     !actionDialogOpen &&
-    filteredCompanies.length === 0//Company?
+    filteredCompanies.length === 0 //Company?
   ) {
     return (
       <Container sx={{ textAlign: "center", mt: 10 }}>
@@ -177,6 +179,11 @@ const ManageCompaniesPage: React.FC = () => {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
+        <MenuItem onClick={handleNavigateToVehicles}>
+          <AirportShuttle sx={{ mr: 1.5 }} />
+          Quản lý xe
+        </MenuItem>
+        
         <MenuItem
           onClick={() =>
             selectedCompany && handleOpenEditDialog(selectedCompany)

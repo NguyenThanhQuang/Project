@@ -14,19 +14,30 @@ export interface Vehicle {
   vehicleNumber: string;
   type: string;
   description?: string;
-  seatMap?: SeatMap;
-  totalSeats: number;
-  floors: number;
   status: VehicleStatus;
+
+  floors: number;
+  seatColumns: number;
+  seatRows: number;
+  aislePositions: number[];
+
+  totalSeats: number;
+  seatMap?: SeatMap;
+  seatMapFloor2?: SeatMap;
+
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface VehiclePayload {
   companyId: string;
   vehicleNumber: string;
   type: string;
-  totalSeats: number;
   description?: string;
   status: VehicleStatus;
-  floors?: number;
-  seatMap?: SeatMap;
+
+  floors: number;
+  seatColumns: number;
+  seatRows: number;
+  aislePositions: number[];
 }

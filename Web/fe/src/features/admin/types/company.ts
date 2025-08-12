@@ -11,6 +11,7 @@ export interface Company {
   logoUrl?: string;
   status: CompanyStatus;
 }
+
 export interface CompanyWithStats {
   _id: string;
   name: string;
