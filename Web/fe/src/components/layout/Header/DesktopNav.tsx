@@ -1,11 +1,6 @@
 import React from "react";
 import { Box, Button } from "@mui/material";
-import {
-  Add,
-  BookOnline,
-  DirectionsBus,
-  TrackChanges,
-} from "@mui/icons-material";
+import { BookOnline, DirectionsBus, TrackChanges } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store";
@@ -89,15 +84,7 @@ const DesktopNav = () => {
                 startIcon={<DirectionsBus />}
                 sx={{ fontWeight: 600 }}
               >
-                Quản lý chuyến
-              </Button>
-              <Button
-                color="inherit"
-                onClick={() => navigate("/add-trip")}
-                startIcon={<Add />}
-                sx={{ fontWeight: 600, color: "success.main" }}
-              >
-                Thêm chuyến
+                Quản lý chuyến xe
               </Button>
             </>
           )}
