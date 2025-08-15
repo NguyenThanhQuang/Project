@@ -103,7 +103,8 @@ export class BookingsService {
     const newBooking = new this.bookingModel({
       userId: user?._id,
       tripId: createDto.tripId,
-      companyId: trip.companyId,
+      companyId: trip.companyId._id,
+      //companyId: trip.companyId,
       status: BookingStatus.HELD,
       paymentStatus: PaymentStatus.PENDING,
       heldUntil,

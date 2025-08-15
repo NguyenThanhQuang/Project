@@ -249,6 +249,13 @@ export class AuthService {
       );
     }
 
+    user.lastLoginDate = new Date();
+    user
+      .save()
+      .catch((err) =>
+        this.logger.error('Failed to update last login date', err),
+      );
+
     if (!user.isEmailVerified) {
       this.logger.warn(`Login attempt for unverified email: ${user.email}`);
       throw new UnauthorizedException(

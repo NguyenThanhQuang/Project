@@ -2,6 +2,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -223,5 +224,86 @@ export class UsersService {
         `Giá trị '${String(value)}' cho trường '${field}' đã tồn tại.`,
       );
     }
+  }
+  async findAllForAdmin(): Promise<any[]> {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    return this.userModel.aggregate([
+      { $match: { roles: UserRole.USER } },
+      {
+        $lookup: {
+          from: 'bookings',
+          localField: '_id',
+          foreignField: 'userId',
+          as: 'bookings',
+        },
+      },
+      {
+        $addFields: {
+          totalBookings: { $size: '$bookings' },
+          totalSpent: {
+            $sum: {
+              $map: {
+                input: {
+                  $filter: {
+                    input: '$bookings',
+                    as: 'booking',
+                    cond: { $eq: ['$$booking.status', 'confirmed'] },
+                  },
+                },
+                as: 'confirmedBooking',
+                in: '$$confirmedBooking.totalAmount',
+              },
+            },
+          },
+          status: {
+            $switch: {
+              branches: [
+                { case: { $eq: ['$isBanned', true] }, then: 'banned' },
+                {
+                  case: {
+                    $or: [
+                      { $not: ['$lastLoginDate'] },
+                      { $lt: ['$lastLoginDate', ninetyDaysAgo] },
+                    ],
+                  },
+                  then: 'inactive',
+                },
+              ],
+              default: 'active',
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          name: 1,
+          email: 1,
+          phone: 1,
+          createdAt: 1,
+          lastLoginDate: 1,
+          status: 1,
+          totalBookings: 1,
+          totalSpent: 1,
+        },
+      },
+      { $sort: { createdAt: -1 } },
+    ]);
+  }
+  async updateUserStatus(
+    userId: string | Types.ObjectId,
+    isBanned: boolean,
+  ): Promise<SanitizedUser> {
+    const user = await this.findById(userId); // Sử dụng lại hàm findById đã có
+
+    if (user.roles.includes(UserRole.ADMIN)) {
+      throw new ForbiddenException('Không thể thay đổi trạng thái của Admin.');
+    }
+
+    user.isBanned = isBanned;
+    await user.save();
+
+    return this.sanitizeUser(user);
   }
 }

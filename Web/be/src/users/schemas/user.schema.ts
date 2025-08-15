@@ -68,6 +68,12 @@ export class User {
 
   @Prop({ type: Date, select: false })
   passwordResetExpires?: Date;
+
+  @Prop({ type: Date, select: false })
+  lastLoginDate?: Date;
+
+  @Prop({ type: Boolean, default: false })
+  isBanned: boolean;
 }
 
 export const UserSchema = SchemaFactory.createForClass(User);

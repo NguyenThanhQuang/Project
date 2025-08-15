@@ -20,6 +20,8 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SanitizedUser, UserRole } from './schemas/user.schema';
 import { UsersService } from './users.service';
+import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id.pipe';
+import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: UserRole };
 }
@@ -111,5 +113,31 @@ export class UsersController {
   ) {
     const userId = req.user.userId;
     return this.usersService.changePassword(userId, changePasswordDto);
+  }
+  /**
+   * [ADMIN] Lấy danh sách tất cả người dùng với dữ liệu tổng hợp
+   * @route GET /api/users/admin/all
+   */
+  @Get('admin/all')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  getAllUsersForAdmin() {
+    return this.usersService.findAllForAdmin();
+  }
+  /**
+   * [ADMIN] Cập nhật trạng thái (cấm/bỏ cấm) của một người dùng
+   * @route PATCH /api/users/admin/:userId/status
+   */
+  @Patch('admin/:userId/status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN)
+  updateUserStatus(
+    @Param('userId', ParseMongoIdPipe) userId: string,
+    @Body() updateUserStatusDto: UpdateUserStatusDto,
+  ) {
+    return this.usersService.updateUserStatus(
+      userId,
+      updateUserStatusDto.isBanned,
+    );
   }
 }
