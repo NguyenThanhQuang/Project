@@ -1,6 +1,6 @@
 import type dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
-import type { export export export Vehicle } from "../features/admin/types/vehicle";
+import type { Vehicle } from "../features/admin/types/vehicle";
 
 export type UserRole = "user" | "company_admin" | "admin";
 export type LocationType =

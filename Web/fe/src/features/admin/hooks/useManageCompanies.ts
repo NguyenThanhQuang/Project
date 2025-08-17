@@ -67,6 +67,7 @@ export interface UseManageCompaniesResult {
     companyId?: string
   ) => void;
   handleNavigateToVehicles: () => void;
+  handleNavigateToTrips: () => void;
   setCompanyDialogOpen: (open: boolean) => void;
   setActionDialogOpen: (open: boolean) => void;
 }
@@ -165,6 +166,13 @@ export const useManageCompanies = (): UseManageCompaniesResult => {
     handleMenuClose();
   };
 
+  const handleNavigateToTrips = () => {
+    if (selectedCompany) {
+      navigate(`/admin/companies/${selectedCompany._id}/trips`);
+    }
+    handleMenuClose();
+  };
+
   const handleOpenCreateDialog = () => {
     setCompanyToEdit(null);
     setCompanyDialogOpen(true);
@@ -250,6 +258,7 @@ export const useManageCompanies = (): UseManageCompaniesResult => {
     handleMenuOpen,
     handleMenuClose,
     handleNavigateToVehicles,
+    handleNavigateToTrips,
     handleAction,
     confirmAction,
     handleOpenCreateDialog,

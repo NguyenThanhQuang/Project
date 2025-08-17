@@ -23,17 +23,20 @@ import {
 import {
   Search,
   Add,
-  // MoreVert,
   Edit,
-  Delete,
   Close,
+  ArrowBack,
+  Visibility,
+  VisibilityOff,
 } from "@mui/icons-material";
+import { useNavigate } from "react-router-dom";
 import { useManageVehicles } from "../hooks/useManageVehicles";
 import VehicleTable from "../components/VehicleTable";
 import VehicleStatsCards from "../components/VehicleStatsCards";
 import AddVehicleDialog from "../components/AddVehicleDialog";
 
 const ManageVehicles: React.FC = () => {
+  const navigate = useNavigate();
   const {
     loading,
     error,
@@ -50,7 +53,8 @@ const ManageVehicles: React.FC = () => {
     selectedVehicle,
     addEditDialogOpen,
     vehicleToEdit,
-    deleteDialogOpen,
+    deleteDialogOpen, // This state now controls the generic action dialog
+    actionType,
     setSearchTerm,
     setActiveTab,
     clearMessages,
@@ -60,12 +64,11 @@ const ManageVehicles: React.FC = () => {
     handleMenuClose,
     handleOpenCreateDialog,
     handleOpenEditDialog,
-    handleOpenDeleteDialog,
     handleSaveVehicle,
-    handleDeleteVehicle,
     setAddEditDialogOpen,
+    handleAction,
+    confirmAction,
     setDeleteDialogOpen,
-    navigate,
   } = useManageVehicles();
 
   if (loading && filteredVehicles.length === 0) {
@@ -82,7 +85,7 @@ const ManageVehicles: React.FC = () => {
         <Alert severity="warning" sx={{ mt: 4 }}>
           Không tìm thấy thông tin nhà xe.
           <Button onClick={() => navigate("/admin/companies")} sx={{ ml: 2 }}>
-            Quay lại
+            Quay lại danh sách nhà xe
           </Button>
         </Alert>
       </Container>
@@ -118,9 +121,25 @@ const ManageVehicles: React.FC = () => {
         </Alert>
       </Collapse>
 
-      <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-        Quản lý xe: {companyName}
-      </Typography>
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 1,
+        }}
+      >
+        <Typography variant="h4" sx={{ fontWeight: 700 }}>
+          Quản lý xe: {companyName}
+        </Typography>
+        <Button
+          variant="contained"
+          startIcon={<ArrowBack />}
+          onClick={() => navigate("/admin/companies")}
+        >
+          Quay lại danh sách nhà xe
+        </Button>
+      </Box>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
         Thêm, sửa, xóa và quản lý các loại xe của nhà xe này.
       </Typography>
@@ -185,14 +204,28 @@ const ManageVehicles: React.FC = () => {
         open={Boolean(anchorEl)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleOpenEditDialog}>
+        <MenuItem onClick={() => handleOpenEditDialog(selectedVehicle!)}>
           <Edit sx={{ mr: 1.5 }} />
           Chỉnh sửa
         </MenuItem>
-        <MenuItem onClick={handleOpenDeleteDialog} sx={{ color: "error.main" }}>
-          <Delete sx={{ mr: 1.5 }} />
-          Xóa
-        </MenuItem>
+
+        {selectedVehicle?.status === "active" ? (
+          <MenuItem
+            onClick={() => handleAction("deactivate")}
+            sx={{ color: "warning.main" }}
+          >
+            <VisibilityOff sx={{ mr: 1.5 }} />
+            Vô hiệu hóa
+          </MenuItem>
+        ) : (
+          <MenuItem
+            onClick={() => handleAction("activate")}
+            sx={{ color: "success.main" }}
+          >
+            <Visibility sx={{ mr: 1.5 }} />
+            Kích hoạt
+          </MenuItem>
+        )}
       </Menu>
 
       {addEditDialogOpen && companyId && (
@@ -209,25 +242,22 @@ const ManageVehicles: React.FC = () => {
         open={deleteDialogOpen}
         onClose={() => setDeleteDialogOpen(false)}
       >
-        <DialogTitle>Xác nhận xóa xe</DialogTitle>
+        <DialogTitle>
+          Xác nhận {actionType === "activate" ? "Kích hoạt" : "Vô hiệu hóa"} xe
+        </DialogTitle>
         <DialogContent>
-          {/* FIX: Đã xóa bỏ việc truy cập `totalTrips` */}
           <Typography>
-            Bạn có chắc chắn muốn xóa xe{" "}
-            <strong>{selectedVehicle?.vehicleNumber}</strong>? Thao tác này sẽ
-            xóa vĩnh viễn và không thể hoàn tác.
-            <br />
-            <br />
-            Nếu xe đang được gán cho các chuyến đi sắp tới, hệ thống sẽ không
-            cho phép xóa.
+            Bạn có chắc chắn muốn{" "}
+            {actionType === "activate" ? "kích hoạt" : "vô hiệu hóa"} xe{" "}
+            <strong>{selectedVehicle?.vehicleNumber}</strong>?
           </Typography>
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDeleteDialogOpen(false)}>Hủy</Button>
           <Button
-            onClick={handleDeleteVehicle}
+            onClick={confirmAction}
             variant="contained"
-            color="error"
+            color={actionType === "activate" ? "success" : "warning"}
           >
             Xác nhận
           </Button>

@@ -19,14 +19,14 @@ import Policies from "./features/core/pages/Policies";
 import CompanyRegistration from "./features/company/pages/CompanyRegistration";
 import CompanyRegistrationSuccess from "./features/company/pages/CompanyRegistrationSuccess";
 import ForgotPassword from "./features/auth/pages/ForgotPassword";
-import MyBookings from "./features/profile/pages/MyBookings";
+// import MyBookings from "./features/profile/pages/MyBookings";
 import LoyaltyProgram from "./features/profile/pages/LoyaltyProgram";
 import ChangePassword from "./features/profile/pages/ChangePassword";
 import PaymentStatus from "./features/bookings/pages/PaymentStatus";
-import BookingCheckout from "./features/bookings/pages/BookingCheckout";
+// import BookingCheckout from "./features/bookings/pages/BookingCheckout";
 import AddTrip from "./features/company/pages/AddTripPage";
 import ManageTrips from "./features/company/pages/ManageTrips";
-import { BusTracking } from "./features/tracking/pages/BusTracking";
+// import { BusTracking } from "./features/tracking/pages/BusTracking";
 import AdminDashboardContent from "./features/admin/pages/AdminDashboardPage";
 import ManageCompanies from "./features/admin/pages/ManageCompaniesPage";
 import ManageUsers from "./features/admin/pages/ManageUsers";
@@ -39,6 +39,8 @@ import VerificationResultPage from "./features/auth/pages/VerificationResultPage
 import ResetPassword from "./features/auth/pages/ResetPassword";
 import { useTabSync } from "./hooks/useTabSync";
 import ManageVehicles from "./features/admin/pages/ManageVehicles";
+import AdminManageTrips from "./features/admin/pages/AdminManageTrips";
+import AddTripPage from "./features/company/pages/AddTripPage";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -84,14 +86,14 @@ function App() {
                   element={<VerificationResultPage />}
                 />
                 {/* Trang được bảo vệ */}
-                <Route
+                {/* <Route
                   path="my-bookings"
                   element={
                     <ProtectedRoute allowedRoles={["user", "company_admin"]}>
                       <MyBookings />
                     </ProtectedRoute>
                   }
-                />
+                /> */}
                 <Route
                   path="loyalty-program"
                   element={
@@ -116,14 +118,14 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
+                {/* <Route
                   path="bookings/checkout"
                   element={
                     <ProtectedRoute allowedRoles={["user", "company_admin"]}>
                       <BookingCheckout />
                     </ProtectedRoute>
                   }
-                />
+                /> */}
                 <Route
                   path="add-trip"
                   element={
@@ -140,14 +142,14 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
+                {/* <Route
                   path="bus-tracking"
                   element={
                     <ProtectedRoute allowedRoles={["company_admin"]}>
                       <BusTracking />
                     </ProtectedRoute>
                   }
-                />
+                /> */}
               </Route>
 
               {/* Cấu trúc route lồng nhau cho Admin Layout */}
@@ -165,6 +167,11 @@ function App() {
                   path="companies/:companyId/vehicles"
                   element={<ManageVehicles />}
                 />
+                <Route
+                  path="companies/:companyId/trips"
+                  element={<AdminManageTrips />}
+                />
+                <Route path="add-trip" element={<AddTripPage />} />
                 <Route path="users" element={<ManageUsers />} />
                 <Route path="finance" element={<FinanceReports />} />
                 <Route path="settings" element={<SystemSettings />} />

@@ -21,6 +21,7 @@ import {
   CheckCircle,
   Close,
   AirportShuttle,
+  DirectionsBus,
 } from "@mui/icons-material";
 import { useManageCompanies } from "../hooks/useManageCompanies";
 import CompanyStatsCards from "../components/CompanyStatsCards";
@@ -52,6 +53,7 @@ const ManageCompaniesPage: React.FC = () => {
     handleMenuOpen,
     handleMenuClose,
     handleNavigateToVehicles,
+    handleNavigateToTrips,
     handleAction,
     confirmAction,
     handleOpenCreateDialog,
@@ -183,7 +185,12 @@ const ManageCompaniesPage: React.FC = () => {
           <AirportShuttle sx={{ mr: 1.5 }} />
           Quản lý xe
         </MenuItem>
-        
+
+        <MenuItem onClick={handleNavigateToTrips}>
+          <DirectionsBus sx={{ mr: 1.5 }} />
+          Quản lý chuyến đi
+        </MenuItem>
+
         <MenuItem
           onClick={() =>
             selectedCompany && handleOpenEditDialog(selectedCompany)

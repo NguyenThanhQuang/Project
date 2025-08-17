@@ -15,6 +15,7 @@ import {
   SeatMapLayout,
   Vehicle,
   VehicleDocument,
+  VehicleStatus,
 } from './schemas/vehicle.schema';
 
 @Injectable()
@@ -176,6 +177,33 @@ export class VehiclesService {
       }
     }
 
+    const hasStructuralChange =
+      (updateVehicleDto.floors !== undefined &&
+        updateVehicleDto.floors !== existingVehicle.floors) ||
+      (updateVehicleDto.seatRows !== undefined &&
+        updateVehicleDto.seatRows !== existingVehicle.seatRows) ||
+      (updateVehicleDto.seatColumns !== undefined &&
+        updateVehicleDto.seatColumns !== existingVehicle.seatColumns) ||
+      // (So sánh mảng phức tạp hơn, nhưng đây là cách đơn giản và hiệu quả)
+      (updateVehicleDto.aislePositions !== undefined &&
+        JSON.stringify(updateVehicleDto.aislePositions) !==
+          JSON.stringify(existingVehicle.aislePositions));
+
+    if (hasStructuralChange) {
+      const upcomingTripsCount = await this.tripModel
+        .countDocuments({
+          vehicleId: existingVehicle._id,
+          status: { $in: [TripStatus.SCHEDULED, TripStatus.DEPARTED] },
+        })
+        .exec();
+
+      if (upcomingTripsCount > 0) {
+        throw new ConflictException(
+          `Không thể thay đổi cấu trúc xe vì đang được sử dụng trong ${upcomingTripsCount} chuyến đi sắp tới hoặc đang chạy.`,
+        );
+      }
+    }
+
     const configChanged =
       updateVehicleDto.seatRows !== undefined ||
       updateVehicleDto.seatColumns !== undefined ||
@@ -229,7 +257,6 @@ export class VehiclesService {
   async remove(id: string): Promise<VehicleDocument> {
     const vehicle = await this.findOne(id);
 
-    // KIỂM TRA XE CÓ ĐANG ĐƯỢC SỬ DỤNG KHÔNG
     const upcomingTripsCount = await this.tripModel
       .countDocuments({
         vehicleId: vehicle._id,
@@ -239,11 +266,13 @@ export class VehiclesService {
 
     if (upcomingTripsCount > 0) {
       throw new ConflictException(
-        `Không thể xóa xe vì đang được sử dụng trong ${upcomingTripsCount} chuyến đi sắp tới hoặc đang chạy.`,
+        `Không thể xóa/vô hiệu hóa xe vì đang được sử dụng trong ${upcomingTripsCount} chuyến đi sắp tới hoặc đang chạy.`,
       );
     }
 
-    await vehicle.deleteOne();
+    vehicle.status = VehicleStatus.INACTIVE;
+    await vehicle.save();
+
     return vehicle;
   }
 }

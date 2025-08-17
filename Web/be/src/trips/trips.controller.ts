@@ -55,15 +55,19 @@ export class TripsController {
 
   /**
    * @description [MANAGEMENT] Lấy danh sách chuyến đi cho mục đích quản lý.
-   * Dành cho Admin (xem tất cả) và Company Admin (chỉ xem của công ty mình).
+   * Dành cho Admin (xem tất cả hoặc lọc theo companyId) và Company Admin (chỉ xem của công ty mình).
    * @route GET /api/trips/management/all
    * @param {AuthenticatedRequest} req - Request đã được xác thực, chứa thông tin user.
+   * @param {string} companyId - (Tùy chọn) ID của công ty để lọc (dành cho Admin).
    * @returns {Promise<TripDocument[]>} - Danh sách chuyến đi.
    */
   @Get('management/all')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
-  async findTripsForManagement(@Req() req: AuthenticatedRequest) {
+  async findTripsForManagement(
+    @Req() req: AuthenticatedRequest,
+    @Query('companyId') companyId?: string,
+  ) {
     const user = req.user;
     if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       if (!user.companyId) {
@@ -73,8 +77,7 @@ export class TripsController {
       }
       return this.tripsService.findForManagement(user.companyId);
     }
-    // Admin sẽ không có companyId trong điều kiện, service sẽ hiểu là lấy tất cả.
-    return this.tripsService.findForManagement();
+    return this.tripsService.findForManagement(companyId);
   }
 
   /**
@@ -226,15 +229,31 @@ export class TripsController {
   }
 
   /**
-   * @description [DEV ONLY] Xóa tất cả các chuyến đi.
-   * Chỉ dùng cho mục đích phát triển và dọn dẹp dữ liệu.
-   * Cần được bảo vệ chặt chẽ hoặc xóa đi trong môi trường production.
-   * @route DELETE /api/trips/dev/delete-all
+   * @description [MANAGEMENT] Hủy một chuyến đi.
+   * Logic bao gồm cập nhật trạng thái chuyến, vé, ghế và gửi thông báo.
+   * @route PATCH /api/trips/:tripId/cancel
+   * @param {Types.ObjectId} tripId - ID của chuyến đi cần hủy.
+   * @param {AuthenticatedRequest} req - Request đã được xác thực.
+   * @returns {Promise<TripDocument>} - Chuyến đi sau khi đã hủy.
    */
-  // @Delete('dev/delete-all')
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(UserRole.ADMIN) // Chỉ Super Admin mới có quyền này
-  // async deleteAll() {
-  //   return this.tripsService.deleteAll();
-  // }
+  @Patch(':tripId/cancel') // <-- DÙNG PATCH VÌ CHỈ CẬP NHẬT MỘT PHẦN (STATUS)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async cancelTrip(
+    @Param('tripId', ParseMongoIdPipe) tripId: Types.ObjectId,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = req.user;
+    // Kiểm tra quyền sở hữu đối với Company Admin
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
+      const trip = await this.tripsService.findOne(tripId.toString());
+      if (
+        !user.companyId ||
+        trip.companyId._id.toString() !== user.companyId.toString()
+      ) {
+        throw new ForbiddenException('Bạn không có quyền hủy chuyến đi này.');
+      }
+    }
+    return this.tripsService.cancel(tripId.toString());
+  }
 }

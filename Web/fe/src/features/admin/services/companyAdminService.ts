@@ -1,5 +1,6 @@
 import api from "../../../services/api";
 import type {
+  Company,
   CompanyWithStats,
   CreateCompanyPayload,
   UpdateCompanyPayload,
@@ -25,5 +26,12 @@ export const updateCompany = async (
     `/companies/${companyId}`,
     companyData
   );
+  return response.data;
+};
+
+export const getCompanyDetails = async (
+  companyId: string
+): Promise<Company> => {
+  const response = await api.get<Company>(`/companies/${companyId}`);
   return response.data;
 };

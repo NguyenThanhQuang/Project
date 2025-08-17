@@ -1,49 +1,57 @@
-// File: fe/src/features/admin/hooks/useManageVehicles.ts
-
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { getErrorMessage } from "../../../utils/getErrorMessage";
-import * as vehicleAdminService from "../services/vehicleAdminService";
-import type { Vehicle, VehiclePayload } from "../types/vehicle";
+import {
+  createVehicle,
+  deleteVehicle,
+  getCompanyDetails,
+  getVehiclesByCompany,
+  updateVehicle,
+} from "../services/vehicleAdminService";
+import type { Vehicle, VehiclePayload, VehicleStatus } from "../types/vehicle";
 
 export const useManageVehicles = () => {
-  const { companyId } = useParams<{ companyId: string }>();
   const navigate = useNavigate();
+  const { companyId } = useParams<{ companyId: string }>();
 
+  // Data state
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
-  const [companyName, setCompanyName] = useState<string | null>(null);
+  const [companyName, setCompanyName] = useState<string>("");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
+  // UI state for table and filtering
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<string | "all">("all");
+  const [activeTab, setActiveTab] = useState<VehicleStatus | "all">("all");
 
+  // UI state for menus and dialogs
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
   const [addEditDialogOpen, setAddEditDialogOpen] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState<Vehicle | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [actionType, setActionType] = useState<
+    "deactivate" | "activate" | null
+  >(null);
 
   const fetchData = useCallback(async () => {
     if (!companyId) {
-      setError(
-        "Không có thông tin nhà xe. Vui lòng chọn một nhà xe để quản lý."
-      );
+      setError("Không tìm thấy ID nhà xe trong URL.");
       setLoading(false);
       return;
     }
     try {
       setLoading(true);
       setError(null);
-      const [companyDetails, vehicleData] = await Promise.all([
-        vehicleAdminService.getCompanyDetails(companyId),
-        vehicleAdminService.getVehiclesByCompany(companyId),
+      const [vehiclesData, companyData] = await Promise.all([
+        getVehiclesByCompany(companyId),
+        getCompanyDetails(companyId),
       ]);
-      setCompanyName(companyDetails.name);
-      setVehicles(vehicleData);
+      setVehicles(vehiclesData);
+      setCompanyName(companyData.name);
     } catch (err) {
       setError(getErrorMessage(err, "Không thể tải dữ liệu xe."));
     } finally {
@@ -60,84 +68,17 @@ export const useManageVehicles = () => {
     setSuccessMessage(null);
   };
 
-  const handleChangePage = (event: unknown, newPage: number) =>
-    setPage(newPage);
-  const handleChangeRowsPerPage = (
-    event: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
-
-  const handleMenuOpen = (
-    event: React.MouseEvent<HTMLElement>,
-    vehicle: Vehicle
-  ) => {
-    setAnchorEl(event.currentTarget);
-    setSelectedVehicle(vehicle);
-  };
-  const handleMenuClose = () => setAnchorEl(null);
-
-  const handleOpenCreateDialog = () => {
-    setVehicleToEdit(null);
-    setAddEditDialogOpen(true);
-  };
-  const handleOpenEditDialog = () => {
-    if (selectedVehicle) {
-      setVehicleToEdit(selectedVehicle);
-      setAddEditDialogOpen(true);
-    }
-    handleMenuClose();
-  };
-  const handleOpenDeleteDialog = () => {
-    setDeleteDialogOpen(true);
-    handleMenuClose();
-  };
-
-  const handleSaveVehicle = async (data: VehiclePayload, id?: string) => {
-    clearMessages();
-    try {
-      if (id) {
-        await vehicleAdminService.updateVehicle(id, data);
-        setSuccessMessage("Cập nhật xe thành công!");
-      } else {
-        await vehicleAdminService.createVehicle(data);
-        setSuccessMessage("Thêm xe mới thành công!");
-      }
-      setAddEditDialogOpen(false);
-      fetchData();
-    } catch (err: unknown) {
-      const errorMessage = getErrorMessage(err, "Thao tác thất bại.");
-      setError(errorMessage);
-      throw new Error(errorMessage);
-    }
-  };
-
-  const handleDeleteVehicle = async () => {
-    if (!selectedVehicle) return;
-    clearMessages();
-    try {
-      await vehicleAdminService.deleteVehicle(selectedVehicle._id);
-      setSuccessMessage(`Đã xóa xe ${selectedVehicle.vehicleNumber}.`);
-      fetchData();
-    } catch (err: unknown) {
-      setError(getErrorMessage(err, "Xóa xe thất bại."));
-    } finally {
-      setDeleteDialogOpen(false);
-    }
-  };
-
   const filteredVehicles = useMemo(() => {
     let filtered = vehicles;
     if (activeTab !== "all") {
-      filtered = filtered.filter((v) => v.status === activeTab);
+      filtered = filtered.filter((vehicle) => vehicle.status === activeTab);
     }
     if (searchTerm) {
       const lowercasedFilter = searchTerm.toLowerCase();
       filtered = filtered.filter(
-        (v) =>
-          v.vehicleNumber?.toLowerCase().includes(lowercasedFilter) ||
-          v.type.toLowerCase().includes(lowercasedFilter)
+        (vehicle) =>
+          vehicle.vehicleNumber.toLowerCase().includes(lowercasedFilter) ||
+          vehicle.type.toLowerCase().includes(lowercasedFilter)
       );
     }
     return filtered;
@@ -152,6 +93,100 @@ export const useManageVehicles = () => {
     }),
     [vehicles]
   );
+
+  const handleChangePage = (event: unknown, newPage: number) =>
+    setPage(newPage);
+
+  const handleChangeRowsPerPage = (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    setRowsPerPage(parseInt(event.target.value, 10));
+    setPage(0);
+  };
+
+  const handleMenuOpen = (
+    event: React.MouseEvent<HTMLElement>,
+    vehicle: Vehicle
+  ) => {
+    setAnchorEl(event.currentTarget);
+    setSelectedVehicle(vehicle);
+  };
+
+  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleOpenCreateDialog = () => {
+    setVehicleToEdit(null);
+    setAddEditDialogOpen(true);
+  };
+
+  const handleOpenEditDialog = (vehicle: Vehicle) => {
+    setVehicleToEdit(vehicle);
+    setAddEditDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleSaveVehicle = async (
+    vehicleData: VehiclePayload,
+    vehicleId?: string
+  ) => {
+    clearMessages();
+    try {
+      setLoading(true);
+      if (vehicleId) {
+        await updateVehicle(vehicleId, vehicleData);
+        setSuccessMessage("Cập nhật thông tin xe thành công!");
+      } else {
+        await createVehicle(vehicleData);
+        setSuccessMessage("Thêm xe mới thành công!");
+      }
+      setAddEditDialogOpen(false);
+      await fetchData();
+    } catch (err) {
+      setError(getErrorMessage(err, "Có lỗi xảy ra, vui lòng thử lại."));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAction = (type: "deactivate" | "activate") => {
+    setActionType(type);
+    setDeleteDialogOpen(true);
+    handleMenuClose();
+  };
+
+  const handleOpenDeleteDialog = () => handleAction("deactivate");
+
+  const confirmAction = async () => {
+    if (!selectedVehicle || !actionType) return;
+
+    clearMessages();
+    setLoading(true);
+
+    try {
+      let successMsg = "";
+      if (actionType === "deactivate") {
+        await deleteVehicle(selectedVehicle._id); // API "xóa mềm"
+        successMsg = `Đã vô hiệu hóa xe "${selectedVehicle.vehicleNumber}" thành công.`;
+      } else {
+        // actionType === 'activate'
+        await updateVehicle(selectedVehicle._id, { status: "active" });
+        successMsg = `Đã kích hoạt lại xe "${selectedVehicle.vehicleNumber}" thành công.`;
+      }
+
+      setSuccessMessage(successMsg);
+      await fetchData(); // Tải lại dữ liệu
+    } catch (err) {
+      setError(
+        getErrorMessage(err, "Thao tác thất bại. Xe có thể đang được sử dụng.")
+      );
+    } finally {
+      setLoading(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
+  // Giữ lại hàm này để tương thích với component cũ, nhưng nó chỉ là một trường hợp của handleAction
+  const handleDeleteVehicle = confirmAction;
 
   return {
     loading,
@@ -170,6 +205,7 @@ export const useManageVehicles = () => {
     addEditDialogOpen,
     vehicleToEdit,
     deleteDialogOpen,
+    actionType,
     setSearchTerm,
     setActiveTab,
     clearMessages,
@@ -185,5 +221,7 @@ export const useManageVehicles = () => {
     setAddEditDialogOpen,
     setDeleteDialogOpen,
     navigate,
+    handleAction,
+    confirmAction,
   };
 };

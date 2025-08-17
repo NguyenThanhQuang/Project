@@ -1,15 +1,20 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
+import { EventEmitter2 } from '@nestjs/event-emitter';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
-import { FilterQuery, Model, Types } from 'mongoose';
+import { Connection, FilterQuery, Model, Types } from 'mongoose';
 import { CompanyStatus } from 'src/companies/schemas/company.schema';
+import {
+  Booking,
+  BookingDocument,
+  BookingStatus,
+} from '../bookings/schemas/booking.schema';
 import { CompaniesService } from '../companies/companies.service';
 import { LocationsService } from '../locations/locations.service';
 import { MapsService } from '../maps/maps.service';
@@ -24,6 +29,7 @@ import {
   SeatStatus,
   Trip,
   TripDocument,
+  TripStatus,
   TripStopInfo,
   TripStopStatus,
 } from './schemas/trip.schema';
@@ -31,7 +37,11 @@ dayjs.extend(utc);
 @Injectable()
 export class TripsService {
   constructor(
-    @InjectModel(Trip.name) private tripModel: Model<TripDocument>,
+    @InjectModel(Trip.name) private readonly tripModel: Model<TripDocument>,
+    @InjectModel(Booking.name)
+    private readonly bookingModel: Model<BookingDocument>,
+    @InjectConnection() private readonly connection: Connection,
+    private readonly eventEmitter: EventEmitter2,
     private readonly companiesService: CompaniesService,
     private readonly vehiclesService: VehiclesService,
     private readonly locationsService: LocationsService,
@@ -44,6 +54,7 @@ export class TripsService {
     let maxPrice = 0;
 
     trips.forEach((trip) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const companyIdStr = trip.companyId._id.toString();
       if (trip.companyId && typeof trip.companyId === 'object') {
         const companyIdStr = trip.companyId._id.toString();
@@ -66,17 +77,7 @@ export class TripsService {
       maxPrice,
     };
   }
-  /**
-   * @description Tạo một chuyến đi mới.
-   * 1. Validate sự tồn tại của các tài nguyên liên quan (công ty, xe, địa điểm).
-   * 2. Gọi MapsService để lấy polyline cho tuyến đường.
-   * 3. Khởi tạo danh sách ghế từ thông tin xe.
-   * 4. Kiểm tra logic nghiệp vụ (thời gian, xe thuộc công ty...).
-   * 5. Kiểm tra sự trùng lặp của chuyến đi.
-   * 6. Lưu chuyến đi mới vào cơ sở dữ liệu.
-   * @param {CreateTripDto} createTripDto - Dữ liệu đầu vào để tạo chuyến đi.
-   * @returns {Promise<TripDocument>} - Chuyến đi vừa được tạo.
-   */
+
   async create(createTripDto: CreateTripDto): Promise<TripDocument> {
     const { companyId, vehicleId, route } = createTripDto;
     const { fromLocationId, toLocationId, stops: stopDtos } = route;
@@ -112,11 +113,9 @@ export class TripsService {
       );
     }
 
-    // Lấy tọa độ từ các địa điểm đã được validate để tạo polyline
     const coordinates = locations.map((loc) => loc.location.coordinates);
     const polyline = await this.mapsService.getRoutePolyline(coordinates);
 
-    // Validate thời gian
     const departureTime = new Date(createTripDto.departureTime);
     const expectedArrivalTime = new Date(createTripDto.expectedArrivalTime);
     if (departureTime >= expectedArrivalTime) {
@@ -125,10 +124,8 @@ export class TripsService {
       );
     }
 
-    // Khởi tạo danh sách ghế từ thông tin xe
     const seats: Seat[] = this.generateSeatsFromVehicle(vehicle);
 
-    // Xử lý thông tin các điểm dừng
     const stops: TripStopInfo[] = (stopDtos || []).map((dto) => ({
       locationId: new Types.ObjectId(dto.locationId),
       expectedArrivalTime: new Date(dto.expectedArrivalTime),
@@ -138,7 +135,6 @@ export class TripsService {
       status: TripStopStatus.PENDING,
     }));
 
-    // Kiểm tra xem chuyến đi tương tự đã tồn tại chưa
     const existingTrip = await this.tripModel
       .findOne({
         companyId,
@@ -154,7 +150,6 @@ export class TripsService {
       );
     }
 
-    // Tạo object dữ liệu cuối cùng để lưu
     const newTripData = {
       ...createTripDto,
       route: { ...createTripDto.route, stops, polyline },
@@ -175,35 +170,53 @@ export class TripsService {
    */
   private generateSeatsFromVehicle(vehicle: VehicleDocument): Seat[] {
     const generatedSeats: Seat[] = [];
+
+    // Xử lý tầng 1 (luôn luôn có)
+    if (vehicle.seatMap && vehicle.seatMap.layout) {
+      vehicle.seatMap.layout.forEach((row) => {
+        if (Array.isArray(row)) {
+          row.forEach((seatElement) => {
+            if (seatElement !== null && seatElement !== undefined) {
+              generatedSeats.push({
+                seatNumber: String(seatElement),
+                status: SeatStatus.AVAILABLE,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Xử lý tầng 2 (nếu có)
     if (
-      !vehicle.seatMap ||
-      !vehicle.seatMap.layout ||
-      !Array.isArray(vehicle.seatMap.layout) ||
-      vehicle.seatMap.layout.length === 0
+      vehicle.floors > 1 &&
+      vehicle.seatMapFloor2 &&
+      vehicle.seatMapFloor2.layout
     ) {
-      // Nếu không có sơ đồ, tạo ghế dựa trên tổng số ghế
+      vehicle.seatMapFloor2.layout.forEach((row) => {
+        if (Array.isArray(row)) {
+          row.forEach((seatElement) => {
+            if (seatElement !== null && seatElement !== undefined) {
+              generatedSeats.push({
+                seatNumber: String(seatElement),
+                status: SeatStatus.AVAILABLE,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Trường hợp dự phòng nếu xe không có sơ đồ ghế chi tiết
+    if (generatedSeats.length === 0 && vehicle.totalSeats > 0) {
       for (let i = 1; i <= vehicle.totalSeats; i++) {
         generatedSeats.push({
-          seatNumber: `G${i}`,
+          seatNumber: `G${i}`, // Generic seat number
           status: SeatStatus.AVAILABLE,
         });
       }
-      return generatedSeats;
     }
-    // Nếu có sơ đồ, tạo ghế dựa trên sơ đồ
-    const { layout } = vehicle.seatMap;
-    (layout as Array<Array<string | null | number>>).forEach((row) => {
-      if (Array.isArray(row)) {
-        row.forEach((seatElement) => {
-          if (seatElement !== null && seatElement !== undefined) {
-            generatedSeats.push({
-              seatNumber: String(seatElement),
-              status: SeatStatus.AVAILABLE,
-            });
-          }
-        });
-      }
-    });
+
     return generatedSeats;
   }
 
@@ -217,6 +230,7 @@ export class TripsService {
   async findPublicTrips(
     queryTripsDto: QueryTripsDto,
   ): Promise<{ trips: any[]; filters: any }> {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { from, to, passengers = 1 } = queryTripsDto;
 
     const [fromLocations, toLocations] = await Promise.all([
@@ -333,9 +347,9 @@ export class TripsService {
     return this.tripModel
       .find(query)
       .populate('companyId', 'name')
-      .populate('vehicleId', 'type')
-      .populate('route.fromLocationId', 'name')
-      .populate('route.toLocationId', 'name')
+      .populate('vehicleId', 'type vehicleNumber')
+      .populate('route.fromLocationId', 'name province')
+      .populate('route.toLocationId', 'name province')
       .sort({ departureTime: -1 })
       .exec();
   }
@@ -376,12 +390,51 @@ export class TripsService {
     id: string,
     updateTripDto: UpdateTripDto,
   ): Promise<TripDocument> {
-    // const existingTrip = await this.findOne(id);
-    // TODO: Thêm logic phức tạp nếu cần, ví dụ: nếu thay đổi xe thì phải tạo lại ghế...
-    // Hiện tại, chỉ cập nhật các trường được cung cấp.
-    const updatedTrip = await this.tripModel
-      .findByIdAndUpdate(id, { $set: updateTripDto }, { new: true })
-      .exec();
+    const existingTrip = await this.findOne(id);
+
+    const hasActiveBookings = existingTrip.seats.some(
+      (seat) =>
+        seat.status === SeatStatus.BOOKED || seat.status === SeatStatus.HELD,
+    );
+
+    if (hasActiveBookings) {
+      if (
+        updateTripDto.vehicleId &&
+        updateTripDto.vehicleId.toString() !==
+          existingTrip.vehicleId._id.toString()
+      ) {
+        throw new ConflictException(
+          'Không thể đổi xe cho chuyến đi đã có người đặt vé.',
+        );
+      }
+
+      const hasCoreInfoChange =
+        updateTripDto.route ||
+        updateTripDto.departureTime ||
+        updateTripDto.price !== undefined;
+
+      if (hasCoreInfoChange) {
+        throw new ConflictException(
+          'Không thể thay đổi thông tin cốt lõi (tuyến đường, thời gian, giá vé) của chuyến đi đã có người đặt vé.',
+        );
+      }
+    } else {
+      if (
+        updateTripDto.vehicleId &&
+        updateTripDto.vehicleId.toString() !==
+          existingTrip.vehicleId._id.toString()
+      ) {
+        const newVehicle = await this.vehiclesService.findOne(
+          updateTripDto.vehicleId,
+        );
+        const newSeats = this.generateSeatsFromVehicle(newVehicle);
+        existingTrip.seats = newSeats;
+      }
+    }
+
+    Object.assign(existingTrip, updateTripDto);
+
+    const updatedTrip = await existingTrip.save();
     if (!updatedTrip) {
       throw new NotFoundException(
         `Không tìm thấy chuyến đi với ID: ${id} để cập nhật.`,
@@ -471,11 +524,51 @@ export class TripsService {
     return trip.save();
   }
 
-  /**
-   * @description [DEV ONLY] Xóa tất cả chuyến đi.
-   * @returns {Promise<any>} - Kết quả từ operation của MongoDB.
-   */
-  async deleteAll(): Promise<any> {
-    return this.tripModel.deleteMany({}).exec();
+  async cancel(tripId: string): Promise<TripDocument> {
+    const session = await this.connection.startSession();
+    session.startTransaction();
+    try {
+      const trip = await this.tripModel.findById(tripId).session(session);
+      if (!trip) {
+        throw new NotFoundException(
+          `Không tìm thấy chuyến đi với ID: ${tripId}`,
+        );
+      }
+      if (trip.status === TripStatus.CANCELLED) {
+        throw new BadRequestException('Chuyến đi này đã được hủy trước đó.');
+      }
+      if (trip.status === TripStatus.ARRIVED) {
+        throw new BadRequestException('Không thể hủy chuyến đi đã hoàn thành.');
+      }
+
+      const bookingsToCancel = await this.bookingModel
+        .find({
+          tripId: trip._id,
+          status: BookingStatus.CONFIRMED,
+        })
+        .session(session);
+
+      trip.status = TripStatus.CANCELLED;
+      trip.seats.forEach((seat) => {
+        seat.status = SeatStatus.AVAILABLE;
+        seat.bookingId = undefined;
+      });
+
+      for (const booking of bookingsToCancel) {
+        booking.status = BookingStatus.CANCELLED;
+        await booking.save({ session });
+        this.eventEmitter.emit('booking.cancelled', booking.toObject());
+      }
+
+      await trip.save({ session });
+      await session.commitTransaction();
+
+      return trip;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
   }
 }
