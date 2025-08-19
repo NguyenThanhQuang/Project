@@ -21,6 +21,11 @@ export type BookingStatus =
   | "expired";
 export type PaymentStatus = "pending" | "paid" | "failed";
 
+interface PopulatedCompany {
+  _id: string;
+  name: string;
+}
+
 export interface User {
   _id: string;
   name: string;
@@ -28,7 +33,7 @@ export interface User {
   phone: string;
   roles: UserRole[];
   isEmailVerified: boolean;
-  companyId?: string;
+  companyId?: string | PopulatedCompany;
   createdAt: string;
   updatedAt: string;
 }

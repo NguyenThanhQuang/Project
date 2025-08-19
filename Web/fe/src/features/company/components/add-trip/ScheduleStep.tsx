@@ -17,16 +17,18 @@ import type { Location } from "../../../../types";
 
 interface ScheduleStepProps {
   formData: AddTripFormState;
-  onFormChange: (field: keyof AddTripFormState, value: any) => void;
+  onFormChange: <K extends keyof AddTripFormState>(
+    field: K,
+    value: AddTripFormState[K]
+  ) => void;
   onAddStop: () => void;
   onRemoveStop: (stopId: string) => void;
-  onUpdateStop: (
+  onUpdateStop: <K extends keyof RouteStopFormState>(
     stopId: string,
-    field: keyof RouteStopFormState,
-    value: any
+    field: K,
+    value: RouteStopFormState[K]
   ) => void;
-  searchedLocations: Location[];
-  onLocationSearch: (query: string) => void;
+  allLocations: Location[];
 }
 
 const ScheduleStep: React.FC<ScheduleStepProps> = ({
@@ -35,11 +37,11 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
   onAddStop,
   onRemoveStop,
   onUpdateStop,
-  searchedLocations,
-  onLocationSearch,
+  allLocations,
 }) => {
   return (
     <Grid container spacing={3}>
+      {/* Lựa chọn Ngày và Giờ */}
       <Grid size={{ xs: 12, md: 4 }}>
         <DatePicker
           label="Ngày khởi hành"
@@ -47,6 +49,11 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
           onChange={(value) => onFormChange("departureTime", value)}
           sx={{ width: "100%" }}
           disablePast
+          slotProps={{
+            textField: {
+              required: true,
+            },
+          }}
         />
       </Grid>
       <Grid size={{ xs: 12, md: 4 }}>
@@ -55,6 +62,11 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
           value={formData.departureTime}
           onChange={(value) => onFormChange("departureTime", value)}
           sx={{ width: "100%" }}
+          slotProps={{
+            textField: {
+              required: true,
+            },
+          }}
         />
       </Grid>
       <Grid size={{ xs: 12, md: 4 }}>
@@ -63,9 +75,15 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
           value={formData.expectedArrivalTime}
           onChange={(value) => onFormChange("expectedArrivalTime", value)}
           sx={{ width: "100%" }}
+          slotProps={{
+            textField: {
+              required: true,
+            },
+          }}
         />
       </Grid>
 
+      {/* Phần quản lý trạm dừng */}
       <Grid size={{ xs: 12 }}>
         <Box
           sx={{
@@ -76,73 +94,103 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
             mb: 2,
           }}
         >
-          <Typography variant="h6">Trạm dừng trung gian</Typography>
+          <Typography variant="h6">Trạm dừng trung gian (tùy chọn)</Typography>
           <Button startIcon={<Add />} onClick={onAddStop} variant="outlined">
             Thêm trạm dừng
           </Button>
         </Box>
 
-        {formData.stops.map((stop, index) => (
-          <Card key={stop.id} sx={{ mb: 2 }}>
-            <CardContent>
-              <Box
-                sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  mb: 2,
-                }}
-              >
-                <Typography variant="subtitle1">
-                  Trạm dừng {index + 1}
-                </Typography>
-                <IconButton
-                  onClick={() => onRemoveStop(stop.id)}
-                  color="error"
-                  size="small"
+        {/* Lặp qua danh sách các trạm dừng để hiển thị */}
+        {formData.stops.map((stop, index) => {
+          const stopOptions = allLocations.filter((loc) => {
+            if (
+              loc._id === formData.fromLocationId ||
+              loc._id === formData.toLocationId
+            ) {
+              return false;
+            }
+            const otherSelectedStopIds = formData.stops
+              .filter((s) => s.id !== stop.id)
+              .map((s) => s.locationId);
+            if (otherSelectedStopIds.includes(loc._id)) {
+              return false;
+            }
+            return true;
+          });
+
+          return (
+            <Card key={stop.id} sx={{ mb: 2 }} variant="outlined">
+              <CardContent>
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    mb: 2,
+                  }}
                 >
-                  <Delete />
-                </IconButton>
-              </Box>
-              <Grid container spacing={2}>
-                <Grid size={{ xs: 12 }}>
-                  <Autocomplete
-                    fullWidth
-                    options={searchedLocations}
-                    getOptionLabel={(option) => option.name}
-                    onInputChange={(_, val) => onLocationSearch(val)}
-                    onChange={(_, val) =>
-                      onUpdateStop(stop.id, "locationId", val?._id || "")
-                    }
-                    renderInput={(params) => (
-                      <TextField {...params} label="Địa điểm dừng" />
-                    )}
-                  />
+                  <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                    Trạm dừng {index + 1}
+                  </Typography>
+                  <IconButton
+                    onClick={() => onRemoveStop(stop.id)}
+                    color="error"
+                    size="small"
+                    aria-label={`Xóa trạm dừng ${index + 1}`}
+                  >
+                    <Delete />
+                  </IconButton>
+                </Box>
+                <Grid container spacing={2}>
+                  <Grid size={{ xs: 12 }}>
+                    <Autocomplete
+                      fullWidth
+                      options={stopOptions} // Dùng danh sách đã lọc
+                      getOptionLabel={(option) => option.name}
+                      // Bỏ onInputChange
+                      // Tìm giá trị hiện tại để hiển thị
+                      value={
+                        allLocations.find((l) => l._id === stop.locationId) ||
+                        null
+                      }
+                      onChange={(_, val) =>
+                        onUpdateStop(stop.id, "locationId", val?._id || "")
+                      }
+                      renderInput={(params) => (
+                        <TextField {...params} label="Chọn địa điểm dừng" />
+                      )}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TimePicker
+                      label="Giờ đến trạm (dự kiến)"
+                      value={stop.expectedArrivalTime}
+                      onChange={(value) =>
+                        onUpdateStop(stop.id, "expectedArrivalTime", value)
+                      }
+                      sx={{ width: "100%" }}
+                      slotProps={{
+                        textField: {
+                          required: true,
+                        },
+                      }}
+                    />
+                  </Grid>
+                  <Grid size={{ xs: 12, md: 6 }}>
+                    <TimePicker
+                      label="Giờ rời trạm (dự kiến)"
+                      value={stop.expectedDepartureTime}
+                      onChange={(value) =>
+                        onUpdateStop(stop.id, "expectedDepartureTime", value)
+                      }
+                      sx={{ width: "100%" }}
+                    />
+                  </Grid>
                 </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TimePicker
-                    label="Giờ đến trạm"
-                    value={stop.expectedArrivalTime}
-                    onChange={(value) =>
-                      onUpdateStop(stop.id, "expectedArrivalTime", value)
-                    }
-                    sx={{ width: "100%" }}
-                  />
-                </Grid>
-                <Grid size={{ xs: 12, md: 6 }}>
-                  <TimePicker
-                    label="Giờ rời trạm"
-                    value={stop.expectedDepartureTime}
-                    onChange={(value) =>
-                      onUpdateStop(stop.id, "expectedDepartureTime", value)
-                    }
-                    sx={{ width: "100%" }}
-                  />
-                </Grid>
-              </Grid>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </Grid>
     </Grid>
   );

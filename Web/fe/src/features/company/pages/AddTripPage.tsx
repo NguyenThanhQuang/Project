@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Container,
@@ -19,15 +19,18 @@ import ScheduleStep from "../components/add-trip/ScheduleStep";
 import PricingStep from "../components/add-trip/PricingStep";
 import PreviewStep from "../components/add-trip/PreviewStep";
 import type { RootState } from "../../../store";
-import { getCompanyDetails, getVehiclesByCompany } from "../../admin/services/vehicleAdminService";
+import {
+  getCompanyDetails,
+  getVehiclesByCompany,
+} from "../../admin/services/vehicleAdminService";
 import type { Location } from "../../../types";
 import type { Vehicle } from "../../admin/types/vehicle";
 import {
-  getPopularLocations,
+  getAllLocations,
   searchLocations,
 } from "../../../services/locationService";
 import { debounce } from "lodash";
-import { useCallback, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 
 const steps = ["Thông tin cơ bản", "Lịch trình", "Giá vé", "Xem trước & Lưu"];
 
@@ -35,9 +38,10 @@ const AddTripPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const isAdmin = user?.roles.includes("admin");
 
-  const companyHook = useAddTripForm();
-  const adminHook = useAdminAddTripForm();
-  const formLogic = isAdmin ? adminHook : companyHook;
+  const companyHookResult = useAddTripForm();
+  const adminHookResult = useAdminAddTripForm();
+
+  const formLogic = isAdmin ? adminHookResult : companyHookResult;
 
   const {
     activeStep,
@@ -51,11 +55,12 @@ const AddTripPage: React.FC = () => {
     removeRouteStop,
     updateRouteStop,
   } = formLogic;
-
   const [companyVehicles, setCompanyVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [searchedLocations, setSearchedLocations] = useState<Location[]>([]);
-  const [loadingLocations, setLoadingLocations] = useState(false);
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
+  const [loadingLocations, setLoadingLocations] = useState(true);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [companyName, setCompanyName] = useState<string>("");
 
   useEffect(() => {
@@ -76,25 +81,27 @@ const AddTripPage: React.FC = () => {
   }, [formData.companyId]);
 
   useEffect(() => {
-    const fetchInitialLocations = async () => {
+    const fetchAllLocations = async () => {
       setLoadingLocations(true);
       try {
-        const popularLocations = await getPopularLocations();
-        setSearchedLocations(popularLocations);
+        const locations = await getAllLocations();
+        const filteredLocations = locations.filter(
+          (loc) => loc.type !== "city"
+        );
+        setAllLocations(filteredLocations);
       } catch (error) {
-        console.error("Failed to fetch popular locations", error);
+        console.error("Failed to fetch all locations", error);
       } finally {
         setLoadingLocations(false);
       }
     };
 
-    fetchInitialLocations();
+    fetchAllLocations();
   }, []);
 
   useEffect(() => {
     const fetchCompanyName = async () => {
       if (user?.companyId && typeof user.companyId === "string") {
-        // Đảm bảo companyId là string
         try {
           const companyDetails = await getCompanyDetails(user.companyId);
           setCompanyName(companyDetails.name);
@@ -103,24 +110,32 @@ const AddTripPage: React.FC = () => {
           setCompanyName("Không tìm thấy tên");
         }
       } else if (user?.companyId && typeof user.companyId === "object") {
-        // Nếu companyId là object, ta đã có tên
-        setCompanyName((user.companyId as any).name || "Tên không xác định");
+        setCompanyName(user.companyId.name || "Tên không xác định");
       }
     };
     fetchCompanyName();
   }, [user?.companyId]);
 
-  const debouncedLocationSearch = useCallback(
-    debounce(async (query: string) => {
-      if (query.length > 1) {
-        setLoadingLocations(true);
-        const results = await searchLocations(query);
-        setSearchedLocations(results);
-        setLoadingLocations(false);
-      }
-    }, 500),
-    []
+  const debouncedLocationSearch = useMemo(
+    () =>
+      debounce(async (query: string) => {
+        if (query.length > 1) {
+          setLoadingLocations(true);
+          const results = await searchLocations(query);
+          setSearchedLocations(results);
+          setLoadingLocations(false);
+        } else {
+          setSearchedLocations(allLocations);
+        }
+      }, 500),
+    [allLocations]
   );
+
+  useEffect(() => {
+    return () => {
+      debouncedLocationSearch.cancel();
+    };
+  }, [debouncedLocationSearch]);
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -130,8 +145,7 @@ const AddTripPage: React.FC = () => {
             formData={formData}
             onFormChange={handleFormChange}
             companyVehicles={companyVehicles}
-            searchedLocations={searchedLocations}
-            onLocationSearch={debouncedLocationSearch}
+            allLocations={allLocations}
             loadingVehicles={loadingVehicles}
             loadingLocations={loadingLocations}
           />
@@ -144,8 +158,7 @@ const AddTripPage: React.FC = () => {
             onAddStop={addRouteStop}
             onRemoveStop={removeRouteStop}
             onUpdateStop={updateRouteStop}
-            searchedLocations={searchedLocations}
-            onLocationSearch={debouncedLocationSearch}
+            allLocations={allLocations}
           />
         );
       case 2:
@@ -181,8 +194,7 @@ const AddTripPage: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 4 }}>
-          Thêm chuyến xe cho nhà xe:{" "}
-          {isAdmin ? (formLogic as any).companyName : user?.companyId}
+          Thêm chuyến xe cho nhà xe: {formLogic.companyName}{" "}
         </Typography>
         <Stepper activeStep={activeStep} orientation="vertical">
           {steps.map((label, index) => (

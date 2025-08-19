@@ -31,7 +31,6 @@ export const useManageTrips = () => {
 
   /**
    * Hàm gọi API để lấy dữ liệu chuyến đi và thông tin nhà xe.
-   * Sử dụng Promise.all để thực hiện các cuộc gọi đồng thời, tăng hiệu suất.
    */
   const fetchData = useCallback(async () => {
     if (!companyId) {
@@ -68,7 +67,6 @@ export const useManageTrips = () => {
 
   /**
    * Tính toán danh sách chuyến đi cho trang hiện tại.
-   * Sử dụng useMemo để tối ưu hóa, chỉ tính toán lại khi cần thiết.
    */
   const paginatedTrips = useMemo(() => {
     return trips.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);

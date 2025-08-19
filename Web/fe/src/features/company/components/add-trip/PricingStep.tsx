@@ -1,6 +1,7 @@
 import React from "react";
 import { Grid, TextField } from "@mui/material";
 import type { AddTripFormState } from "../../types/trip";
+import NumericFormatCustom from "../../../../components/common/NumericFormatCustom";
 
 interface PricingStepProps {
   formData: AddTripFormState;
@@ -19,25 +20,21 @@ const PricingStep: React.FC<PricingStepProps> = ({
       <Grid size={{ xs: 12 }}>
         <TextField
           fullWidth
-          type="number"
           label="Giá vé (VNĐ)"
-          value={formData.price}
-          onChange={(e) => onFormChange("price", Number(e.target.value))}
-          inputProps={{ min: 0, step: 10000 }}
+          value={formData.price === 0 ? "" : formData.price}
+          name="price"
+          onChange={(e) => {
+            const numericValue =
+              e.target.value === "" ? 0 : Number(e.target.value);
+            onFormChange("price", numericValue);
+          }}
           required
           helperText="Nhập giá vé cho một hành khách trên chuyến đi này."
+          InputProps={{
+            inputComponent: NumericFormatCustom,
+          }}
         />
       </Grid>
-      {/*
-        Phần chọn tiện ích (amenities) có thể được thêm vào đây trong tương lai.
-        Ví dụ:
-        <Grid item xs={12}>
-          <Typography variant="h6">Tiện ích</Typography>
-          <Box>
-            // Checkbox hoặc Chip group cho các tiện ích
-          </Box>
-        </Grid>
-      */}
     </Grid>
   );
 };

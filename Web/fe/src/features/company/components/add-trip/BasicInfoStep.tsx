@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { Grid, TextField, Autocomplete, Box, Typography } from "@mui/material";
 import type { AddTripFormState } from "../../types/trip";
 import type { Location } from "../../../../types";
@@ -11,8 +11,7 @@ interface BasicInfoStepProps {
     value: AddTripFormState[K]
   ) => void;
   companyVehicles: Vehicle[];
-  searchedLocations: Location[];
-  onLocationSearch: (query: string) => void;
+  allLocations: Location[];
   loadingVehicles: boolean;
   loadingLocations: boolean;
 }
@@ -21,20 +20,35 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
   formData,
   onFormChange,
   companyVehicles,
-  searchedLocations,
-  onLocationSearch,
+  allLocations,
   loadingVehicles,
   loadingLocations,
 }) => {
   const selectedVehicle = companyVehicles.find(
     (v) => v._id === formData.vehicleId
   );
-  const fromLocation = searchedLocations.find(
+  const fromLocation = allLocations.find(
     (l) => l._id === formData.fromLocationId
   );
-  const toLocation = searchedLocations.find(
-    (l) => l._id === formData.toLocationId
-  );
+  const toLocation = allLocations.find((l) => l._id === formData.toLocationId);
+
+  const selectedLocationIds = useMemo(() => {
+    const ids = new Set<string | null>();
+    if (formData.toLocationId) ids.add(formData.toLocationId);
+    formData.stops.forEach((stop) => ids.add(stop.locationId));
+    return ids;
+  }, [formData.toLocationId, formData.stops]);
+
+  const fromLocationOptions = useMemo(() => {
+    return allLocations.filter((loc) => !selectedLocationIds.has(loc._id));
+  }, [allLocations, selectedLocationIds]);
+
+  const toLocationOptions = useMemo(() => {
+    const ids = new Set<string | null>();
+    if (formData.fromLocationId) ids.add(formData.fromLocationId);
+    formData.stops.forEach((stop) => ids.add(stop.locationId));
+    return allLocations.filter((loc) => !ids.has(loc._id));
+  }, [allLocations, formData.fromLocationId, formData.stops]);
 
   return (
     <Grid container spacing={3}>
@@ -68,10 +82,9 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       <Grid size={{ xs: 12, md: 6 }}>
         <Autocomplete
           fullWidth
-          options={searchedLocations}
+          options={fromLocationOptions}
           loading={loadingLocations}
           getOptionLabel={(option) => option.name}
-          onInputChange={(_, newInputValue) => onLocationSearch(newInputValue)}
           value={fromLocation || null}
           onChange={(_, newValue) =>
             onFormChange("fromLocationId", newValue?._id || null)
@@ -89,10 +102,9 @@ const BasicInfoStep: React.FC<BasicInfoStepProps> = ({
       <Grid size={{ xs: 12, md: 6 }}>
         <Autocomplete
           fullWidth
-          options={searchedLocations}
+          options={toLocationOptions}
           loading={loadingLocations}
           getOptionLabel={(option) => option.name}
-          onInputChange={(_, newInputValue) => onLocationSearch(newInputValue)}
           value={toLocation || null}
           onChange={(_, newValue) =>
             onFormChange("toLocationId", newValue?._id || null)

@@ -1,127 +1,57 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
-import { useNotification } from "../../../components/common/NotificationProvider";
 import type { RootState } from "../../../store";
+import { getCompanyDetails } from "../../admin/services/vehicleAdminService";
 import { createTrip } from "../services/tripCompanyService";
-import type {
-  AddTripFormState,
-  CreateTripPayload,
-  RouteStopFormState,
-} from "../types/trip";
+import { useTripFormLogic } from "./useTripFormLogic";
 
 const useAddTripForm = () => {
-  const navigate = useNavigate();
-  const { showNotification } = useNotification();
   const { user } = useSelector((state: RootState) => state.auth);
+  const [companyName, setCompanyName] = useState("Nhà xe của bạn");
 
-  const [activeStep, setActiveStep] = useState(0);
-  const [loading, setLoading] = useState(false);
+  useEffect(() => {
+    const fetchCompanyName = async () => {
+      if (!user?.companyId) {
+        return;
+      }
 
-  const [formData, setFormData] = useState<AddTripFormState>({
-    companyId: user?.companyId || "",
-    vehicleId: null,
-    fromLocationId: null,
-    toLocationId: null,
-    departureTime: null,
-    expectedArrivalTime: null,
-    price: 0,
-    stops: [],
+      if (typeof user.companyId === "object" && user.companyId.name) {
+        setCompanyName(user.companyId.name);
+        return;
+      }
+
+      if (typeof user.companyId === "string") {
+        try {
+          const company = await getCompanyDetails(user.companyId);
+          setCompanyName(company.name);
+        } catch (error) {
+          console.error("Failed to fetch company name:", error);
+          setCompanyName("Không tìm thấy tên");
+        }
+      }
+    };
+
+    fetchCompanyName();
+  }, [user?.companyId]);
+
+  const getInitialCompanyId = (): string => {
+    if (!user?.companyId) {
+      return "";
+    }
+    return typeof user.companyId === "string"
+      ? user.companyId
+      : user.companyId._id;
+  };
+
+  const tripFormLogic = useTripFormLogic({
+    initialCompanyId: getInitialCompanyId(),
+    saveFunction: createTrip,
+    onSuccessRedirectPath: () => "/manage-trips",
   });
 
-  const handleFormChange = (field: keyof AddTripFormState, value: any) => {
-    setFormData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const addRouteStop = () => {
-    const newStop: RouteStopFormState = {
-      id: `stop-${Date.now()}`,
-      locationId: "",
-      arrivalTime: null,
-      departureTime: null,
-    };
-    handleFormChange("stops", [...formData.stops, newStop]);
-  };
-
-  const removeRouteStop = (stopId: string) => {
-    handleFormChange(
-      "stops",
-      formData.stops.filter((stop) => stop.id !== stopId)
-    );
-  };
-
-  const updateRouteStop = (
-    stopId: string,
-    field: keyof RouteStopFormState,
-    value: any
-  ) => {
-    const updatedStops = formData.stops.map((stop) =>
-      stop.id === stopId ? { ...stop, [field]: value } : stop
-    );
-    handleFormChange("stops", updatedStops);
-  };
-
-  const handleNext = () => setActiveStep((prev) => prev + 1);
-  const handleBack = () => setActiveStep((prev) => prev - 1);
-
-  const handleSave = async () => {
-    if (
-      !formData.companyId ||
-      !formData.vehicleId ||
-      !formData.fromLocationId ||
-      !formData.toLocationId ||
-      !formData.departureTime ||
-      !formData.expectedArrivalTime ||
-      formData.price <= 0
-    ) {
-      showNotification("Vui lòng điền đầy đủ thông tin bắt buộc.", "error");
-      return;
-    }
-
-    setLoading(true);
-
-    const payload: CreateTripPayload = {
-      companyId: formData.companyId,
-      vehicleId: formData.vehicleId,
-      route: {
-        fromLocationId: formData.fromLocationId,
-        toLocationId: formData.toLocationId,
-        stops: formData.stops.map((s) => ({
-          locationId: s.locationId,
-          expectedArrivalTime: s.expectedArrivalTime!.toISOString(),
-          expectedDepartureTime: s.expectedDepartureTime?.toISOString(),
-        })),
-      },
-      departureTime: formData.departureTime.toISOString(),
-      expectedArrivalTime: formData.expectedArrivalTime.toISOString(),
-      price: formData.price,
-    };
-
-    try {
-      await createTrip(payload);
-      showNotification("Thêm chuyến xe mới thành công!", "success");
-      navigate("/manage-trips");
-    } catch (err: any) {
-      showNotification(
-        err.response?.data?.message || "Thêm chuyến xe thất bại.",
-        "error"
-      );
-    } finally {
-      setLoading(false);
-    }
-  };
-
   return {
-    activeStep,
-    loading,
-    formData,
-    handleNext,
-    handleBack,
-    handleSave,
-    handleFormChange,
-    addRouteStop,
-    removeRouteStop,
-    updateRouteStop,
+    ...tripFormLogic,
+    companyName,
   };
 };
 

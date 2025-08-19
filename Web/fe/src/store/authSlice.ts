@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   createAsyncThunk,
   createSlice,
@@ -263,7 +262,7 @@ const authSlice = createSlice({
         state.status = "succeeded";
         state.user = action.payload;
       })
-      .addCase(loadUser.rejected, (state, action) => {
+      .addCase(loadUser.rejected, (state) => {
         state.status = "failed";
         state.user = null;
         state.token = null;

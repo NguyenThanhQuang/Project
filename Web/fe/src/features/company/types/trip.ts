@@ -18,7 +18,6 @@ export interface AddTripFormState {
   stops: RouteStopFormState[];
 }
 
-// CreateTripDto
 export interface CreateTripPayload {
   companyId: string;
   vehicleId: string;
