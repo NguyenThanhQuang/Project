@@ -53,7 +53,7 @@ const ManageVehicles: React.FC = () => {
     selectedVehicle,
     addEditDialogOpen,
     vehicleToEdit,
-    deleteDialogOpen, // This state now controls the generic action dialog
+    deleteDialogOpen,
     actionType,
     setSearchTerm,
     setActiveTab,

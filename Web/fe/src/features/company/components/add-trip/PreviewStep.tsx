@@ -1,4 +1,5 @@
 import React from "react";
+import dayjs from "dayjs";
 import {
   Grid,
   Card,
@@ -47,15 +48,15 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
   toLocationData,
   stopsData,
 }) => {
-  const formatTime = (date: Date | null) =>
+  const formatTime = (date: dayjs.Dayjs | null) =>
     date
-      ? new Date(date).toLocaleTimeString("vi-VN", {
+      ? date.toDate().toLocaleTimeString("vi-VN", {
           hour: "2-digit",
           minute: "2-digit",
         })
       : "N/A";
-  const formatDate = (date: Date | null) =>
-    date ? new Date(date).toLocaleDateString("vi-VN") : "N/A";
+  const formatDate = (date: dayjs.Dayjs | null) =>
+    date ? date.toDate().toLocaleDateString("vi-VN") : "N/A";
 
   return (
     <Card variant="outlined">
@@ -69,7 +70,7 @@ const PreviewStep: React.FC<PreviewStepProps> = ({
             </Box>
             <InfoRow
               label="Nhà xe"
-              value={vehicleData?.companyId || "Đang tải..."}
+              value={vehicleData?.companyId?.name || "Đang tải..."}
             />
             <InfoRow label="Loại xe" value={vehicleData?.type || "N/A"} />
             <InfoRow label="Số ghế" value={vehicleData?.totalSeats || "N/A"} />

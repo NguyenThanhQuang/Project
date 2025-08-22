@@ -114,7 +114,8 @@ export class TripsService {
     }
 
     const coordinates = locations.map((loc) => loc.location.coordinates);
-    const polyline = await this.mapsService.getRoutePolyline(coordinates);
+    const routeInfoFromMapService =
+      await this.mapsService.getRouteInfo(coordinates);
 
     const departureTime = new Date(createTripDto.departureTime);
     const expectedArrivalTime = new Date(createTripDto.expectedArrivalTime);
@@ -152,7 +153,13 @@ export class TripsService {
 
     const newTripData = {
       ...createTripDto,
-      route: { ...createTripDto.route, stops, polyline },
+      route: {
+        ...createTripDto.route,
+        stops,
+        polyline: routeInfoFromMapService.polyline,
+        duration: routeInfoFromMapService.duration,
+        distance: routeInfoFromMapService.distance,
+      },
       departureTime,
       expectedArrivalTime,
       seats,

@@ -8,9 +8,15 @@ export interface SeatMap {
   layout: SeatMapLayout;
 }
 
+export interface CompanyReference {
+  _id: string;
+  name: string;
+  code: string;
+}
+
 export interface Vehicle {
   _id: string;
-  companyId: string;
+  companyId: CompanyReference;
   vehicleNumber: string;
   type: string;
   description?: string;

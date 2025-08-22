@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useState } from "react";
 import {
   Box,
   Container,
@@ -12,25 +12,17 @@ import {
 } from "@mui/material";
 import { Save } from "@mui/icons-material";
 import { useSelector } from "react-redux";
-import useAddTripForm from "../hooks/useAddTripForm";
+import { useAddTripForm } from "../hooks/useAddTripForm";
 import { useAdminAddTripForm } from "../../admin/hooks/useAdminAddTripForm";
 import BasicInfoStep from "../components/add-trip/BasicInfoStep";
 import ScheduleStep from "../components/add-trip/ScheduleStep";
 import PricingStep from "../components/add-trip/PricingStep";
 import PreviewStep from "../components/add-trip/PreviewStep";
 import type { RootState } from "../../../store";
-import {
-  getCompanyDetails,
-  getVehiclesByCompany,
-} from "../../admin/services/vehicleAdminService";
+import { getVehiclesByCompany } from "../../admin/services/vehicleAdminService";
 import type { Location } from "../../../types";
 import type { Vehicle } from "../../admin/types/vehicle";
-import {
-  getAllLocations,
-  searchLocations,
-} from "../../../services/locationService";
-import { debounce } from "lodash";
-import { useEffect, useState } from "react";
+import { getAllLocations } from "../../../services/locationService";
 
 const steps = ["Thông tin cơ bản", "Lịch trình", "Giá vé", "Xem trước & Lưu"];
 
@@ -38,47 +30,10 @@ const AddTripPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const isAdmin = user?.roles.includes("admin");
 
-  const companyHookResult = useAddTripForm();
-  const adminHookResult = useAdminAddTripForm();
-
-  const formLogic = isAdmin ? adminHookResult : companyHookResult;
-
-  const {
-    activeStep,
-    loading,
-    formData,
-    handleNext,
-    handleBack,
-    handleSave,
-    handleFormChange,
-    addRouteStop,
-    removeRouteStop,
-    updateRouteStop,
-  } = formLogic;
+  const [allLocations, setAllLocations] = useState<Location[]>([]);
   const [companyVehicles, setCompanyVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
-  const [searchedLocations, setSearchedLocations] = useState<Location[]>([]);
-  const [allLocations, setAllLocations] = useState<Location[]>([]);
   const [loadingLocations, setLoadingLocations] = useState(true);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [companyName, setCompanyName] = useState<string>("");
-
-  useEffect(() => {
-    const fetchVehicles = async () => {
-      if (formData.companyId) {
-        setLoadingVehicles(true);
-        try {
-          const data = await getVehiclesByCompany(formData.companyId);
-          setCompanyVehicles(data.filter((v) => v.status === "active"));
-        } catch (error) {
-          console.error("Failed to fetch vehicles", error);
-        } finally {
-          setLoadingVehicles(false);
-        }
-      }
-    };
-    fetchVehicles();
-  }, [formData.companyId]);
 
   useEffect(() => {
     const fetchAllLocations = async () => {
@@ -99,43 +54,41 @@ const AddTripPage: React.FC = () => {
     fetchAllLocations();
   }, []);
 
+  const companyHookResult = useAddTripForm({ allLocations });
+  const adminHookResult = useAdminAddTripForm({ allLocations });
+
+  const formLogic = isAdmin ? adminHookResult : companyHookResult;
+
+  const {
+    activeStep,
+    loading,
+    isCalculating,
+    formData,
+    handleNext,
+    handleBack,
+    handleSave,
+    handleFormChange,
+    addRouteStop,
+    removeRouteStop,
+    updateRouteStop,
+  } = formLogic;
+
   useEffect(() => {
-    const fetchCompanyName = async () => {
-      if (user?.companyId && typeof user.companyId === "string") {
+    const fetchVehicles = async () => {
+      if (formData.companyId) {
+        setLoadingVehicles(true);
         try {
-          const companyDetails = await getCompanyDetails(user.companyId);
-          setCompanyName(companyDetails.name);
+          const data = await getVehiclesByCompany(formData.companyId);
+          setCompanyVehicles(data.filter((v) => v.status === "active"));
         } catch (error) {
-          console.error("Failed to fetch company name", error);
-          setCompanyName("Không tìm thấy tên");
+          console.error("Failed to fetch vehicles", error);
+        } finally {
+          setLoadingVehicles(false);
         }
-      } else if (user?.companyId && typeof user.companyId === "object") {
-        setCompanyName(user.companyId.name || "Tên không xác định");
       }
     };
-    fetchCompanyName();
-  }, [user?.companyId]);
-
-  const debouncedLocationSearch = useMemo(
-    () =>
-      debounce(async (query: string) => {
-        if (query.length > 1) {
-          setLoadingLocations(true);
-          const results = await searchLocations(query);
-          setSearchedLocations(results);
-          setLoadingLocations(false);
-        } else {
-          setSearchedLocations(allLocations);
-        }
-      }, 500),
-    [allLocations]
-  );
-
-  useEffect(() => {
-    return () => {
-      debouncedLocationSearch.cancel();
-    };
-  }, [debouncedLocationSearch]);
+    fetchVehicles();
+  }, [formData.companyId]);
 
   const renderStepContent = (step: number) => {
     switch (step) {
@@ -159,6 +112,7 @@ const AddTripPage: React.FC = () => {
             onRemoveStop={removeRouteStop}
             onUpdateStop={updateRouteStop}
             allLocations={allLocations}
+            isCalculating={isCalculating}
           />
         );
       case 2:
@@ -172,17 +126,27 @@ const AddTripPage: React.FC = () => {
             vehicleData={companyVehicles.find(
               (v) => v._id === formData.vehicleId
             )}
-            fromLocationData={searchedLocations.find(
+            fromLocationData={allLocations.find(
               (l) => l._id === formData.fromLocationId
             )}
-            toLocationData={searchedLocations.find(
+            toLocationData={allLocations.find(
               (l) => l._id === formData.toLocationId
             )}
-            stopsData={formData.stops.map((s) => ({
-              ...searchedLocations.find((l) => l._id === s.locationId)!,
-              arrivalTime: s.expectedArrivalTime?.toISOString(),
-              departureTime: s.expectedDepartureTime?.toISOString(),
-            }))}
+            stopsData={formData.stops
+              .map((s) => {
+                const locationInfo = allLocations.find(
+                  (l) => l._id === s.locationId
+                );
+                if (!locationInfo) return null;
+                return {
+                  ...locationInfo,
+                  arrivalTime: s.expectedArrivalTime?.toISOString(),
+                  departureTime: s.expectedDepartureTime?.toISOString(),
+                };
+              })
+              .filter(
+                (item): item is NonNullable<typeof item> => item !== null
+              )}
           />
         );
       default:
@@ -194,7 +158,7 @@ const AddTripPage: React.FC = () => {
     <Container maxWidth="lg" sx={{ py: 4 }}>
       <Paper elevation={3} sx={{ p: 4 }}>
         <Typography variant="h4" sx={{ fontWeight: 700, mb: 4 }}>
-          Thêm chuyến xe cho nhà xe: {formLogic.companyName}{" "}
+          Thêm chuyến xe cho nhà xe: {formLogic.companyName}
         </Typography>
         <Stepper activeStep={activeStep} orientation="vertical">
           {steps.map((label, index) => (
@@ -217,9 +181,13 @@ const AddTripPage: React.FC = () => {
                       variant="contained"
                       startIcon={<Save />}
                       onClick={handleSave}
-                      disabled={loading}
+                      disabled={loading || isCalculating}
                     >
-                      {loading ? "Đang lưu..." : "Lưu chuyến xe"}
+                      {loading
+                        ? "Đang lưu..."
+                        : isCalculating
+                        ? "Đang tính toán..."
+                        : "Lưu chuyến xe"}
                     </Button>
                   )}
                 </Box>

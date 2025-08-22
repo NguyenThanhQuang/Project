@@ -1,11 +1,16 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store";
+import type { Location } from "../../../types";
 import { getCompanyDetails } from "../../admin/services/vehicleAdminService";
 import { createTrip } from "../services/tripCompanyService";
 import { useTripFormLogic } from "./useTripFormLogic";
 
-const useAddTripForm = () => {
+interface UseAddTripFormProps {
+  allLocations: Location[];
+}
+
+export const useAddTripForm = ({ allLocations }: UseAddTripFormProps) => {
   const { user } = useSelector((state: RootState) => state.auth);
   const [companyName, setCompanyName] = useState("Nhà xe của bạn");
 
@@ -47,6 +52,7 @@ const useAddTripForm = () => {
     initialCompanyId: getInitialCompanyId(),
     saveFunction: createTrip,
     onSuccessRedirectPath: () => "/manage-trips",
+    allLocations: allLocations,
   });
 
   return {

@@ -60,3 +60,13 @@ export const updateVehicle = async (
 export const deleteVehicle = async (id: string): Promise<void> => {
   await api.delete(`/vehicles/${id}`);
 };
+
+/**
+ * Lấy thông tin chi tiết đầy đủ của một xe.
+ * @param id ID của xe cần lấy thông tin.
+ * @returns Promise chứa thông tin Vehicle đầy đủ.
+ */
+export const getVehicleDetails = async (id: string): Promise<Vehicle> => {
+  const response = await api.get<Vehicle>(`/vehicles/${id}`);
+  return response.data;
+};

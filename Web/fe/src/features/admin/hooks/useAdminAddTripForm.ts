@@ -3,10 +3,17 @@ import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useNotification } from "../../../components/common/NotificationProvider";
 import type { RootState } from "../../../store";
+import type { Location } from "../../../types";
 import { useTripFormLogic } from "../../company/hooks/useTripFormLogic";
 import { createTripForCompany } from "../services/tripAdminService";
 
-export const useAdminAddTripForm = () => {
+interface UseAdminAddTripFormProps {
+  allLocations: Location[];
+}
+
+export const useAdminAddTripForm = ({
+  allLocations,
+}: UseAdminAddTripFormProps) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { showNotification } = useNotification();
@@ -30,6 +37,7 @@ export const useAdminAddTripForm = () => {
     initialCompanyId: companyInfo?.companyId || "",
     saveFunction: createTripForCompany,
     onSuccessRedirectPath: (companyId) => `/admin/companies/${companyId}/trips`,
+    allLocations: allLocations,
   });
 
   return {

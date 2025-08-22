@@ -86,7 +86,7 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
   const getInitialState = useCallback(() => {
     if (isEditMode && vehicleToEdit) {
       setFormData({
-        companyId: vehicleToEdit.companyId,
+        companyId: vehicleToEdit.companyId._id,
         type: vehicleToEdit.type,
         vehicleNumber: vehicleToEdit.vehicleNumber,
         status: vehicleToEdit.status,

@@ -7,6 +7,12 @@ import {
 } from '@nestjs/common';
 import { firstValueFrom } from 'rxjs';
 
+export interface RouteInfo {
+  polyline: string;
+  duration: number;
+  distance: number;
+}
+
 @Injectable()
 export class MapsService {
   private readonly logger = new Logger(MapsService.name);
@@ -15,24 +21,28 @@ export class MapsService {
   constructor(private readonly httpService: HttpService) {}
 
   /**
-   * Lấy thông tin tuyến đường và polyline từ OSRM
+   * Lấy thông tin tuyến đường (polyline, duration, distance) từ OSRM
    * @param coordinates Mảng các tọa độ [longitude, latitude]
-   * @returns Chuỗi polyline được mã hóa
+   * @returns Một object chứa thông tin tuyến đường
    */
-  async getRoutePolyline(coordinates: [number, number][]): Promise<string> {
+  async getRouteInfo(coordinates: [number, number][]): Promise<RouteInfo> {
     if (!coordinates || coordinates.length < 2) {
       throw new BadRequestException('Cần ít nhất 2 tọa độ để tạo tuyến đường.');
     }
 
     const coordsString = coordinates.map((c) => c.join(',')).join(';');
-    const url = `${this.OSRM_BASE_URL}/route/v1/driving/${coordsString}?overview=full&geometries=polyline`;
+    const url = `${this.OSRM_BASE_URL}/route/v1/driving/${coordsString}?overview=full&geometries=polyline&annotations=duration,distance`;
 
     this.logger.log(`Requesting route from OSRM: ${url}`);
 
     try {
       interface OsrmRouteResponse {
         code: string;
-        routes: { geometry: string }[];
+        routes: {
+          geometry: string;
+          duration: number;
+          distance: number;
+        }[];
         [key: string]: any;
       }
 
@@ -40,15 +50,17 @@ export class MapsService {
         this.httpService.get<OsrmRouteResponse>(url),
       );
 
-      if (
-        response.data &&
-        response.data.code === 'Ok' &&
-        response.data.routes &&
-        response.data.routes.length > 0
-      ) {
-        const polyline = response.data.routes[0].geometry;
-        this.logger.log(`Successfully retrieved polyline.`);
-        return polyline;
+      const route = response.data?.routes?.[0];
+
+      if (response.data?.code === 'Ok' && route) {
+        this.logger.log(
+          `Successfully retrieved route info. Duration: ${route.duration}s, Distance: ${route.distance}m.`,
+        );
+        return {
+          polyline: route.geometry,
+          duration: route.duration,
+          distance: route.distance,
+        };
       } else {
         this.logger.error(
           'OSRM API did not return a valid route.',

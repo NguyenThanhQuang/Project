@@ -59,16 +59,13 @@ export interface SeatMap {
 export interface Location {
   _id: string;
   name: string;
-  slug: string;
   province: string;
-  district?: string;
   fullAddress: string;
   location: {
     type: "Point";
     coordinates: [number, number];
   };
-  type: LocationType;
-  images?: string[];
+  type: string;
   isActive: boolean;
 }
 

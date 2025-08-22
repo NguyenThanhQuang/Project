@@ -29,6 +29,7 @@ interface ScheduleStepProps {
     value: RouteStopFormState[K]
   ) => void;
   allLocations: Location[];
+  isCalculating: boolean;
 }
 
 const ScheduleStep: React.FC<ScheduleStepProps> = ({
@@ -38,6 +39,7 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
   onRemoveStop,
   onUpdateStop,
   allLocations,
+  isCalculating,
 }) => {
   return (
     <Grid container spacing={3}>
@@ -75,9 +77,11 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
           value={formData.expectedArrivalTime}
           onChange={(value) => onFormChange("expectedArrivalTime", value)}
           sx={{ width: "100%" }}
+          readOnly
           slotProps={{
             textField: {
               required: true,
+              helperText: isCalculating ? " " : "Tự động tính toán",
             },
           }}
         />
@@ -145,10 +149,8 @@ const ScheduleStep: React.FC<ScheduleStepProps> = ({
                   <Grid size={{ xs: 12 }}>
                     <Autocomplete
                       fullWidth
-                      options={stopOptions} // Dùng danh sách đã lọc
+                      options={stopOptions}
                       getOptionLabel={(option) => option.name}
-                      // Bỏ onInputChange
-                      // Tìm giá trị hiện tại để hiển thị
                       value={
                         allLocations.find((l) => l._id === stop.locationId) ||
                         null

@@ -98,6 +98,12 @@ export class RouteInfo {
 
   @Prop({ type: String })
   polyline?: string; // Chuỗi mã hóa polyline để vẽ trên bản đồ
+
+  @Prop({ type: Number })
+  duration?: number; // Thời gian di chuyển (giây)
+
+  @Prop({ type: Number })
+  distance?: number; // Quãng đường (mét)
 }
 export const RouteInfoSchema = SchemaFactory.createForClass(RouteInfo);
 

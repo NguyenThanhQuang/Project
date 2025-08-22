@@ -1,6 +1,9 @@
-import { useState } from "react";
+import dayjs from "dayjs";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../../components/common/NotificationProvider";
+import { calculateRouteInfo } from "../../../services/mapService";
+import type { Location } from "../../../types";
 import { getErrorMessage } from "../../../utils/getErrorMessage";
 import type {
   AddTripFormState,
@@ -11,20 +14,23 @@ import type {
 interface UseTripFormLogicProps {
   initialCompanyId: string;
   saveFunction: (payload: CreateTripPayload) => Promise<unknown>;
-  // saveFunction: (payload: CreateTripPayload) => Promise<Trip | AdminTrip>; //Rõ ràng hơn
   onSuccessRedirectPath: (companyId: string) => string;
+  allLocations: Location[];
 }
 
 export const useTripFormLogic = ({
   initialCompanyId,
   saveFunction,
   onSuccessRedirectPath,
+  allLocations,
 }: UseTripFormLogicProps) => {
   const navigate = useNavigate();
   const { showNotification } = useNotification();
 
   const [activeStep, setActiveStep] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [isCalculating, setIsCalculating] = useState(false);
+
   const [formData, setFormData] = useState<AddTripFormState>({
     companyId: initialCompanyId,
     vehicleId: null,
@@ -35,6 +41,90 @@ export const useTripFormLogic = ({
     price: 0,
     stops: [],
   });
+
+  useEffect(() => {
+    const calculateAndSetTimes = async () => {
+      if (
+        !formData.fromLocationId ||
+        !formData.toLocationId ||
+        !formData.departureTime ||
+        allLocations.length === 0
+      ) {
+        return;
+      }
+
+      const waypointsCoords: [number, number][] = [];
+
+      const fromLocation = allLocations.find(
+        (l) => l._id === formData.fromLocationId
+      );
+      if (fromLocation) waypointsCoords.push(fromLocation.location.coordinates);
+
+      formData.stops.forEach((stop) => {
+        const stopLocation = allLocations.find(
+          (l) => l._id === stop.locationId
+        );
+        if (stopLocation)
+          waypointsCoords.push(stopLocation.location.coordinates);
+      });
+
+      const toLocation = allLocations.find(
+        (l) => l._id === formData.toLocationId
+      );
+      if (toLocation) waypointsCoords.push(toLocation.location.coordinates);
+
+      if (waypointsCoords.length < 2) return;
+
+      setIsCalculating(true);
+      try {
+        const routeInfo = await calculateRouteInfo(
+          waypointsCoords.map((coords) => ({
+            longitude: coords[0],
+            latitude: coords[1],
+          }))
+        );
+
+        const totalStopTimeInSeconds = formData.stops.reduce((total, stop) => {
+          if (stop.expectedArrivalTime && stop.expectedDepartureTime) {
+            const stopDuration = stop.expectedDepartureTime.diff(
+              stop.expectedArrivalTime,
+              "second"
+            );
+            return total + (stopDuration > 0 ? stopDuration : 0);
+          }
+          return total;
+        }, 0);
+
+        const totalDurationInSeconds =
+          routeInfo.duration + totalStopTimeInSeconds;
+        const newArrivalTime = formData.departureTime.add(
+          totalDurationInSeconds,
+          "second"
+        );
+
+        setFormData((prev) => ({
+          ...prev,
+          expectedArrivalTime: dayjs(newArrivalTime),
+        }));
+      } catch (err) {
+        showNotification(
+          getErrorMessage(err, "Lỗi khi tính toán thời gian di chuyển."),
+          "error"
+        );
+      } finally {
+        setIsCalculating(false);
+      }
+    };
+
+    calculateAndSetTimes();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [
+    formData.fromLocationId,
+    formData.toLocationId,
+    formData.departureTime,
+    formData.stops,
+    allLocations.length,
+  ]);
 
   const handleFormChange = <K extends keyof AddTripFormState>(
     field: K,
@@ -126,6 +216,7 @@ export const useTripFormLogic = ({
   return {
     activeStep,
     loading,
+    isCalculating,
     formData,
     handleNext,
     handleBack,
