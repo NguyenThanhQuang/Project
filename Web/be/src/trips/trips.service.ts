@@ -8,7 +8,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import * as dayjs from 'dayjs';
 import * as utc from 'dayjs/plugin/utc';
-import { Connection, FilterQuery, Model, Types } from 'mongoose';
+import { Connection, Model, Types } from 'mongoose';
 import { CompanyStatus } from 'src/companies/schemas/company.schema';
 import {
   Booking,
@@ -34,6 +34,34 @@ import {
   TripStopStatus,
 } from './schemas/trip.schema';
 dayjs.extend(utc);
+
+interface PopulatedPublicTrip {
+  _id: Types.ObjectId;
+  companyId?: {
+    _id: Types.ObjectId;
+    name: string;
+    logoUrl?: string;
+    status: CompanyStatus;
+  } | null;
+  vehicleId?: {
+    _id: Types.ObjectId;
+    type: string;
+  } | null;
+  route: {
+    fromLocationId?: {
+      _id: Types.ObjectId;
+      name: string;
+      province: string;
+    } | null;
+    toLocationId?: {
+      _id: Types.ObjectId;
+      name: string;
+      province: string;
+    } | null;
+  };
+  departureTime: Date;
+  price: number;
+}
 @Injectable()
 export class TripsService {
   constructor(
@@ -234,109 +262,57 @@ export class TripsService {
    * @param {QueryTripsDto} queryTripsDto - Dữ liệu tìm kiếm.
    * @returns {Promise<any[]>} - Danh sách các chuyến đi phù hợp, đã được xử lý để hiển thị.
    */
-  async findPublicTrips(
-    queryTripsDto: QueryTripsDto,
-  ): Promise<{ trips: any[]; filters: any }> {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { from, to, passengers = 1 } = queryTripsDto;
+  async findPublicTrips(queryTripsDto: QueryTripsDto): Promise<any[]> {
+    const { from, to, date } = queryTripsDto;
 
-    const [fromLocations, toLocations] = await Promise.all([
-      this.locationsService.findAll({ province: new RegExp(from, 'i') }),
-      this.locationsService.findAll({ province: new RegExp(to, 'i') }),
-    ]);
+    const startOfDay = dayjs.utc(date).startOf('day').toDate();
+    const endOfDay = dayjs.utc(date).endOf('day').toDate();
 
-    if (fromLocations.length === 0 || toLocations.length === 0) {
-      return {
-        trips: [],
-        filters: { companies: [], vehicleTypes: [], maxPrice: 0 },
-      };
-    }
+    const tripsInDay = await this.tripModel
+      .find({
+        departureTime: { $gte: startOfDay, $lte: endOfDay },
+        status: TripStatus.SCHEDULED,
+      })
+      .populate<{ companyId: PopulatedPublicTrip['companyId'] }>({
+        path: 'companyId',
+        select: 'name logoUrl status',
+      })
+      .populate<{ vehicleId: PopulatedPublicTrip['vehicleId'] }>({
+        path: 'vehicleId',
+        select: 'type',
+      })
+      .populate<{ route: PopulatedPublicTrip['route'] }>({
+        path: 'route.fromLocationId',
+        select: 'name province',
+      })
+      .populate<{ route: PopulatedPublicTrip['route'] }>({
+        path: 'route.toLocationId',
+        select: 'name province',
+      })
+      .lean()
+      .exec();
 
-    const fromLocationIds = fromLocations.map((loc) => loc._id);
-    const toLocationIds = toLocations.map((loc) => loc._id);
+    // --- BƯỚC 2: ÉP KIỂU VÀ LỌC VỚI TYPE SAFETY ---
+    const finalTrips = (tripsInDay as PopulatedPublicTrip[]).filter((trip) => {
+      // Điều kiện 1: Nhà xe phải tồn tại và đang hoạt động
+      const isCompanyActive = trip.companyId?.status === CompanyStatus.ACTIVE;
 
-    const query: FilterQuery<Trip> = {
-      'route.fromLocationId': { $in: fromLocationIds },
-      'route.toLocationId': { $in: toLocationIds },
-    };
+      // Lấy thông tin tỉnh/thành một cách an toàn
+      const fromProvince = trip.route.fromLocationId?.province;
+      const toProvince = trip.route.toLocationId?.province;
 
-    const allTripsFromDb = (await this.tripModel.aggregate([
-      { $match: query },
+      // Điều kiện 2 & 3: Tỉnh đi và đến phải tồn tại và khớp
+      const isFromMatch = fromProvince
+        ? fromProvince.toLowerCase() === from.toLowerCase()
+        : false;
+      const isToMatch = toProvince
+        ? toProvince.toLowerCase() === to.toLowerCase()
+        : false;
 
-      {
-        $lookup: {
-          from: 'companies',
-          localField: 'companyId',
-          foreignField: '_id',
-          as: 'companyDetails',
-        },
-      },
-      { $unwind: '$companyDetails' },
+      return isCompanyActive && isFromMatch && isToMatch;
+    });
 
-      {
-        $match: {
-          'companyDetails.status': CompanyStatus.ACTIVE,
-        },
-      },
-
-      {
-        $lookup: {
-          from: 'vehicles',
-          localField: 'vehicleId',
-          foreignField: '_id',
-          as: 'vehicleDetails',
-        },
-      },
-      { $unwind: '$vehicleDetails' },
-      {
-        $lookup: {
-          from: 'locations',
-          localField: 'route.fromLocationId',
-          foreignField: '_id',
-          as: 'fromLocationDetails',
-        },
-      },
-      { $unwind: '$fromLocationDetails' },
-      {
-        $lookup: {
-          from: 'locations',
-          localField: 'route.toLocationId',
-          foreignField: '_id',
-          as: 'toLocationDetails',
-        },
-      },
-      { $unwind: '$toLocationDetails' },
-
-      {
-        $project: {
-          _id: 1,
-          departureTime: 1,
-          expectedArrivalTime: 1,
-          price: 1,
-          seats: 1,
-          companyId: {
-            _id: '$companyDetails._id',
-            name: '$companyDetails.name',
-            logoUrl: '$companyDetails.logoUrl',
-          },
-          vehicleId: {
-            _id: '$vehicleDetails._id',
-            type: '$vehicleDetails.type',
-          },
-          route: {
-            fromLocationId: '$fromLocationDetails',
-            toLocationId: '$toLocationDetails',
-          },
-        },
-      },
-    ])) as unknown as PopulatedTripForFiltering[];
-
-    const filters = this.extractFilterOptions(allTripsFromDb);
-
-    return {
-      trips: allTripsFromDb,
-      filters,
-    };
+    return finalTrips;
   }
   /**
    * @description Tìm kiếm chuyến đi cho mục đích quản lý.

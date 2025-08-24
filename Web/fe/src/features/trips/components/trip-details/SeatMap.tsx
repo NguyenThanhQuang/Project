@@ -1,5 +1,5 @@
 import React from "react";
-import { Box, Typography, Grid, CardContent, Paper } from "@mui/material";
+import { Box, Typography, CardContent, Paper, Grid } from "@mui/material";
 import type { FrontendSeat, TripDetailView } from "../../../../types";
 
 interface SeatMapProps {
@@ -56,9 +56,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
   };
 
   const renderFloor = (seats: FrontendSeat[], floorName: string) => {
-    const { seatLayout } = trip;
-    const maxColumns = seatLayout.columns;
-    const aislePosition = seatLayout.aisleAfterColumn ?? 2;
+    const maxColumns = Math.max(...seats.map((s) => s.position.column)) + 1;
 
     return (
       <Box sx={{ mb: 4 }}>
@@ -72,60 +70,37 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           sx={{
             display: "grid",
             gridTemplateColumns: `repeat(${maxColumns}, 1fr)`,
-            gap: 1,
-            maxWidth: seatLayout.floors === 2 ? 400 : 500,
+            gap: { xs: "6px", sm: "8px" },
+            maxWidth: 350,
             mx: "auto",
             p: 2,
-            border: "2px solid #e0e0e0",
+            border: "1px solid #e0e0e0",
             borderRadius: 2,
             position: "relative",
           }}
         >
-          {/* Driver area */}
-          <Box
-            sx={{
-              gridColumn: "1 / -1",
-              height: 40,
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              bgcolor: "grey.100",
-              borderRadius: 1,
-              mb: 1,
-            }}
-          >
-            <Typography variant="body2" color="text.secondary">
-              🚗 Tài xế
-            </Typography>
-          </Box>
-
           {seats.map((seat) => (
             <Box
               key={seat.id}
               sx={{
-                gridColumn: `${seat.position.column + 1} / span 1`, // Vị trí cột
-                gridRow: `${seat.position.row + 2} / span 1`, // Vị trí hàng (cộng 2 vì có khu vực tài xế)
+                gridColumn: `${seat.position.column + 1} / span 1`,
+                gridRow: `${seat.position.row + 1} / span 1`,
                 aspectRatio: "1",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
                 bgcolor: getSeatColor(seat),
-                border: `2px solid ${getSeatBorderColor(seat)}`,
-                borderRadius: 1,
+                border: `1px solid ${getSeatBorderColor(seat)}`,
+                borderRadius: "4px",
                 cursor: seat.status === "available" ? "pointer" : "not-allowed",
                 transition: "all 0.2s ease",
-                position: "relative",
                 "&:hover":
                   seat.status === "available"
                     ? {
-                        transform: "scale(1.05)",
-                        boxShadow: "0 4px 8px rgba(0,0,0,0.2)",
+                        transform: "scale(1.1)",
+                        boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
                       }
                     : {},
-                // Một chút margin để tạo lối đi
-                ...(seat.position.column === aislePosition - 1 && {
-                  marginRight: "24px",
-                }),
               }}
               onClick={() => onSeatSelect(seat.id, seat.status)}
             >
@@ -133,11 +108,11 @@ export const SeatMap: React.FC<SeatMapProps> = ({
                 variant="caption"
                 sx={{
                   fontWeight: 600,
-                  fontSize: "0.7rem",
+                  fontSize: "0.65rem", // Chữ nhỏ hơn
                   color: selectedSeats.includes(seat.id)
                     ? "white"
                     : seat.status === "booked"
-                    ? "#666"
+                    ? "#757575" // Màu chữ cho ghế đã bán
                     : "text.primary",
                 }}
               >
@@ -174,90 +149,58 @@ export const SeatMap: React.FC<SeatMapProps> = ({
         </Typography>
       </Box>
       <CardContent sx={{ p: { xs: 2, md: 4 } }}>
+        {/* --- THAY ĐỔI CHÍNH NẰM Ở ĐÂY --- */}
         {trip.seatLayout.floors === 2 ? (
-          <>
-            {renderFloor(
-              firstFloorSeats,
-              `Tầng 1 (${formatPrice(trip.price)})`
-            )}
-            {renderFloor(
-              secondFloorSeats,
-              `Tầng 2 (${formatPrice(trip.price)})`
-            )}
-          </>
+          <Grid container spacing={4} justifyContent="center">
+            {/* Cột cho Tầng 1 */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              {renderFloor(firstFloorSeats, `Tầng 1`)}
+            </Grid>
+            {/* Cột cho Tầng 2 */}
+            <Grid size={{ xs: 12, md: 6 }}>
+              {renderFloor(secondFloorSeats, `Tầng 2`)}
+            </Grid>
+          </Grid>
         ) : (
+          // Nếu chỉ có 1 tầng thì render như cũ
           renderFloor(
             firstFloorSeats,
             `Xe ghế ngồi (${formatPrice(trip.price)})`
           )
         )}
-
         {/* Legend */}
-        <Box sx={{ mt: 4 }}>
-          <Typography
-            variant="subtitle2"
-            sx={{ mb: 2, fontWeight: 600, textAlign: "center" }}
-          >
-            Chú thích
-          </Typography>
-          <Grid container spacing={2} sx={{ justifyContent: "center" }}>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    bgcolor: "#e8f5e8",
-                    border: "2px solid #4caf50",
-                    borderRadius: 0.5,
-                  }}
-                />
-                <Typography variant="caption">Ghế trống</Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    bgcolor: "#2196f3",
-                    border: "2px solid #2196f3",
-                    borderRadius: 0.5,
-                  }}
-                />
-                <Typography variant="caption">Đã chọn</Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    bgcolor: "#ffecb3",
-                    border: "2px solid #ff9800",
-                    borderRadius: 0.5,
-                  }}
-                />
-                <Typography variant="caption">Đang giữ</Typography>
-              </Box>
-            </Grid>
-            <Grid size={{ xs: 6, sm: 3 }}>
-              <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                <Box
-                  sx={{
-                    width: 20,
-                    height: 20,
-                    bgcolor: "#e0e0e0",
-                    border: "2px solid #9e9e9e",
-                    borderRadius: 0.5,
-                  }}
-                />
-                <Typography variant="caption">Đã bán</Typography>
-              </Box>
-            </Grid>
-          </Grid>
+        // Vị trí: Phần JSX của "Chú thích" ở cuối file SeatMap.tsx
+        <Box
+          sx={{
+            mt: 4,
+            display: "flex",
+            justifyContent: "center",
+            gap: 3,
+            flexWrap: "wrap",
+          }}
+        >
+          {[
+            { label: "Ghế trống", color: "#e8f5e8", borderColor: "#4caf50" },
+            { label: "Đã chọn", color: "#2196f3", borderColor: "#2196f3" },
+            { label: "Đang giữ", color: "#ffecb3", borderColor: "#ff9800" },
+            { label: "Đã bán", color: "#e0e0e0", borderColor: "#9e9e9e" },
+          ].map((item) => (
+            <Box
+              key={item.label}
+              sx={{ display: "flex", alignItems: "center", gap: 1 }}
+            >
+              <Box
+                sx={{
+                  width: 18,
+                  height: 18,
+                  bgcolor: item.color,
+                  border: `1px solid ${item.borderColor}`,
+                  borderRadius: 0.5,
+                }}
+              />
+              <Typography variant="body2">{item.label}</Typography>
+            </Box>
+          ))}
         </Box>
       </CardContent>
     </Paper>

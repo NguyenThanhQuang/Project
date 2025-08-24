@@ -2,12 +2,15 @@ import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import api from "../../../services/api";
 import type {
+  FilterOptions,
   FrontendSeat,
   PopulatedTrip,
   SearchTripsResponse,
-  SeatStatus,
+  SeatStatus, // Giữ lại type này để API call
   TripDetailView,
+  TripSearchResult,
 } from "../../../types";
+import type { CompanyReference } from "../../admin/types/vehicle";
 dayjs.extend(duration);
 
 interface SearchTripsParams {
@@ -17,21 +20,49 @@ interface SearchTripsParams {
   passengers: number;
 }
 
+const extractFilterOptions = (trips: TripSearchResult[]): FilterOptions => {
+  const companies = new Map<string, CompanyReference>();
+  const vehicleTypes = new Set<string>();
+  let maxPrice = 0;
+
+  trips.forEach((trip) => {
+    if (trip.companyId) {
+      companies.set(trip.companyId._id, trip.companyId);
+    }
+    if (trip.vehicleId) {
+      vehicleTypes.add(trip.vehicleId.type);
+    }
+    if (trip.price > maxPrice) {
+      maxPrice = trip.price;
+    }
+  });
+
+  return {
+    companies: Array.from(companies.values()),
+    vehicleTypes: Array.from(vehicleTypes),
+    maxPrice: maxPrice > 0 ? maxPrice : 1000000, // Giá trị mặc định nếu không có chuyến nào
+  };
+};
+
 export const searchTrips = async (
   params: SearchTripsParams
 ): Promise<SearchTripsResponse> => {
   try {
-    const response = await api.get<SearchTripsResponse>("/trips", { params });
-    return response.data;
+    // THAY ĐỔI 1: Mong đợi một mảng TripSearchResult[] từ API
+    const response = await api.get<TripSearchResult[]>("/trips", { params });
+    const trips = response.data;
+
+    // THAY ĐỔI 2: Tự tính toán bộ lọc từ kết quả
+    const filters = extractFilterOptions(trips);
+
+    // THAY ĐỔI 3: Trả về đối tượng có cấu trúc mà trang đang mong đợi
+    return { trips, filters };
   } catch (error) {
     console.error("Error searching trips:", error);
+    // Trả về cấu trúc rỗng để không làm crash trang
     return {
       trips: [],
-      filters: {
-        companies: [],
-        vehicleTypes: [],
-        maxPrice: 0,
-      },
+      filters: { companies: [], vehicleTypes: [], maxPrice: 0 },
     };
   }
 };
@@ -51,15 +82,14 @@ const mapPopulatedTripToView = (trip: PopulatedTrip): TripDetailView => {
     floors: 1 | 2;
   } => {
     const frontendSeats: FrontendSeat[] = [];
-    const seatMap = trip.vehicleId.seatMap;
-    let floors: 1 | 2 = 1;
+    const { seatMap, seatMapFloor2, floors: vehicleFloors } = trip.vehicleId;
 
     const backendSeatStatusMap = new Map<string, SeatStatus>();
     trip.seats.forEach((s) => {
       backendSeatStatusMap.set(s.seatNumber, s.status);
     });
 
-    if (seatMap && seatMap.layout && seatMap.layout.length > 0) {
+    if (seatMap && seatMap.layout) {
       seatMap.layout.forEach((row, rowIndex) => {
         row.forEach((seatNumber, colIndex) => {
           if (seatNumber) {
@@ -76,27 +106,28 @@ const mapPopulatedTripToView = (trip: PopulatedTrip): TripDetailView => {
           }
         });
       });
+    }
 
-      if (trip.seats.length > frontendSeats.length) {
-        floors = 2;
-        const firstFloorSeatNumbers = new Set(
-          frontendSeats.map((s) => s.seatNumber)
-        );
-        trip.seats.forEach((backendSeat) => {
-          if (!firstFloorSeatNumbers.has(backendSeat.seatNumber)) {
+    if (vehicleFloors > 1 && seatMapFloor2 && seatMapFloor2.layout) {
+      seatMapFloor2.layout.forEach((row, rowIndex) => {
+        row.forEach((seatNumber, colIndex) => {
+          if (seatNumber) {
+            const seatNumStr = String(seatNumber);
             frontendSeats.push({
-              id: backendSeat.seatNumber,
-              seatNumber: backendSeat.seatNumber,
-              status: backendSeat.status,
+              id: seatNumStr,
+              seatNumber: seatNumStr,
+              status: backendSeatStatusMap.get(seatNumStr) || "booked",
               price: trip.price,
-              position: { row: 0, column: 0 },
+              position: { row: rowIndex, column: colIndex },
               floor: 2,
               type: "normal",
             });
           }
         });
-      }
-    } else {
+      });
+    }
+
+    if (frontendSeats.length === 0) {
       trip.seats.forEach((backendSeat, index) => {
         frontendSeats.push({
           id: backendSeat.seatNumber,
@@ -104,13 +135,13 @@ const mapPopulatedTripToView = (trip: PopulatedTrip): TripDetailView => {
           status: backendSeat.status,
           price: trip.price,
           position: { row: Math.floor(index / 5), column: index % 5 },
-          floor: 1,
+          floor: backendSeat.seatNumber.startsWith("B") ? 2 : 1,
           type: "normal",
         });
       });
     }
 
-    return { seats: frontendSeats, floors };
+    return { seats: frontendSeats, floors: vehicleFloors > 1 ? 2 : 1 };
   };
 
   const { seats: frontendSeats, floors } = generateFrontendSeats();
