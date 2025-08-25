@@ -3,7 +3,6 @@ import {
   Controller,
   Delete,
   Param,
-  Patch,
   Post,
   Req,
   UseGuards,
@@ -36,16 +35,6 @@ export class BookingsController {
     @Req() req: AuthenticatedRequest,
   ) {
     return this.bookingsService.createHold(createDto, req.user);
-  }
-
-  /**
-   * @description [MOCK-INTERNAL] API giả lập xác nhận thanh toán thành công
-   * @route PATCH /api/bookings/:id/mock-confirm-payment
-   */
-  @Patch(':id/mock-confirm-payment')
-  // Không cần guard, hoặc có thể tạo một guard đặc biệt cho việc test
-  confirmBooking(@Param('id', ParseMongoIdPipe) id: string) {
-    return this.bookingsService.confirmBooking(id);
   }
 
   /**

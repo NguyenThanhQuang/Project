@@ -13,6 +13,7 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { UserDocument } from '../users/schemas/user.schema';
 import { CreatePaymentLinkDto } from './dto/create-payment-link.dto';
 import { PaymentsService } from './payments.service';
+import { PayOSWebhookDto } from './dto/payos-webhook.dto';
 
 interface AuthenticatedRequest extends Request {
   user?: UserDocument;
@@ -40,7 +41,7 @@ export class PaymentsController {
 
     return this.paymentsService.createPaymentLink(
       createPaymentLinkDto,
-      req.user, // Bây giờ req.user chắc chắn là UserDocument
+      req.user,
     );
   }
 
@@ -49,9 +50,9 @@ export class PaymentsController {
    * @route POST /api/payments/webhook
    */
   @Post('webhook')
-  @HttpCode(HttpStatus.OK) // Luôn trả về 200 OK ngay lập tức cho PayOS
-  handlePayOSWebhook(@Body() webhookData: any) {
-    // Gọi đến service (hiện tại đang rỗng)
-    return this.paymentsService.handleWebhook(webhookData);
+  @HttpCode(HttpStatus.OK)
+  async handlePayOSWebhook(@Body() webhookData: PayOSWebhookDto) {
+    await this.paymentsService.handleWebhook(webhookData);
+    return { message: 'Webhook received' };
   }
 }

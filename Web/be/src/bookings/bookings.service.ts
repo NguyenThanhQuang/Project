@@ -4,6 +4,7 @@ import {
   ForbiddenException,
   Injectable,
   InternalServerErrorException,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
@@ -25,6 +26,7 @@ import {
 
 @Injectable()
 export class BookingsService {
+  private readonly logger = new Logger(BookingsService.name);
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     private readonly tripsService: TripsService,
@@ -138,7 +140,7 @@ export class BookingsService {
   }
 
   /**
-   * Bước 2 (Giả lập): Xác nhận thanh toán và hoàn tất booking
+   * Bước 2: Xác nhận thanh toán và hoàn tất booking
    */
   async confirmBooking(
     bookingId: string,

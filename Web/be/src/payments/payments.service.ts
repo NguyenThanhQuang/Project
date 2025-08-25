@@ -10,8 +10,9 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
 import PayOS from '@payos/node';
-import { WebhookType } from '@payos/node/lib/type';
+import * as crypto from 'crypto';
 import { Connection, Model } from 'mongoose';
+import { SeatStatus, Trip, TripDocument } from 'src/trips/schemas/trip.schema';
 import { BookingsService } from '../bookings/bookings.service';
 import {
   Booking,
@@ -19,9 +20,13 @@ import {
   BookingStatus,
   PaymentStatus,
 } from '../bookings/schemas/booking.schema';
-import { SeatStatus, Trip, TripDocument } from '../trips/schemas/trip.schema';
 import { UserDocument } from '../users/schemas/user.schema';
 import { CreatePaymentLinkDto } from './dto/create-payment-link.dto';
+import {
+  PayOSWebhookDataDto,
+  PayOSWebhookDto,
+  PayOSWebhookStatus,
+} from './dto/payos-webhook.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -92,33 +97,89 @@ export class PaymentsService {
     }
   }
 
-  async handleWebhook(webhookData: any): Promise<void> {
-    this.logger.log('Nhận được webhook từ PayOS');
+  async handleWebhook(webhookPayload: PayOSWebhookDto): Promise<void> {
+    this.logger.log(
+      `Received PayOS webhook for orderCode: ${webhookPayload.data?.orderCode}`,
+    );
+
+    const checksumKey = this.configService.get<string>('PAYOS_CHECKSUM_KEY');
+    if (!checksumKey) {
+      this.logger.error('PAYOS_CHECKSUM_KEY is not configured.');
+      return;
+    }
+
+    const dataObject: PayOSWebhookDataDto = webhookPayload.data;
+    const sortedDataKeys = Object.keys(
+      dataObject,
+    ).sort() as (keyof PayOSWebhookDataDto)[];
+
+    let dataToSign = '';
+    for (const key of sortedDataKeys) {
+      dataToSign += `${key}=${dataObject[key]}&`;
+    }
+    dataToSign = dataToSign.slice(0, -1);
+
+    const generatedSignature = crypto
+      .createHmac('sha256', checksumKey)
+      .update(dataToSign)
+      .digest('hex');
+
+    if (generatedSignature !== webhookPayload.signature) {
+      this.logger.warn(
+        `Webhook signature mismatch for orderCode: ${webhookPayload.data.orderCode}.`,
+      );
+      return;
+    }
+
+    this.logger.log('Webhook signature verified successfully.');
+
+    const { data } = webhookPayload;
+
+    if (data.status !== PayOSWebhookStatus.PAID) {
+      this.logger.log(
+        `Webhook for order ${data.orderCode} has status ${data.status}. Skipping.`,
+      );
+      return;
+    }
+
     try {
-      const verifiedData: WebhookType =
-        this.payOS.verifyPaymentWebhookData(webhookData);
+      const booking = await this.bookingModel
+        .findOne({
+          paymentOrderCode: data.orderCode,
+        })
+        .exec();
 
-      this.logger.log('Webhook đã được xác thực thành công.');
-
-      if (verifiedData.code === '00' && verifiedData.data?.status === 'PAID') {
-        const orderCode = verifiedData.data.orderCode;
-        this.logger.log(
-          `Xử lý thanh toán thành công cho orderCode: ${orderCode}`,
+      if (!booking) {
+        this.logger.error(
+          `Booking with paymentOrderCode ${data.orderCode} not found.`,
         );
-        await this.processSuccessfulPayment(orderCode);
-      } else {
-        this.logger.warn(
-          `Webhook không ở trạng thái PAID. Bỏ qua. Status: ${verifiedData.data?.status}`,
-        );
+        return;
       }
+
+      if (booking.status === BookingStatus.CONFIRMED) {
+        this.logger.warn(
+          `Booking ${booking._id.toString()} is already confirmed. Skipping.`,
+        );
+        return;
+      }
+
+      await this.bookingsService.confirmBooking(
+        booking._id.toString(),
+        data.amount,
+        'PayOS',
+        data.transactionDateTime,
+      );
+
+      this.logger.log(
+        `Successfully confirmed booking ${booking._id.toString()} via webhook.`,
+      );
     } catch (error) {
       this.logger.error(
-        'LỖI BẢO MẬT: Webhook từ PayOS không hợp lệ!',
-        (error as Error).message,
+        `Error processing webhook for orderCode ${data.orderCode}:`,
+        error,
       );
     }
   }
-
   private async processSuccessfulPayment(orderCode: number): Promise<void> {
     const session = await this.connection.startSession();
     session.startTransaction();

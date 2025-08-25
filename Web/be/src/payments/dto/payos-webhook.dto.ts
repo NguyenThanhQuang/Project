@@ -1,21 +1,40 @@
 import { Type } from 'class-transformer';
 import {
+  IsEnum,
   IsNotEmpty,
+  IsNumber,
   IsObject,
   IsString,
   ValidateNested,
 } from 'class-validator';
 
+export enum PayOSWebhookStatus {
+  PAID = 'PAID',
+  PENDING = 'PENDING',
+  PROCESSING = 'PROCESSING',
+  CANCELLED = 'CANCELLED',
+}
+
 export class PayOSWebhookDataDto {
+  @IsNumber()
+  @IsNotEmpty()
+  orderCode: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  amount: number;
+
   @IsString()
   @IsNotEmpty()
-  orderCode: string;
+  description: string;
 
-  // @IsNumber()
-  // amount: number;
+  @IsString()
+  @IsNotEmpty()
+  transactionDateTime: string;
 
-  // @IsString()
-  // status: string;
+  @IsEnum(PayOSWebhookStatus)
+  @IsNotEmpty()
+  status: PayOSWebhookStatus;
 }
 
 export class PayOSWebhookDto {
