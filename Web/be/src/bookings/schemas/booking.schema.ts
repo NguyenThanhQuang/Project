@@ -96,6 +96,9 @@ export class Booking {
 
   @Prop({ type: Types.ObjectId, ref: 'Company', required: true, index: true })
   companyId: Types.ObjectId;
+
+  @Prop({ type: Number, unique: true, sparse: true, index: true })
+  paymentOrderCode?: number;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);

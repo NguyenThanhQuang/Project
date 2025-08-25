@@ -15,6 +15,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { TripsModule } from './trips/trips.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     BookingsModule,
     NotificationsModule,
     DashboardModule,
+    PaymentsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

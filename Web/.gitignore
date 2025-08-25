@@ -12,3 +12,9 @@ yarn-error.log*
 dist/
 build/
 .vite/
+
+/Web/be/package.json
+/Web/be/package-lock.json
+
+/Web/fe/package.json
+/Web/fe/package-lock.json

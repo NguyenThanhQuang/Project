@@ -140,18 +140,41 @@ export class BookingsService {
   /**
    * Bước 2 (Giả lập): Xác nhận thanh toán và hoàn tất booking
    */
-  async confirmBooking(bookingId: string): Promise<BookingDocument> {
+  async confirmBooking(
+    bookingId: string,
+    paidAmount: number,
+    paymentMethod: string,
+    transactionDateTime: string,
+  ): Promise<BookingDocument> {
     const booking = await this.findOne(bookingId);
-    if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt vé.');
+    if (!booking) {
+      throw new NotFoundException('Không tìm thấy đơn đặt vé.');
+    }
+
+    // Kiểm tra xem booking đã được xử lý chưa để tránh webhook xử lý 2 lần
+    if (booking.status === BookingStatus.CONFIRMED) {
+      this.logger.warn(`Booking ${bookingId} is already confirmed. Skipping.`);
+      return booking;
+    }
+
+    // Chỉ xác nhận các booking đang ở trạng thái giữ chỗ
     if (booking.status !== BookingStatus.HELD) {
       throw new BadRequestException(
         'Chỉ có thể xác nhận đơn đặt vé đang ở trạng thái giữ chỗ.',
       );
     }
 
+    // Kiểm tra số tiền thanh toán có khớp không
+    if (paidAmount < booking.totalAmount) {
+      throw new BadRequestException(
+        `Số tiền thanh toán (${paidAmount}) không khớp với tổng tiền đơn hàng (${booking.totalAmount}).`,
+      );
+    }
+
     const seatNumbers = booking.passengers.map((p) => p.seatNumber);
 
     try {
+      // Cập nhật trạng thái ghế trong chuyến đi thành 'booked'
       await this.tripsService.updateSeatStatuses(
         booking.tripId,
         seatNumbers,
@@ -159,18 +182,23 @@ export class BookingsService {
         booking._id,
       );
 
+      // Cập nhật thông tin booking
       booking.status = BookingStatus.CONFIRMED;
       booking.paymentStatus = PaymentStatus.PAID;
-      booking.paymentMethod = 'mock_payment';
-      booking.heldUntil = undefined;
+      booking.paymentMethod = paymentMethod;
+      booking.heldUntil = undefined; // Xóa thời gian hết hạn giữ chỗ
       booking.ticketCode = await this.generateTicketCode();
-      booking.paymentGatewayTransactionId = `MOCK_${Date.now()}`;
+      booking.paymentGatewayTransactionId = transactionDateTime; // Lưu thời gian giao dịch
+
       const savedBooking = await booking.save();
+
+      // Phát sự kiện để gửi email xác nhận
       this.eventEmitter.emit('booking.confirmed', savedBooking);
 
       return savedBooking;
     } catch (error) {
-      console.error('Error confirming booking:', error);
+      this.logger.error(`Error confirming booking ${bookingId}:`, error);
+      // Cân nhắc thêm logic rollback (trả ghế về AVAILABLE) nếu cần
       throw new InternalServerErrorException('Lỗi khi xác nhận đơn đặt vé.');
     }
   }
@@ -252,7 +280,7 @@ export class BookingsService {
     return booking;
   }
 
-  private async generateTicketCode(length = 8): Promise<string> {
+  public async generateTicketCode(length = 8): Promise<string> {
     const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
     let result = '';
     while (true) {
@@ -298,5 +326,10 @@ export class BookingsService {
     }
 
     return booking;
+  }
+  async findOneByCondition(
+    condition: FilterQuery<Booking>,
+  ): Promise<BookingDocument | null> {
+    return this.bookingModel.findOne(condition).exec();
   }
 }
