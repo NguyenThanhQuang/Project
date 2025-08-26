@@ -9,11 +9,11 @@ import { Booking, BookingSchema } from './schemas/booking.schema';
 @Module({
   imports: [
     MongooseModule.forFeature([{ name: Booking.name, schema: BookingSchema }]),
-    TripsModule,
-    ConfigModule,
     forwardRef(() => TripsModule),
+    ConfigModule,
   ],
   controllers: [BookingsController],
   providers: [BookingsService],
+  exports: [BookingsService],
 })
 export class BookingsModule {}

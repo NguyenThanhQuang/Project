@@ -6,8 +6,9 @@ import {
 } from '@nestjs/common';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectConnection, InjectModel } from '@nestjs/mongoose';
-import * as dayjs from 'dayjs';
-import * as utc from 'dayjs/plugin/utc';
+import dayjs from 'dayjs';
+import timezone from 'dayjs/plugin/timezone';
+import utc from 'dayjs/plugin/utc';
 import { Connection, Model, Types } from 'mongoose';
 import { CompanyStatus } from 'src/companies/schemas/company.schema';
 import {
@@ -34,6 +35,7 @@ import {
   TripStopStatus,
 } from './schemas/trip.schema';
 dayjs.extend(utc);
+dayjs.extend(timezone);
 
 interface PopulatedPublicTrip {
   _id: Types.ObjectId;
@@ -110,6 +112,8 @@ export class TripsService {
     const { companyId, vehicleId, route } = createTripDto;
     const { fromLocationId, toLocationId, stops: stopDtos } = route;
 
+    const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+
     const stopLocationIds = (stopDtos || []).map((s) => s.locationId);
     const allLocationIds = [fromLocationId, toLocationId, ...stopLocationIds];
 
@@ -145,8 +149,12 @@ export class TripsService {
     const routeInfoFromMapService =
       await this.mapsService.getRouteInfo(coordinates);
 
-    const departureTime = new Date(createTripDto.departureTime);
-    const expectedArrivalTime = new Date(createTripDto.expectedArrivalTime);
+    const departureTime = dayjs
+      .tz(createTripDto.departureTime, VIETNAM_TIMEZONE)
+      .toDate();
+    const expectedArrivalTime = dayjs
+      .tz(createTripDto.expectedArrivalTime, VIETNAM_TIMEZONE)
+      .toDate();
     if (departureTime >= expectedArrivalTime) {
       throw new BadRequestException(
         'Thời gian khởi hành phải trước thời gian dự kiến đến.',
@@ -157,9 +165,9 @@ export class TripsService {
 
     const stops: TripStopInfo[] = (stopDtos || []).map((dto) => ({
       locationId: new Types.ObjectId(dto.locationId),
-      expectedArrivalTime: new Date(dto.expectedArrivalTime),
+      expectedArrivalTime: dayjs(dto.expectedArrivalTime).toDate(),
       expectedDepartureTime: dto.expectedDepartureTime
-        ? new Date(dto.expectedDepartureTime)
+        ? dayjs(dto.expectedDepartureTime).toDate()
         : undefined,
       status: TripStopStatus.PENDING,
     }));

@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
-import * as dayjs from 'dayjs';
+import dayjs from 'dayjs';
 import { Model } from 'mongoose';
 import {
   Booking,
