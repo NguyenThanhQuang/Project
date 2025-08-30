@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -7,20 +7,15 @@ import {
   CardContent,
   Chip,
   Divider,
-  Alert,
 } from "@mui/material";
-import { Timer } from "@mui/icons-material";
 import type { TripDetailView, FrontendSeat } from "../../../../types";
 
 interface BookingSummaryProps {
   trip: TripDetailView;
   selectedSeats: FrontendSeat[];
-  holdTimer: number;
   onContinue: () => void;
   onRemoveSeat: (seatId: string) => void;
 }
-
-const SEAT_HOLD_DURATION = 15 * 60;
 
 export const BookingSummary: React.FC<BookingSummaryProps> = ({
   trip,
@@ -28,41 +23,6 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
   onRemoveSeat,
   onContinue,
 }) => {
-  const [holdTimer, setHoldTimer] = useState<number>(SEAT_HOLD_DURATION);
-
-  useEffect(() => {
-    // Chỉ chạy timer khi có ghế được chọn
-    if (selectedSeats.length > 0) {
-      const timer = setInterval(() => {
-        setHoldTimer((prev) => {
-          if (prev <= 1) {
-            // Khi hết giờ, component cha sẽ xử lý việc xóa ghế
-            // Ở đây chỉ reset timer
-            // onTimeExpire(); // Có thể thêm callback này nếu cần
-            return SEAT_HOLD_DURATION;
-          }
-          return prev - 1;
-        });
-      }, 1000);
-
-      // Reset timer mỗi khi danh sách ghế thay đổi
-      setHoldTimer(SEAT_HOLD_DURATION);
-
-      return () => clearInterval(timer);
-    } else {
-      // Nếu không có ghế nào được chọn, reset timer
-      setHoldTimer(SEAT_HOLD_DURATION);
-    }
-  }, [selectedSeats]);
-
-  const formatTime = (seconds: number) => {
-    const minutes = Math.floor(seconds / 60);
-    const remainingSeconds = seconds % 60;
-    return `${minutes.toString().padStart(2, "0")}:${remainingSeconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
-
   const getTotalPrice = () => {
     return selectedSeats.reduce((total, seat) => total + seat.price, 0);
   };
@@ -88,17 +48,6 @@ export const BookingSummary: React.FC<BookingSummaryProps> = ({
         <Typography variant="h5" sx={{ fontWeight: 700, mb: 3 }}>
           Thông tin đặt vé
         </Typography>
-
-        {selectedSeats.length > 0 && (
-          <Alert severity="warning" sx={{ mb: 3 }}>
-            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-              <Timer />
-              <Typography variant="body2">
-                Thời gian giữ ghế: <strong>{formatTime(holdTimer)}</strong>
-              </Typography>
-            </Box>
-          </Alert>
-        )}
 
         <Box sx={{ mb: 3 }}>
           <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>

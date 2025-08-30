@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import { ExecutionContext, Injectable } from '@nestjs/common';
 import { AuthGuard } from '@nestjs/passport';
 import { UserDocument } from 'src/users/schemas/user.schema';
@@ -8,7 +7,9 @@ export class OptionalJwtAuthGuard extends AuthGuard('jwt') {
   handleRequest<TUser = UserDocument | false>(
     err: any,
     user: TUser,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _info: any,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     _context: ExecutionContext,
   ): TUser {
     // Nếu có lỗi xác thực (ví dụ: token sai định dạng), Passport sẽ ném lỗi.

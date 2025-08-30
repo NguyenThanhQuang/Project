@@ -23,7 +23,7 @@ import ForgotPassword from "./features/auth/pages/ForgotPassword";
 import LoyaltyProgram from "./features/profile/pages/LoyaltyProgram";
 import ChangePassword from "./features/profile/pages/ChangePassword";
 import PaymentStatus from "./features/bookings/pages/PaymentStatus";
-// import BookingCheckout from "./features/bookings/pages/BookingCheckout";
+import BookingCheckout from "./features/bookings/pages/BookingCheckout";
 import AddTrip from "./features/company/pages/AddTripPage";
 import ManageTrips from "./features/company/pages/ManageTrips";
 // import { BusTracking } from "./features/tracking/pages/BusTracking";
@@ -110,22 +110,8 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
-                <Route
-                  path="payment/status"
-                  element={
-                    <ProtectedRoute allowedRoles={["user", "company_admin"]}>
-                      <PaymentStatus />
-                    </ProtectedRoute>
-                  }
-                />
-                {/* <Route
-                  path="bookings/checkout"
-                  element={
-                    <ProtectedRoute allowedRoles={["user", "company_admin"]}>
-                      <BookingCheckout />
-                    </ProtectedRoute>
-                  }
-                /> */}
+                <Route path="payment/status" element={<PaymentStatus />} />
+                <Route path="bookings/checkout" element={<BookingCheckout />} />
                 <Route
                   path="add-trip"
                   element={

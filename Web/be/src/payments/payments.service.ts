@@ -53,7 +53,7 @@ export class PaymentsService {
 
   async createPaymentLink(
     createPaymentLinkDto: CreatePaymentLinkDto,
-    user: UserDocument,
+    user?: UserDocument,
   ): Promise<any> {
     const { bookingId } = createPaymentLinkDto;
     this.logger.log(`Tạo link thanh toán cho booking: ${bookingId.toString()}`);
@@ -62,14 +62,28 @@ export class PaymentsService {
     if (!booking) {
       throw new NotFoundException('Không tìm thấy đơn đặt vé.');
     }
-    if (booking.userId?.toString() !== user._id.toString()) {
-      throw new ForbiddenException(
-        'Bạn không có quyền thanh toán cho đơn này.',
-      );
+
+    // Chỉ kiểm tra quyền sở hữu nếu đây là booking của một người dùng đã đăng nhập
+    if (booking.userId && user) {
+      if (booking.userId.toString() !== user._id.toString()) {
+        throw new ForbiddenException(
+          'Bạn không có quyền thanh toán cho đơn đặt vé này.',
+        );
+      }
     }
+
     if (booking.status !== BookingStatus.HELD) {
       throw new BadRequestException(
         'Chỉ có thể thanh toán cho đơn hàng đang ở trạng thái "giữ chỗ".',
+      );
+    }
+
+    if (!booking.heldUntil) {
+      this.logger.error(
+        `Booking ${booking._id.toString()} ở trạng thái HELD nhưng thiếu heldUntil.`,
+      );
+      throw new InternalServerErrorException(
+        'Lỗi hệ thống: Không thể xác định thời gian hết hạn của đơn hàng.',
       );
     }
 
@@ -79,12 +93,15 @@ export class PaymentsService {
     booking.paymentOrderCode = orderCode;
     await booking.save();
 
+    const expirationTimestamp = Math.floor(booking.heldUntil.getTime() / 1000);
+
     const paymentData = {
       orderCode,
       amount: booking.totalAmount,
-      description: `Thanh toán vé xe cho mã đặt chỗ ${booking._id.toString()}`,
+      description: `Thanh toan ve xe ${booking.paymentOrderCode}`,
       returnUrl: `${this.publicUrl}${this.configService.get<string>('CLIENT_PAYMENT_SUCCESS_PATH')}?bookingId=${booking._id.toString()}`,
       cancelUrl: `${this.publicUrl}${this.configService.get<string>('CLIENT_PAYMENT_CANCEL_PATH')}?bookingId=${booking._id.toString()}`,
+      expiredAt: expirationTimestamp,
     };
 
     try {

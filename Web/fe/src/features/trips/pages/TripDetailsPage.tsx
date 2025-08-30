@@ -8,10 +8,8 @@ import {
   RouteStepperModal,
 } from "../components/trip-details";
 
-import { getTripDetails } from "../services/tripService";
+import { getTripDetails } from "../../trips/services/tripService";
 import type { TripDetailView, FrontendSeat, SeatStatus } from "../../../types";
-
-const SEAT_HOLD_DURATION = 15 * 60;
 
 const TripDetailsPage: React.FC = () => {
   const { tripId } = useParams<{ tripId: string }>();
@@ -23,7 +21,6 @@ const TripDetailsPage: React.FC = () => {
 
   const [selectedSeats, setSelectedSeats] = useState<FrontendSeat[]>([]);
   const [showRouteModal, setShowRouteModal] = useState<boolean>(false);
-  const [holdTimer, setHoldTimer] = useState<number>(SEAT_HOLD_DURATION);
 
   useEffect(() => {
     if (!tripId) {
@@ -52,28 +49,6 @@ const TripDetailsPage: React.FC = () => {
     fetchTripData();
   }, [tripId]);
 
-  // --- TIMER LOGIC ---
-  useEffect(() => {
-    if (selectedSeats.length === 0) {
-      setHoldTimer(SEAT_HOLD_DURATION);
-      return;
-    }
-
-    const timerId = setInterval(() => {
-      setHoldTimer((prev) => {
-        if (prev <= 1) {
-          setSelectedSeats([]);
-          // Cân nhắc: dùng một thư viện thông báo (toast) thay vì alert
-          alert("Thời gian giữ ghế đã hết hạn. Vui lòng chọn lại.");
-          return SEAT_HOLD_DURATION;
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timerId);
-  }, [selectedSeats]);
-
   const handleSeatSelect = (seatId: string, seatStatus: SeatStatus) => {
     if (seatStatus !== "available" || !trip) return;
 
@@ -86,6 +61,7 @@ const TripDetailsPage: React.FC = () => {
         return prevSelected.filter((s) => s.id !== seatId);
       } else {
         if (prevSelected.length >= 4) {
+          // Dùng thư viện notification thay cho alert "use NotificationProvider.tsx"
           alert("Bạn chỉ có thể chọn tối đa 4 ghế cho mỗi lần đặt vé.");
           return prevSelected;
         }
@@ -97,22 +73,6 @@ const TripDetailsPage: React.FC = () => {
   const handleContinue = () => {
     if (selectedSeats.length === 0 || !trip) return;
 
-    // TODO: Gọi API giữ chỗ (POST /api/bookings/hold)
-    console.log("Navigating to checkout with:", {
-      tripId: trip._id,
-      selectedSeats: selectedSeats.map((s) => ({
-        seatNumber: s.seatNumber,
-        name: "Hành khách",
-        phone: "0123456789",
-      })),
-      totalPrice: selectedSeats.reduce((total, seat) => total + seat.price, 0),
-    });
-
-    // Sau khi API giữ chỗ thành công, navigate đến trang checkout
-    // Ví dụ: const { bookingId } = await holdSeatsApi(...);
-    // navigate(`/booking/${bookingId}/checkout`);
-
-    // Tạm thời dùng navigate để kiểm tra biến navigate không bị unused
     navigate("/bookings/checkout", {
       state: {
         trip,
@@ -125,7 +85,6 @@ const TripDetailsPage: React.FC = () => {
     setSelectedSeats((prev) => prev.filter((s) => s.id !== seatId));
   };
 
-  // --- RENDER LOGIC ---
   if (loading) {
     return (
       <Container
@@ -160,8 +119,7 @@ const TripDetailsPage: React.FC = () => {
   return (
     <Container maxWidth="xl" sx={{ py: 4 }}>
       <Grid container spacing={4}>
-        {/* Cột trái - Thông tin và Sơ đồ ghế */}
-        <Grid size={{ xs: 12, sm: 8 }}>
+        <Grid size={{ xs: 12, lg: 8 }}>
           <TripInfoHeader
             trip={trip}
             onShowRoute={() => setShowRouteModal(true)}
@@ -173,19 +131,16 @@ const TripDetailsPage: React.FC = () => {
           />
         </Grid>
 
-        {/* Cột phải - Tóm tắt Booking */}
-        <Grid size={{ xs: 12, sm: 4 }}>
+        <Grid size={{ xs: 12, lg: 4 }}>
           <BookingSummary
             trip={trip}
             selectedSeats={selectedSeats}
-            holdTimer={holdTimer}
             onContinue={handleContinue}
             onRemoveSeat={handleRemoveSeat}
           />
         </Grid>
       </Grid>
 
-      {/* Modal Lộ trình */}
       <RouteStepperModal
         open={showRouteModal}
         onClose={() => setShowRouteModal(false)}

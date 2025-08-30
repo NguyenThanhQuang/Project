@@ -1,5 +1,4 @@
 import {
-  BadRequestException,
   Body,
   Controller,
   HttpCode,
@@ -9,11 +8,11 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { OptionalJwtAuthGuard } from 'src/auth/guards/optional-jwt-auth.guard';
 import { UserDocument } from '../users/schemas/user.schema';
 import { CreatePaymentLinkDto } from './dto/create-payment-link.dto';
-import { PaymentsService } from './payments.service';
 import { PayOSWebhookDto } from './dto/payos-webhook.dto';
+import { PaymentsService } from './payments.service';
 
 interface AuthenticatedRequest extends Request {
   user?: UserDocument;
@@ -28,17 +27,11 @@ export class PaymentsController {
    * @route POST /api/payments/create-link
    */
   @Post('create-link')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(OptionalJwtAuthGuard)
   createPaymentLink(
     @Body() createPaymentLinkDto: CreatePaymentLinkDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    if (!req.user) {
-      throw new BadRequestException(
-        'Không tìm thấy thông tin người dùng đã xác thực.',
-      );
-    }
-
     return this.paymentsService.createPaymentLink(
       createPaymentLinkDto,
       req.user,

@@ -112,8 +112,6 @@ export class TripsService {
     const { companyId, vehicleId, route } = createTripDto;
     const { fromLocationId, toLocationId, stops: stopDtos } = route;
 
-    const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
-
     const stopLocationIds = (stopDtos || []).map((s) => s.locationId);
     const allLocationIds = [fromLocationId, toLocationId, ...stopLocationIds];
 
@@ -149,12 +147,9 @@ export class TripsService {
     const routeInfoFromMapService =
       await this.mapsService.getRouteInfo(coordinates);
 
-    const departureTime = dayjs
-      .tz(createTripDto.departureTime, VIETNAM_TIMEZONE)
-      .toDate();
-    const expectedArrivalTime = dayjs
-      .tz(createTripDto.expectedArrivalTime, VIETNAM_TIMEZONE)
-      .toDate();
+    const departureTime = new Date(createTripDto.departureTime);
+    const expectedArrivalTime = new Date(createTripDto.expectedArrivalTime);
+
     if (departureTime >= expectedArrivalTime) {
       throw new BadRequestException(
         'Thời gian khởi hành phải trước thời gian dự kiến đến.',
@@ -273,8 +268,9 @@ export class TripsService {
   async findPublicTrips(queryTripsDto: QueryTripsDto): Promise<any[]> {
     const { from, to, date } = queryTripsDto;
 
-    const startOfDay = dayjs.utc(date).startOf('day').toDate();
-    const endOfDay = dayjs.utc(date).endOf('day').toDate();
+    const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
+    const startOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).startOf('day').toDate();
+    const endOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).endOf('day').toDate();
 
     const tripsInDay = await this.tripModel
       .find({
@@ -300,7 +296,6 @@ export class TripsService {
       .lean()
       .exec();
 
-    // --- BƯỚC 2: ÉP KIỂU VÀ LỌC VỚI TYPE SAFETY ---
     const finalTrips = (tripsInDay as PopulatedPublicTrip[]).filter((trip) => {
       // Điều kiện 1: Nhà xe phải tồn tại và đang hoạt động
       const isCompanyActive = trip.companyId?.status === CompanyStatus.ACTIVE;
