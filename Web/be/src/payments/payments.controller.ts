@@ -44,8 +44,10 @@ export class PaymentsController {
    */
   @Post('webhook')
   @HttpCode(HttpStatus.OK)
-  async handlePayOSWebhook(@Body() webhookData: PayOSWebhookDto) {
-    await this.paymentsService.handleWebhook(webhookData);
+  // THAY ĐỔI: Dùng Object để nhận body mà không bị validation
+  async handlePayOSWebhook(@Body() webhookData: object) {
+    // Ép kiểu thủ công sau khi đã nhận được dữ liệu
+    await this.paymentsService.handleWebhook(webhookData as PayOSWebhookDto);
     return { message: 'Webhook received' };
   }
 }

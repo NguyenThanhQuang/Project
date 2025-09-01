@@ -8,7 +8,6 @@ async function bootstrap() {
   const logger = new Logger('Bootstrap');
 
   const configService = app.get(ConfigService);
-
   const port = configService.get<number>('PORT') ?? 3000;
 
   app.setGlobalPrefix('api');
@@ -30,7 +29,7 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(port);
+  await app.listen(port, '0.0.0.0');
   logger.log(`Ứng dụng đang chạy tại: http://localhost:${port}/api`);
 }
-bootstrap();
+void bootstrap();

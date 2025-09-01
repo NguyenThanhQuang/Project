@@ -22,11 +22,7 @@ import {
 } from '../bookings/schemas/booking.schema';
 import { UserDocument } from '../users/schemas/user.schema';
 import { CreatePaymentLinkDto } from './dto/create-payment-link.dto';
-import {
-  PayOSWebhookDataDto,
-  PayOSWebhookDto,
-  PayOSWebhookStatus,
-} from './dto/payos-webhook.dto';
+import { PayOSWebhookDto } from './dto/payos-webhook.dto';
 
 @Injectable()
 export class PaymentsService {
@@ -98,7 +94,7 @@ export class PaymentsService {
     const paymentData = {
       orderCode,
       amount: booking.totalAmount,
-      description: `Thanh toan ve xe ${booking.paymentOrderCode}`,
+      description: `TT ve xe ${booking.paymentOrderCode}`,
       returnUrl: `${this.publicUrl}${this.configService.get<string>('CLIENT_PAYMENT_SUCCESS_PATH')}?bookingId=${booking._id.toString()}`,
       cancelUrl: `${this.publicUrl}${this.configService.get<string>('CLIENT_PAYMENT_CANCEL_PATH')}?bookingId=${booking._id.toString()}`,
       expiredAt: expirationTimestamp,
@@ -114,25 +110,35 @@ export class PaymentsService {
     }
   }
 
-  async handleWebhook(webhookPayload: PayOSWebhookDto): Promise<void> {
-    this.logger.log(
-      `Received PayOS webhook for orderCode: ${webhookPayload.data?.orderCode}`,
-    );
+  logVerificationAttempt(): void {
+    this.logger.log('PayOS is attempting to verify the webhook URL.');
+  }
 
-    const checksumKey = this.configService.get<string>('PAYOS_CHECKSUM_KEY');
-    if (!checksumKey) {
-      this.logger.error('PAYOS_CHECKSUM_KEY is not configured.');
+  async handleWebhook(webhookPayload: PayOSWebhookDto): Promise<void> {
+    if (!webhookPayload || !webhookPayload.data || !webhookPayload.signature) {
+      this.logger.log(
+        'Received a webhook test/verification request. Responding successfully.',
+      );
       return;
     }
 
-    const dataObject: PayOSWebhookDataDto = webhookPayload.data;
-    const sortedDataKeys = Object.keys(
-      dataObject,
-    ).sort() as (keyof PayOSWebhookDataDto)[];
+    const { data, signature } = webhookPayload;
+    const orderCode = data.orderCode;
 
+    const checksumKey = this.configService.get<string>('PAYOS_CHECKSUM_KEY');
+    if (!checksumKey) {
+      this.logger.error(
+        'CRITICAL: PAYOS_CHECKSUM_KEY is not configured. Webhook cannot be verified.',
+      );
+      return;
+    }
+
+    const sortedDataKeys = Object.keys(data).sort();
     let dataToSign = '';
     for (const key of sortedDataKeys) {
-      dataToSign += `${key}=${dataObject[key]}&`;
+      if (Object.prototype.hasOwnProperty.call(data, key)) {
+        dataToSign += `${key}=${data[key]}&`;
+      }
     }
     dataToSign = dataToSign.slice(0, -1);
 
@@ -141,45 +147,47 @@ export class PaymentsService {
       .update(dataToSign)
       .digest('hex');
 
-    if (generatedSignature !== webhookPayload.signature) {
+    if (generatedSignature !== signature) {
       this.logger.warn(
-        `Webhook signature mismatch for orderCode: ${webhookPayload.data.orderCode}.`,
+        `Webhook signature mismatch for orderCode: ${orderCode}. The request may be fraudulent.`,
       );
       return;
     }
 
-    this.logger.log('Webhook signature verified successfully.');
+    this.logger.log(
+      `Webhook for orderCode ${orderCode} signature verified successfully.`,
+    );
 
-    const { data } = webhookPayload;
-
-    if (data.status !== PayOSWebhookStatus.PAID) {
+    // Kiểm tra trạng thái giao dịch
+    if (data.code !== '00') {
       this.logger.log(
-        `Webhook for order ${data.orderCode} has status ${data.status}. Skipping.`,
+        `Webhook for order ${orderCode} has a non-successful status code: ${data.code}. Skipping.`,
       );
       return;
     }
 
+    // Xử lý logic nghiệp vụ
     try {
       const booking = await this.bookingModel
-        .findOne({
-          paymentOrderCode: data.orderCode,
-        })
+        .findOne({ paymentOrderCode: orderCode })
         .exec();
 
       if (!booking) {
         this.logger.error(
-          `Booking with paymentOrderCode ${data.orderCode} not found.`,
+          `Booking with paymentOrderCode ${orderCode} not found in the database.`,
         );
         return;
       }
 
+      // Ngăn chặn việc xử lý lại webhook đã xử lý thành công
       if (booking.status === BookingStatus.CONFIRMED) {
-        this.logger.warn(
-          `Booking ${booking._id.toString()} is already confirmed. Skipping.`,
+        this.logger.log(
+          `Booking ${booking._id.toString()} is already confirmed. Skipping duplicate webhook.`,
         );
         return;
       }
 
+      // Gọi service để xác nhận booking
       await this.bookingsService.confirmBooking(
         booking._id.toString(),
         data.amount,
@@ -188,13 +196,14 @@ export class PaymentsService {
       );
 
       this.logger.log(
-        `Successfully confirmed booking ${booking._id.toString()} via webhook.`,
+        `Successfully confirmed booking ${booking._id.toString()} for orderCode ${orderCode} via webhook.`,
       );
     } catch (error) {
       this.logger.error(
-        `Error processing webhook for orderCode ${data.orderCode}:`,
+        `Error processing webhook's business logic for orderCode ${orderCode}:`,
         error,
       );
+      // Cân nhắc ném lỗi ra để một hệ thống monitoring nào đó bắt được
     }
   }
   private async processSuccessfulPayment(orderCode: number): Promise<void> {
