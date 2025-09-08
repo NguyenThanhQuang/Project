@@ -29,7 +29,8 @@ async function bootstrap() {
     }),
   );
 
-  await app.listen(port, '0.0.0.0');
+  // await app.listen(port, '0.0.0.0');
+  await app.listen(port);
   logger.log(`Ứng dụng đang chạy tại: http://localhost:${port}/api`);
 }
 void bootstrap();

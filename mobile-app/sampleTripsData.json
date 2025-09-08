@@ -1,0 +1,262 @@
+{
+  "companies": [
+    {
+      "name": "Công ty Xe khách Phương Trang",
+      "logoUrl": "https://example.com/phuongtrang.png"
+    },
+    {
+      "name": "Công ty Xe khách Mai Linh",
+      "logoUrl": "https://example.com/mailinh.png"
+    },
+    {
+      "name": "Công ty Xe khách Thành Bưởi",
+      "logoUrl": "https://example.com/thanhbuoi.png"
+    },
+    {
+      "name": "Công ty Xe khách Hoàng Long",
+      "logoUrl": "https://example.com/hoanglong.png"
+    },
+    {
+      "name": "Công ty Xe khách Quốc Cường",
+      "logoUrl": "https://example.com/quoccuong.png"
+    },
+    {
+      "name": "Công ty Xe khách Đồng Tháp",
+      "logoUrl": "https://example.com/dongthap.png"
+    },
+    {
+      "name": "Công ty Xe khách An Giang",
+      "logoUrl": "https://example.com/angiang.png"
+    },
+    {
+      "name": "Công ty Xe khách Kiên Giang",
+      "logoUrl": "https://example.com/kiengiang.png"
+    },
+    {
+      "name": "Công ty Xe khách Tiền Giang",
+      "logoUrl": "https://example.com/tiengiang.png"
+    },
+    {
+      "name": "Công ty Xe khách Bình Dương",
+      "logoUrl": "https://example.com/binhduong.png"
+    }
+  ],
+  "vehicles": [
+    {
+      "type": "Xe khách 45 chỗ",
+      "totalSeats": 45
+    },
+    {
+      "type": "Xe khách 35 chỗ",
+      "totalSeats": 35
+    },
+    {
+      "type": "Xe khách 29 chỗ",
+      "totalSeats": 29
+    },
+    {
+      "type": "Xe khách 16 chỗ",
+      "totalSeats": 16
+    },
+    {
+      "type": "Xe khách 12 chỗ",
+      "totalSeats": 12
+    }
+  ],
+  "popularRoutes": [
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Hà Nội", "province": "Hà Nội" },
+      "duration": "24-30 giờ",
+      "basePrice": 800000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Đà Nẵng", "province": "Đà Nẵng" },
+      "duration": "18-22 giờ",
+      "basePrice": 500000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Nha Trang", "province": "Khánh Hòa" },
+      "duration": "8-10 giờ",
+      "basePrice": 250000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Đà Lạt", "province": "Lâm Đồng" },
+      "duration": "6-8 giờ",
+      "basePrice": 180000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Huế", "province": "Thừa Thiên Huế" },
+      "duration": "20-24 giờ",
+      "basePrice": 450000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Vũng Tàu", "province": "Bà Rịa - Vũng Tàu" },
+      "duration": "2-3 giờ",
+      "basePrice": 80000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Cần Thơ", "province": "Cần Thơ" },
+      "duration": "3-4 giờ",
+      "basePrice": 120000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Long Xuyên", "province": "An Giang" },
+      "duration": "4-5 giờ",
+      "basePrice": 150000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Rạch Giá", "province": "Kiên Giang" },
+      "duration": "5-6 giờ",
+      "basePrice": 180000
+    },
+    {
+      "from": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+      "to": { "name": "Thành phố Mỹ Tho", "province": "Tiền Giang" },
+      "duration": "1-2 giờ",
+      "basePrice": 60000
+    },
+    {
+      "from": { "name": "Thành phố Hà Nội", "province": "Hà Nội" },
+      "to": { "name": "Thành phố Đà Nẵng", "province": "Đà Nẵng" },
+      "duration": "12-15 giờ",
+      "basePrice": 350000
+    },
+    {
+      "from": { "name": "Thành phố Hà Nội", "province": "Hà Nội" },
+      "to": { "name": "Thành phố Huế", "province": "Thừa Thiên Huế" },
+      "duration": "14-18 giờ",
+      "basePrice": 400000
+    },
+    {
+      "from": { "name": "Thành phố Đà Nẵng", "province": "Đà Nẵng" },
+      "to": { "name": "Thành phố Huế", "province": "Thừa Thiên Huế" },
+      "duration": "2-3 giờ",
+      "basePrice": 80000
+    },
+    {
+      "from": { "name": "Thành phố Đà Nẵng", "province": "Đà Nẵng" },
+      "to": { "name": "Thành phố Nha Trang", "province": "Khánh Hòa" },
+      "duration": "10-12 giờ",
+      "basePrice": 250000
+    },
+    {
+      "from": { "name": "Thành phố Nha Trang", "province": "Khánh Hòa" },
+      "to": { "name": "Thành phố Đà Lạt", "province": "Lâm Đồng" },
+      "duration": "4-5 giờ",
+      "basePrice": 120000
+    },
+    {
+      "from": { "name": "Thành phố Cần Thơ", "province": "Cần Thơ" },
+      "to": { "name": "Thành phố Long Xuyên", "province": "An Giang" },
+      "duration": "1-2 giờ",
+      "basePrice": 50000
+    },
+    {
+      "from": { "name": "Thành phố Long Xuyên", "province": "An Giang" },
+      "to": { "name": "Thành phố Rạch Giá", "province": "Kiên Giang" },
+      "duration": "2-3 giờ",
+      "basePrice": 80000
+    },
+    {
+      "from": { "name": "Thành phố Mỹ Tho", "province": "Tiền Giang" },
+      "to": { "name": "Thành phố Cần Thơ", "province": "Cần Thơ" },
+      "duration": "2-3 giờ",
+      "basePrice": 70000
+    }
+  ],
+  "sampleTrips": [
+    {
+      "companyId": "Công ty Xe khách Phương Trang",
+      "vehicleId": "Xe khách 45 chỗ",
+      "route": {
+        "fromLocationId": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+        "toLocationId": { "name": "Thành phố Hà Nội", "province": "Hà Nội" },
+        "stops": []
+      },
+      "departureTime": "2025-08-24T06:00:00.000Z",
+      "expectedArrivalTime": "2025-08-25T06:00:00.000Z",
+      "price": 800000,
+      "status": "scheduled",
+      "availableSeats": 35
+    },
+    {
+      "companyId": "Công ty Xe khách Mai Linh",
+      "vehicleId": "Xe khách 35 chỗ",
+      "route": {
+        "fromLocationId": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+        "toLocationId": { "name": "Thành phố Đà Lạt", "province": "Lâm Đồng" },
+        "stops": []
+      },
+      "departureTime": "2025-08-24T08:00:00.000Z",
+      "expectedArrivalTime": "2025-08-24T16:00:00.000Z",
+      "price": 180000,
+      "status": "scheduled",
+      "availableSeats": 25
+    },
+    {
+      "companyId": "Công ty Xe khách Hoàng Long",
+      "vehicleId": "Xe khách 29 chỗ",
+      "route": {
+        "fromLocationId": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+        "toLocationId": { "name": "Thành phố Nha Trang", "province": "Khánh Hòa" },
+        "stops": []
+      },
+      "departureTime": "2025-08-24T10:00:00.000Z",
+      "expectedArrivalTime": "2025-08-24T20:00:00.000Z",
+      "price": 250000,
+      "status": "scheduled",
+      "availableSeats": 20
+    },
+    {
+      "companyId": "Công ty Xe khách Thành Bưởi",
+      "vehicleId": "Xe khách 16 chỗ",
+      "route": {
+        "fromLocationId": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+        "toLocationId": { "name": "Thành phố Vũng Tàu", "province": "Bà Rịa - Vũng Tàu" },
+        "stops": []
+      },
+      "departureTime": "2025-08-24T14:00:00.000Z",
+      "expectedArrivalTime": "2025-08-24T17:00:00.000Z",
+      "price": 80000,
+      "status": "scheduled",
+      "availableSeats": 12
+    },
+    {
+      "companyId": "Công ty Xe khách Quốc Cường",
+      "vehicleId": "Xe khách 45 chỗ",
+      "route": {
+        "fromLocationId": { "name": "Thành phố Hồ Chí Minh", "province": "Hồ Chí Minh" },
+        "toLocationId": { "name": "Thành phố Cần Thơ", "province": "Cần Thơ" },
+        "stops": []
+      },
+      "departureTime": "2025-08-24T16:00:00.000Z",
+      "expectedArrivalTime": "2025-08-24T20:00:00.000Z",
+      "price": 120000,
+      "status": "scheduled",
+      "availableSeats": 40
+    }
+  ],
+  "statistics": {
+    "totalTrips": 324,
+    "totalRoutes": 18,
+    "totalCompanies": 10,
+    "totalVehicles": 5,
+    "priceRange": {
+      "min": 50000,
+      "max": 800000
+    },
+    "durationRange": {
+      "min": "1-2 giờ",
+      "max": "24-30 giờ"
+    }
+  }
+}
