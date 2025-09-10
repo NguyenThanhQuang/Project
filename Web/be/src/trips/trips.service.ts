@@ -557,4 +557,94 @@ export class TripsService {
       await session.endSession();
     }
   }
+
+  async findPopularRoutes(limit = 6): Promise<any> {
+    const ninetyDaysAgo = new Date();
+    ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+    return this.bookingModel.aggregate([
+      // 1. Lọc booking
+      {
+        $match: {
+          status: BookingStatus.CONFIRMED,
+          createdAt: { $gte: ninetyDaysAgo },
+        },
+      },
+
+      // 2. Chuyển đổi tripId
+      { $addFields: { tripObjectId: { $toObjectId: '$tripId' } } },
+
+      // 3. Join với trips
+      {
+        $lookup: {
+          from: 'trips',
+          localField: 'tripObjectId',
+          foreignField: '_id',
+          as: 'tripInfo',
+        },
+      },
+
+      // 4. Deconstruct tripInfo (nếu tripInfo rỗng, document sẽ bị loại bỏ ở đây)
+      { $unwind: '$tripInfo' },
+
+      // 5. [BƯỚC MỚI] Chuyển đổi fromLocationId và toLocationId từ String sang ObjectId
+      {
+        $addFields: {
+          'tripInfo.route.fromLocationObjectId': {
+            $toObjectId: '$tripInfo.route.fromLocationId',
+          },
+          'tripInfo.route.toLocationObjectId': {
+            $toObjectId: '$tripInfo.route.toLocationId',
+          },
+        },
+      },
+
+      // 6. Nhóm theo các ObjectId mới để đếm
+      {
+        $group: {
+          _id: {
+            from: '$tripInfo.route.fromLocationObjectId', // <-- Dùng trường mới
+            to: '$tripInfo.route.toLocationObjectId', // <-- Dùng trường mới
+          },
+          bookingCount: { $sum: 1 },
+        },
+      },
+
+      // 7. Sắp xếp và giới hạn
+      { $sort: { bookingCount: -1 } },
+      { $limit: limit },
+
+      // 8. Join với 'locations' (Bây giờ sẽ hoạt động chính xác)
+      {
+        $lookup: {
+          from: 'locations',
+          localField: '_id.from',
+          foreignField: '_id',
+          as: 'fromLocation',
+        },
+      },
+      {
+        $lookup: {
+          from: 'locations',
+          localField: '_id.to',
+          foreignField: '_id',
+          as: 'toLocation',
+        },
+      },
+
+      // 9. Deconstruct
+      { $unwind: '$fromLocation' },
+      { $unwind: '$toLocation' },
+
+      // 10. Định hình output
+      {
+        $project: {
+          _id: 0,
+          fromLocation: '$fromLocation',
+          toLocation: '$toLocation',
+          bookingCount: 1,
+        },
+      },
+    ]);
+  }
 }

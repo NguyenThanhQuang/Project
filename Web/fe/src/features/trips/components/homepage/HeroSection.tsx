@@ -1,10 +1,33 @@
 import React from "react";
 import { Box, Container, Typography, Grid, Chip } from "@mui/material";
+import dayjs, { Dayjs } from "dayjs";
 import { SearchForm } from "./SearchForm";
+import type { Location } from "../../../../types";
 
-export const HeroSection: React.FC = () => {
+interface HeroSectionProps {
+  searchData: {
+    from: Location | null;
+    to: Location | null;
+    date: Dayjs;
+    passengers: number;
+  };
+  setSearchData: React.Dispatch<
+    React.SetStateAction<{
+      from: Location | null;
+      to: Location | null;
+      date: Dayjs;
+      passengers: number;
+    }>
+  >;
+}
+
+export const HeroSection: React.FC<HeroSectionProps> = ({
+  searchData,
+  setSearchData,
+}) => {
   return (
     <Box
+      id="hero-section"
       sx={{
         background:
           "linear-gradient(135deg, #0077be 0%, #004c8b 20%, #ffa726 100%)",
@@ -30,7 +53,7 @@ export const HeroSection: React.FC = () => {
           <Grid size={{ xs: 12, md: 6 }}>
             <Box sx={{ mb: 4 }}>
               <Chip
-                label="Không rõ mục đích của dòng này là gì, có thể xóa"
+                label="Nền tảng đặt vé xe hàng đầu Việt Nam"
                 sx={{
                   backgroundColor: "rgba(255, 167, 38, 0.2)",
                   color: "white",
@@ -71,7 +94,7 @@ export const HeroSection: React.FC = () => {
               variant="h5"
               sx={{ mb: 4, opacity: 0.95, fontWeight: 400 }}
             >
-              _____________________________________________________________________
+              Hơn 5000+ tuyến đường và 2000+ nhà xe uy tín trên toàn quốc.
             </Typography>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -84,7 +107,7 @@ export const HeroSection: React.FC = () => {
                     1000+
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Chuyến xe
+                    Chuyến xe mỗi ngày
                   </Typography>
                 </Box>
               </Grid>
@@ -97,7 +120,7 @@ export const HeroSection: React.FC = () => {
                     99%
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Hài lòng
+                    Khách hàng hài lòng
                   </Typography>
                 </Box>
               </Grid>
@@ -110,7 +133,7 @@ export const HeroSection: React.FC = () => {
                     24/7
                   </Typography>
                   <Typography variant="body2" sx={{ opacity: 0.9 }}>
-                    Hỗ trợ
+                    Hỗ trợ chuyên nghiệp
                   </Typography>
                 </Box>
               </Grid>
@@ -118,11 +141,10 @@ export const HeroSection: React.FC = () => {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <SearchForm />
+            <SearchForm searchData={searchData} setSearchData={setSearchData} />
           </Grid>
         </Grid>
       </Container>
-      {/* Các Box hiệu ứng float */}
     </Box>
   );
 };

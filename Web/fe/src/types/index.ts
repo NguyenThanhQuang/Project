@@ -272,7 +272,7 @@ export interface Filters {
 }
 
 export interface FilterOptions {
-  companies: Company[];
+  companies: Pick<Company, "_id" | "name">[];
   vehicleTypes: string[];
   maxPrice: number;
 }

@@ -40,6 +40,11 @@ interface AuthenticatedRequest extends Request {
 export class TripsController {
   constructor(private readonly tripsService: TripsService) {}
 
+  @Get('popular')
+  findPopularRoutes() {
+    return this.tripsService.findPopularRoutes();
+  }
+
   /**
    * @description [PUBLIC] Tìm kiếm các chuyến đi có sẵn cho người dùng.
    * Endpoint này công khai, không cần xác thực.

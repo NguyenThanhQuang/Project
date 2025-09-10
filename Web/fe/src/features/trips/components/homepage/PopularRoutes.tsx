@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import {
   Box,
   Container,
@@ -6,23 +6,119 @@ import {
   Grid,
   Card,
   CardContent,
-  // CardActions,
-  // Button,
-  Chip,
+  CircularProgress,
+  Alert,
 } from "@mui/material";
-import { DirectionsBus, TrendingUp } from "@mui/icons-material";
+import { DirectionsBus } from "@mui/icons-material";
+import { getPopularRoutes } from "../../../trips/services/tripService";
+import type { Location } from "../../../../types";
+import type { PopularRoute } from "../../types/trip";
 
-const popularRoutesData = [
-  {
-    from: "Hồ Chí Minh",
-    to: "Đà Lạt",
-    price: "150,000₫",
-    duration: "6h",
-    trend: "+15%",
-  },
-];
+interface PopularRoutesProps {
+  onRouteSelect: (from: Location, to: Location) => void;
+}
 
-export const PopularRoutes: React.FC = () => {
+export const PopularRoutes: React.FC<PopularRoutesProps> = ({
+  onRouteSelect,
+}) => {
+  const [routes, setRoutes] = useState<PopularRoute[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const fetchPopularRoutes = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await getPopularRoutes();
+        setRoutes(data);
+      } catch (err) {
+        console.error("Failed to fetch popular routes:", err);
+        setError("Không thể tải danh sách các tuyến đường phổ biến.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchPopularRoutes();
+  }, []);
+
+  const renderContent = () => {
+    if (loading) {
+      return (
+        <Box sx={{ display: "flex", justifyContent: "center", my: 4 }}>
+          <CircularProgress size={50} />
+        </Box>
+      );
+    }
+
+    if (error) {
+      return (
+        <Alert severity="warning" sx={{ mt: 3 }}>
+          {error}
+        </Alert>
+      );
+    }
+
+    if (routes.length === 0) {
+      return (
+        <Typography color="text.secondary" sx={{ textAlign: "center", mt: 4 }}>
+          Hiện chưa có dữ liệu về các tuyến đường phổ biến.
+        </Typography>
+      );
+    }
+
+    return (
+      <Grid container spacing={4}>
+        {routes.map((route, index) => (
+          <Grid size={{ xs: 12, sm: 6, md: 3, lg: 2.4 }} key={index}>
+            <Card
+              onClick={() =>
+                onRouteSelect(route.fromLocation, route.toLocation)
+              }
+              sx={{
+                height: "100%",
+                borderRadius: 3,
+                cursor: "pointer",
+                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                "&:hover": {
+                  transform: "translateY(-8px) scale(1.02)",
+                  boxShadow: "0 20px 40px rgba(0, 119, 190, 0.2)",
+                  borderColor: "primary.main",
+                },
+                background: "linear-gradient(135deg, #ffffff 0%, #f8fafb 100%)",
+                border: "1px solid rgba(0, 119, 190, 0.1)",
+              }}
+            >
+              <CardContent sx={{ p: { xs: 2, md: 3 } }}>
+                <Box
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                  }}
+                >
+                  <DirectionsBus
+                    sx={{ color: "primary.main", mr: 1.5, fontSize: 28 }}
+                  />
+                  <Box>
+                    <Typography
+                      variant="h6"
+                      sx={{ fontWeight: 700, lineHeight: 1.2 }}
+                    >
+                      {route.fromLocation.province}
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                      đến {route.toLocation.province}
+                    </Typography>
+                  </Box>
+                </Box>
+              </CardContent>
+            </Card>
+          </Grid>
+        ))}
+      </Grid>
+    );
+  };
+
   return (
     <Container maxWidth="lg" sx={{ py: 10 }}>
       <Box sx={{ textAlign: "center", mb: 6 }}>
@@ -34,89 +130,13 @@ export const PopularRoutes: React.FC = () => {
           color="text.secondary"
           sx={{ maxWidth: 600, mx: "auto" }}
         >
-          Những tuyến đường được đặt nhiều nhất với mức tăng trưởng ấn tượng
+          {/* Những tuyến đường được hành khách lựa chọn nhiều nhất trong 90 ngày
+          qua */}
         </Typography>
       </Box>
-      <Grid container spacing={4}>
-        {popularRoutesData.map((route, index) => (
-          <Grid size={{ xs: 12, sm: 6, lg: 3 }} key={index}>
-            <Card
-              sx={{
-                height: "100%",
-                borderRadius: 3,
-                transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-                "&:hover": {
-                  transform: "translateY(-8px) scale(1.02)",
-                  boxShadow: "0 20px 40px rgba(0, 119, 190, 0.2)",
-                },
-                background: "linear-gradient(135deg, #ffffff 0%, #f8fafb 100%)",
-                border: "1px solid rgba(0, 119, 190, 0.1)",
-              }}
-            >
-              <CardContent sx={{ p: 3 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    mb: 2,
-                  }}
-                >
-                  <Box sx={{ display: "flex", alignItems: "center" }}>
-                    <DirectionsBus
-                      sx={{ color: "primary.main", mr: 1, fontSize: 28 }}
-                    />
-                    <Box>
-                      <Typography
-                        variant="h6"
-                        sx={{ fontWeight: 700, lineHeight: 1.2 }}
-                      >
-                        {route.from}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        đến {route.to}
-                      </Typography>
-                    </Box>
-                  </Box>
-                  <Chip
-                    icon={<TrendingUp />}
-                    label={route.trend}
-                    size="small"
-                    sx={{
-                      background:
-                        "linear-gradient(135deg, #48bb78 0%, #38a169 100%)",
-                      color: "white",
-                      fontWeight: 600,
-                    }}
-                  />
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    mb: 2,
-                  }}
-                >
-                  <Chip
-                    label={route.price}
-                    sx={{
-                      background:
-                        "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
-                      color: "white",
-                      fontWeight: 700,
-                    }}
-                  />
-                  <Chip
-                    label={route.duration}
-                    variant="outlined"
-                    sx={{ fontWeight: 600 }}
-                  />
-                </Box>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
+      {renderContent()}
     </Container>
   );
 };
+
+export default PopularRoutes;

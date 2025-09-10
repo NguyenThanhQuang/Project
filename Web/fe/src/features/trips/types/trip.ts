@@ -110,3 +110,9 @@ export interface SearchFormState {
   date: Dayjs | null;
   passengers: number;
 }
+
+export interface PopularRoute {
+  fromLocation: Location;
+  toLocation: Location;
+  bookingCount: number;
+}

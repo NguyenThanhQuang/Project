@@ -2,15 +2,16 @@ import dayjs from "dayjs";
 import duration from "dayjs/plugin/duration";
 import api from "../../../services/api";
 import type {
+  Company,
   FilterOptions,
   FrontendSeat,
   PopulatedTrip,
   SearchTripsResponse,
-  SeatStatus, // Giữ lại type này để API call
+  SeatStatus,
   TripDetailView,
   TripSearchResult,
 } from "../../../types";
-import type { CompanyReference } from "../../admin/types/vehicle";
+import type { PopularRoute } from "../types/trip";
 dayjs.extend(duration);
 
 interface SearchTripsParams {
@@ -21,7 +22,10 @@ interface SearchTripsParams {
 }
 
 const extractFilterOptions = (trips: TripSearchResult[]): FilterOptions => {
-  const companies = new Map<string, CompanyReference>();
+  const companies = new Map<
+    string,
+    Pick<Company, "_id" | "name" | "logoUrl">
+  >();
   const vehicleTypes = new Set<string>();
   let maxPrice = 0;
 
@@ -40,7 +44,7 @@ const extractFilterOptions = (trips: TripSearchResult[]): FilterOptions => {
   return {
     companies: Array.from(companies.values()),
     vehicleTypes: Array.from(vehicleTypes),
-    maxPrice: maxPrice > 0 ? maxPrice : 1000000, // Giá trị mặc định nếu không có chuyến nào
+    maxPrice: maxPrice > 0 ? maxPrice : 1000000,
   };
 };
 
@@ -48,18 +52,14 @@ export const searchTrips = async (
   params: SearchTripsParams
 ): Promise<SearchTripsResponse> => {
   try {
-    // THAY ĐỔI 1: Mong đợi một mảng TripSearchResult[] từ API
     const response = await api.get<TripSearchResult[]>("/trips", { params });
     const trips = response.data;
 
-    // THAY ĐỔI 2: Tự tính toán bộ lọc từ kết quả
     const filters = extractFilterOptions(trips);
 
-    // THAY ĐỔI 3: Trả về đối tượng có cấu trúc mà trang đang mong đợi
     return { trips, filters };
   } catch (error) {
     console.error("Error searching trips:", error);
-    // Trả về cấu trúc rỗng để không làm crash trang
     return {
       trips: [],
       filters: { companies: [], vehicleTypes: [], maxPrice: 0 },
@@ -201,5 +201,15 @@ export const getTripDetails = async (
   } catch (error) {
     console.error(`Error fetching details for trip ${tripId}:`, error);
     return null;
+  }
+};
+
+export const getPopularRoutes = async (): Promise<PopularRoute[]> => {
+  try {
+    const response = await api.get<PopularRoute[]>("/trips/popular");
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching popular routes:", error);
+    return [];
   }
 };

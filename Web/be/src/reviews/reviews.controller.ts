@@ -1,4 +1,3 @@
-// src/reviews/reviews.controller.ts
 import {
   BadRequestException,
   Body,
