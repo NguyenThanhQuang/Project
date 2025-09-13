@@ -1,9 +1,17 @@
-import React from "react";
 import { Box, Button } from "@mui/material";
-import { BookOnline, DirectionsBus, TrackChanges } from "@mui/icons-material";
+import {
+  BookOnline,
+  ConfirmationNumber,
+  DirectionsBus,
+  TrackChanges,
+} from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store";
+import HomeIcon from "@mui/icons-material/Home";
+import GavelIcon from "@mui/icons-material/Gavel";
+import ConnectWithoutContactIcon from "@mui/icons-material/ConnectWithoutContact";
+import HelpIcon from "@mui/icons-material/Help";
 
 const DesktopNav = () => {
   const navigate = useNavigate();
@@ -23,13 +31,23 @@ const DesktopNav = () => {
       <Button
         color="inherit"
         onClick={() => navigate("/")}
+        startIcon={<HomeIcon />}
         sx={{ fontWeight: 600 }}
       >
         Trang chủ
       </Button>
       <Button
         color="inherit"
+        onClick={() => navigate("/lookup")}
+        startIcon={<ConfirmationNumber />}
+        sx={{ fontWeight: 600 }}
+      >
+        Tra cứu vé
+      </Button>
+      <Button
+        color="inherit"
         onClick={() => scrollToSection("footer")}
+        startIcon={<HelpIcon />}
         sx={{ fontWeight: 600 }}
       >
         Trợ giúp
@@ -37,17 +55,18 @@ const DesktopNav = () => {
       <Button
         color="inherit"
         onClick={() => scrollToSection("contact-section")}
+        startIcon={<ConnectWithoutContactIcon />}
         sx={{ fontWeight: 600 }}
       >
         Liên hệ
       </Button>
       <Button
         color="inherit"
-        onClick={() => navigate("/bus-tracking")}
-        startIcon={<TrackChanges />}
-        sx={{ fontWeight: 600, color: "secondary.main" }}
+        onClick={() => navigate("/TermOfService")}
+        startIcon={<GavelIcon />}
+        sx={{ fontWeight: 600 }}
       >
-        Theo dõi xe
+        Chính sách
       </Button>
       {/* 1. Nếu CHƯA đăng nhập, hiển thị "Đăng ký nhà xe" */}
       {!user && (

@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
+import { UsersService } from 'src/users/users.service';
 import { SeatStatus, TripStatus } from '../trips/schemas/trip.schema';
 import { TripsService } from '../trips/trips.service';
 import { UserDocument } from '../users/schemas/user.schema';
@@ -24,6 +25,10 @@ import {
   PaymentStatus,
 } from './schemas/booking.schema';
 
+export interface BookingWithReviewStatus extends BookingDocument {
+  isReviewed: boolean;
+}
+
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
@@ -32,6 +37,7 @@ export class BookingsService {
     private readonly tripsService: TripsService,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
+    private readonly usersService: UsersService,
   ) {}
 
   /**
@@ -86,6 +92,19 @@ export class BookingsService {
       }
     }
 
+    let bookingUserId = user?._id;
+    if (!bookingUserId && createDto.contactEmail) {
+      const potentialUser = await this.usersService.findOneByEmail(
+        createDto.contactEmail,
+      );
+      if (potentialUser) {
+        bookingUserId = potentialUser._id;
+        this.logger.log(
+          `Guest booking by ${createDto.contactEmail} linked to existing user ID: ${potentialUser._id}`,
+        );
+      }
+    }
+
     const totalAmount = trip.price * seatNumbersToHold.length;
 
     const passengersWithPrice: PassengerInfo[] = createDto.passengers.map(
@@ -103,7 +122,7 @@ export class BookingsService {
     const heldUntil = new Date(Date.now() + holdDurationMinutes * 60 * 1000);
 
     const newBooking = new this.bookingModel({
-      userId: user?._id,
+      userId: bookingUserId,
       tripId: createDto.tripId,
       companyId: trip.companyId._id,
       //companyId: trip.companyId,
@@ -251,17 +270,19 @@ export class BookingsService {
   /**
    * Tra cứu thông tin booking
    */
-  async lookupBooking(lookupDto: LookupBookingDto): Promise<BookingDocument> {
-    const query: FilterQuery<Booking> = {};
-    if (lookupDto.ticketCode) {
-      query.ticketCode = lookupDto.ticketCode;
-    } else if (lookupDto.bookingId) {
-      query._id = lookupDto.bookingId;
-      query.contactPhone = lookupDto.contactPhone;
+  async lookupBooking(
+    lookupDto: LookupBookingDto,
+  ): Promise<BookingWithReviewStatus> {
+    const { identifier, contactPhone } = lookupDto;
+
+    const query: FilterQuery<Booking> = {
+      contactPhone: contactPhone,
+    };
+
+    if (Types.ObjectId.isValid(identifier)) {
+      query.$or = [{ _id: identifier }, { ticketCode: identifier }];
     } else {
-      throw new BadRequestException(
-        'Cần cung cấp mã vé hoặc ID đơn đặt vé để tra cứu.',
-      );
+      query.ticketCode = identifier;
     }
 
     const booking = await this.bookingModel
@@ -279,7 +300,14 @@ export class BookingsService {
 
     if (!booking)
       throw new NotFoundException('Không tìm thấy thông tin đặt vé phù hợp.');
-    return booking;
+
+    const bookingObject = booking.toObject();
+
+    const result = bookingObject as BookingWithReviewStatus;
+
+    result.isReviewed = !!result.reviewId;
+
+    return result;
   }
 
   public async generateTicketCode(length = 8): Promise<string> {

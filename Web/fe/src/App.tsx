@@ -19,7 +19,7 @@ import Policies from "./features/core/pages/Policies";
 import CompanyRegistration from "./features/company/pages/CompanyRegistration";
 import CompanyRegistrationSuccess from "./features/company/pages/CompanyRegistrationSuccess";
 import ForgotPassword from "./features/auth/pages/ForgotPassword";
-// import MyBookings from "./features/profile/pages/MyBookings";
+import MyBookings from "./features/profile/pages/MyBookings";
 import LoyaltyProgram from "./features/profile/pages/LoyaltyProgram";
 import ChangePassword from "./features/profile/pages/ChangePassword";
 import PaymentStatus from "./features/bookings/pages/PaymentStatus";
@@ -41,6 +41,10 @@ import { useTabSync } from "./hooks/useTabSync";
 import ManageVehicles from "./features/admin/pages/ManageVehicles";
 import AdminManageTrips from "./features/admin/pages/AdminManageTrips";
 import AddTripPage from "./features/company/pages/AddTripPage";
+import TermOfService from "./features/core/pages/TermsOfService";
+import BookingLookupPage from "./features/bookings/pages/BookingLookupPage";
+import ActivateAccountPage from "./features/auth/pages/ActivateAccountPage";
+import ManageReviewsPage from "./features/admin/pages/ManageReviewsPage";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -85,15 +89,21 @@ function App() {
                   path="/auth/verification-result"
                   element={<VerificationResultPage />}
                 />
+                <Route path="/TermOfService" element={<TermOfService />} />
+                <Route path="lookup" element={<BookingLookupPage />} />
+                <Route
+                  path="/activate-account"
+                  element={<ActivateAccountPage />}
+                />
                 {/* Trang được bảo vệ */}
-                {/* <Route
+                <Route
                   path="my-bookings"
                   element={
                     <ProtectedRoute allowedRoles={["user", "company_admin"]}>
                       <MyBookings />
                     </ProtectedRoute>
                   }
-                /> */}
+                />
                 <Route
                   path="loyalty-program"
                   element={
@@ -159,6 +169,7 @@ function App() {
                 />
                 <Route path="add-trip" element={<AddTripPage />} />
                 <Route path="users" element={<ManageUsers />} />
+                <Route path="reviews" element={<ManageReviewsPage />} />
                 <Route path="finance" element={<FinanceReports />} />
                 <Route path="settings" element={<SystemSettings />} />
                 <Route

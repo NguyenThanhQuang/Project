@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import React from "react";
 import {
   Box,
@@ -33,13 +32,11 @@ export const TripCard: React.FC<TripCardProps> = ({ trip }) => {
     navigate(`/trips/${trip._id}`);
   };
 
-  // Helper để tính toán duration (nên đưa vào utils nếu dùng ở nhiều nơi)
   const calculateDuration = (start: string, end: string): string => {
     const startTime = new Date(start);
     const endTime = new Date(end);
     let diff = endTime.getTime() - startTime.getTime();
     if (diff < 0) {
-      // Xử lý trường hợp qua đêm
       diff += 24 * 60 * 60 * 1000;
     }
     const hours = Math.floor(diff / (1000 * 60 * 60));

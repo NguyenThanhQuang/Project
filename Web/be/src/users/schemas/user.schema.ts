@@ -64,6 +64,18 @@ export class User {
     unique: true,
     sparse: true,
   })
+  accountActivationToken?: string;
+
+  @Prop({ type: Date, select: false })
+  accountActivationExpires?: Date;
+
+  @Prop({
+    type: String,
+    select: false,
+    index: true,
+    unique: true,
+    sparse: true,
+  })
   passwordResetToken?: string;
 
   @Prop({ type: Date, select: false })
@@ -104,3 +116,13 @@ export type SanitizedUser = Omit<
   | 'passwordResetToken'
   | 'passwordResetExpires'
 >;
+
+// TTL Index: Tự động xóa các document đang chờ kích hoạt (chưa có password) sau khi token hết hạn.
+UserSchema.index(
+  { accountActivationExpires: 1 },
+  {
+    expireAfterSeconds: 0,
+    // Chỉ áp dụng cho các user CHƯA có password, tức là đang chờ kích hoạt.
+    partialFilterExpression: { passwordHash: { $exists: false } },
+  },
+);

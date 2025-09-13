@@ -1,10 +1,11 @@
 import api from "../../../services/api";
+import { getErrorMessage } from "../../../utils/getErrorMessage";
 import type {
+  BookingLookupParams,
   CreateHoldPayload,
   HeldBookingResponse,
-  LookedUpBooking,
-  LookupBookingPayload,
   PaymentLinkResponse,
+  PopulatedBookingLookupResult,
 } from "../types/booking";
 
 /**
@@ -45,8 +46,15 @@ export const createPaymentLink = async (
  * @returns Dữ liệu chi tiết của booking đã được populate
  */
 export const lookupBooking = async (
-  payload: LookupBookingPayload
-): Promise<LookedUpBooking> => {
-  const response = await api.post<LookedUpBooking>("/bookings/lookup", payload);
-  return response.data;
+  params: BookingLookupParams
+): Promise<PopulatedBookingLookupResult> => {
+  try {
+    const response = await api.post<PopulatedBookingLookupResult>(
+      "/bookings/lookup",
+      params
+    );
+    return response.data;
+  } catch (error) {
+    throw new Error(getErrorMessage(error, "Không thể tra cứu thông tin vé."));
+  }
 };

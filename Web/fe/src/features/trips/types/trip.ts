@@ -1,7 +1,7 @@
 import type { Dayjs } from "dayjs";
 import type { Company } from "../../admin/types/company";
 import type { Vehicle } from "../../admin/types/vehicle";
-import type { Location } from "./location";
+import type { LocationData } from "./location";
 
 export type TripStatus = "scheduled" | "departed" | "arrived" | "cancelled";
 export type SeatStatus = "available" | "held" | "booked";
@@ -54,9 +54,9 @@ export interface PopulatedTrip {
   companyId: Company;
   vehicleId: Vehicle;
   route: {
-    fromLocationId: Location;
-    toLocationId: Location;
-    stops: (Omit<TripStopInfo, "locationId"> & { locationId: Location })[];
+    fromLocationId: LocationData;
+    toLocationId: LocationData;
+    stops: (Omit<TripStopInfo, "locationId"> & { locationId: LocationData })[];
     polyline?: string;
   };
   departureTime: string;
@@ -75,8 +75,8 @@ export interface TripSearchResult {
   companyId: Pick<Company, "_id" | "name" | "logoUrl">;
   vehicleId: Pick<Vehicle, "_id" | "type">;
   route: {
-    fromLocationId: Pick<Location, "_id" | "name" | "province">;
-    toLocationId: Pick<Location, "_id" | "name" | "province">;
+    fromLocationId: Pick<LocationData, "_id" | "name" | "province">;
+    toLocationId: Pick<LocationData, "_id" | "name" | "province">;
   };
   departureTime: string;
   expectedArrivalTime: string;
@@ -105,14 +105,14 @@ export interface FilterOptions {
  * State của form tìm kiếm chuyến đi.
  */
 export interface SearchFormState {
-  from: Location | null;
-  to: Location | null;
+  from: LocationData | null;
+  to: LocationData | null;
   date: Dayjs | null;
   passengers: number;
 }
 
 export interface PopularRoute {
-  fromLocation: Location;
-  toLocation: Location;
+  fromLocation: LocationData;
+  toLocation: LocationData;
   bookingCount: number;
 }

@@ -1,4 +1,5 @@
-import React, { useState, useCallback } from "react";
+import React from "react";
+import { useNavigate } from "react-router-dom";
 import {
   Grid,
   Button,
@@ -8,100 +9,46 @@ import {
   Typography,
   Box,
   CircularProgress,
-  IconButton,
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
-import { Search, SwapHoriz, LocationOn } from "@mui/icons-material";
-import { useNavigate } from "react-router-dom";
-import type { Dayjs } from "dayjs";
+import { Search, LocationOn } from "@mui/icons-material";
 import dayjs from "dayjs";
-import { debounce } from "lodash";
-import { searchLocations } from "../../../../services/locationService";
-import type { Location } from "../../../../types";
-
+import type { SearchData } from "../../../../types";
+import type { LocationData } from "../../../trips/types/location";
 interface SearchFormProps {
-  searchData: {
-    from: Location | null;
-    to: Location | null;
-    date: Dayjs;
-    passengers: number;
-  };
-  setSearchData: React.Dispatch<
-    React.SetStateAction<{
-      from: Location | null;
-      to: Location | null;
-      date: Dayjs;
-      passengers: number;
-    }>
-  >;
+  searchData: SearchData;
+  setSearchData: React.Dispatch<React.SetStateAction<SearchData>>;
+  fromOptions: readonly LocationData[];
+  fromLoading: boolean;
+  onFromInputChange: (value: string) => void;
+  toOptions: readonly LocationData[];
+  toLoading: boolean;
+  onToInputChange: (value: string) => void;
 }
 
 export const SearchForm: React.FC<SearchFormProps> = ({
   searchData,
   setSearchData,
+  fromOptions,
+  fromLoading,
+  onFromInputChange,
+  toOptions,
+  toLoading,
+  onToInputChange,
 }) => {
   const navigate = useNavigate();
-  const [error, setError] = useState<string | null>(null);
-
-  const [fromOptions, setFromOptions] = useState<readonly Location[]>([]);
-  const [toOptions, setToOptions] = useState<readonly Location[]>([]);
-  const [loadingFrom, setLoadingFrom] = useState(false);
-  const [loadingTo, setLoadingTo] = useState(false);
-
-  const handleDataChange = <K extends keyof typeof searchData>(
-    field: K,
-    value: (typeof searchData)[K]
-  ) => {
-    setSearchData((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handleSwapLocations = () => {
-    setSearchData((prev) => ({ ...prev, from: prev.to, to: prev.from }));
-  };
 
   const handleSearch = () => {
-    setError(null);
-    if (!searchData.from || !searchData.to) {
-      setError("Vui lòng chọn điểm đi và điểm đến.");
-      return;
+    if (searchData.from && searchData.to) {
+      const params = new URLSearchParams({
+        from: searchData.from.province,
+        to: searchData.to.province,
+        date: searchData.date.format("YYYY-MM-DD"),
+        passengers: String(searchData.passengers),
+      });
+      navigate(`/trips/search-results?${params.toString()}`);
     }
-    if (searchData.from._id === searchData.to._id) {
-      setError("Điểm đi và điểm đến không được trùng nhau.");
-      return;
-    }
-
-    const searchParams = new URLSearchParams({
-      from: searchData.from._id,
-      to: searchData.to._id,
-      date: searchData.date.format("YYYY-MM-DD"),
-      passengers: searchData.passengers.toString(),
-    });
-
-    navigate(`/trips/search-results?${searchParams.toString()}`);
   };
-
-  const fetchLocations = async (
-    inputValue: string,
-    setOptions: React.Dispatch<React.SetStateAction<readonly Location[]>>,
-    setLoading: React.Dispatch<React.SetStateAction<boolean>>
-  ) => {
-    setLoading(true);
-    const results = await searchLocations(inputValue);
-    setOptions(results);
-    setLoading(false);
-  };
-
-  const debouncedFetchFrom = useCallback(
-    debounce(
-      (query) => fetchLocations(query, setFromOptions, setLoadingFrom),
-      300
-    ),
-    []
-  );
-  const debouncedFetchTo = useCallback(
-    debounce((query) => fetchLocations(query, setToOptions, setLoadingTo), 300),
-    []
-  );
 
   return (
     <Paper
@@ -126,36 +73,75 @@ export const SearchForm: React.FC<SearchFormProps> = ({
       >
         Tìm chuyến xe lý tưởng
       </Typography>
-      <Grid container spacing={2} alignItems="center">
-        <Grid size={{ xs: 12, md: 5.5 }}>
+      <Grid container spacing={2}>
+        <Grid size={{ xs: 12 }}>
           <Autocomplete
             options={fromOptions}
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, value) => option._id === value._id}
+            filterOptions={(x) => x}
             value={searchData.from}
-            onChange={(_, newValue) => handleDataChange("from", newValue)}
-            onInputChange={(_, newInputValue) =>
-              debouncedFetchFrom(newInputValue)
+            onChange={(_, newValue) =>
+              setSearchData((prev) => ({ ...prev, from: newValue }))
             }
-            loading={loadingFrom}
+            onInputChange={(_, newInputValue) =>
+              onFromInputChange(newInputValue)
+            }
+            loading={fromLoading}
+            autoHighlight
+            includeInputInList
+            getOptionLabel={(option) => {
+              if (typeof option === "string") {
+                return option;
+              }
+              return option.name || "";
+            }}
+            isOptionEqualToValue={(option, value) => option._id === value._id}
+            renderOption={(props, option) => (
+              <Box component="li" {...props} key={option._id}>
+                <LocationOn sx={{ mr: 1.5, color: "text.secondary" }} />
+                <Box>
+                  <Typography variant="body1">{option.name}</Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    {option.province}
+                  </Typography>
+                </Box>
+              </Box>
+            )}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="Điểm đi"
-                required
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (
-                    <>
-                      {loadingFrom ? (
+                    <React.Fragment>
+                      {fromLoading ? (
                         <CircularProgress color="inherit" size={20} />
                       ) : null}
                       {params.InputProps.endAdornment}
-                    </>
+                    </React.Fragment>
                   ),
                 }}
               />
             )}
+          />
+        </Grid>
+        {/* Lặp lại logic tương tự cho Autocomplete "Điểm đến" */}
+        <Grid size={{ xs: 12 }}>
+          <Autocomplete
+            options={toOptions}
+            filterOptions={(x) => x}
+            value={searchData.to}
+            onChange={(_, newValue) =>
+              setSearchData((prev) => ({ ...prev, to: newValue }))
+            }
+            onInputChange={(_, newInputValue) => onToInputChange(newInputValue)}
+            loading={toLoading}
+            autoHighlight
+            includeInputInList
+            getOptionLabel={(option) =>
+              typeof option === "string" ? option : option.name || ""
+            }
+            isOptionEqualToValue={(option, value) => option._id === value._id}
             renderOption={(props, option) => (
               <Box component="li" {...props} key={option._id}>
                 <LocationOn sx={{ mr: 1.5, color: "text.secondary" }} />
@@ -167,81 +153,47 @@ export const SearchForm: React.FC<SearchFormProps> = ({
                 </Box>
               </Box>
             )}
-          />
-        </Grid>
-        <Grid size={{ xs: 12, md: 1 }} sx={{ textAlign: "center" }}>
-          <IconButton
-            onClick={handleSwapLocations}
-            color="primary"
-            aria-label="đảo chiều"
-          >
-            <SwapHoriz />
-          </IconButton>
-        </Grid>
-        <Grid size={{ xs: 12, md: 5.5 }}>
-          {/* [SỬA ĐỔI] Autocomplete cho điểm đến */}
-          <Autocomplete
-            options={toOptions}
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, value) => option._id === value._id}
-            value={searchData.to}
-            onChange={(_, newValue) => handleDataChange("to", newValue)}
-            onInputChange={(_, newInputValue) =>
-              debouncedFetchTo(newInputValue)
-            }
-            loading={loadingTo}
             renderInput={(params) => (
               <TextField
                 {...params}
                 label="Điểm đến"
-                required
                 InputProps={{
                   ...params.InputProps,
                   endAdornment: (
-                    <>
-                      {loadingTo ? (
+                    <React.Fragment>
+                      {toLoading ? (
                         <CircularProgress color="inherit" size={20} />
                       ) : null}
                       {params.InputProps.endAdornment}
-                    </>
+                    </React.Fragment>
                   ),
                 }}
               />
             )}
-            renderOption={(props, option) => (
-              <Box component="li" {...props} key={option._id}>
-                <LocationOn sx={{ mr: 1.5, color: "text.secondary" }} />
-                <Box>
-                  <Typography variant="body1">{option.name}</Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    {option.province}
-                  </Typography>
-                </Box>
-              </Box>
-            )}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          {/* [SỬA ĐỔI] DatePicker */}
           <DatePicker
             label="Ngày đi"
             value={searchData.date}
             onChange={(newValue) =>
-              handleDataChange("date", newValue || dayjs())
+              setSearchData((prev) => ({ ...prev, date: newValue || dayjs() }))
             }
             minDate={dayjs()}
             slotProps={{ textField: { fullWidth: true, required: true } }}
           />
         </Grid>
         <Grid size={{ xs: 12, sm: 6 }}>
-          {/* [SỬA ĐỔI] TextField số lượng khách */}
           <TextField
             label="Số lượng khách"
             type="number"
             fullWidth
             value={searchData.passengers}
             onChange={(e) =>
-              handleDataChange("passengers", parseInt(e.target.value) || 1)
+              setSearchData((prev) => ({
+                ...prev,
+                passengers: parseInt(e.target.value) || 1,
+              }))
             }
             inputProps={{ min: 1, max: 10 }}
           />

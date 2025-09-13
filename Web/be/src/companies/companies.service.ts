@@ -1,10 +1,13 @@
 import {
   ConflictException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
 } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model, Types } from 'mongoose';
+import { InjectConnection, InjectModel } from '@nestjs/mongoose';
+import { Connection, Model, Types } from 'mongoose';
+import { MailService } from 'src/mail/mail.service';
+import { UsersService } from 'src/users/users.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
 import { Company, CompanyDocument } from './schemas/company.schema';
@@ -13,6 +16,9 @@ import { Company, CompanyDocument } from './schemas/company.schema';
 export class CompaniesService {
   constructor(
     @InjectModel(Company.name) private companyModel: Model<CompanyDocument>,
+    @InjectConnection() private readonly connection: Connection,
+    private readonly usersService: UsersService,
+    private readonly mailService: MailService,
   ) {}
 
   async create(createCompanyDto: CreateCompanyDto): Promise<CompanyDocument> {
@@ -33,11 +39,59 @@ export class CompaniesService {
       );
     }
 
-    const newCompany = new this.companyModel({
-      ...createCompanyDto,
-      code: createCompanyDto.code.toUpperCase(),
-    });
-    return newCompany.save();
+    const { adminName, adminEmail, adminPhone, ...companyData } =
+      createCompanyDto;
+
+    const session = await this.connection.startSession();
+    session.startTransaction();
+
+    try {
+      // Bước 1: Tạo Company
+      const newCompany = new this.companyModel({
+        ...companyData,
+        code: createCompanyDto.code.toUpperCase(),
+      });
+      const savedCompanyArray = await newCompany.save({ session });
+      const savedCompany = savedCompanyArray;
+
+      // Bước 2: Tạo hoặc Thăng cấp tài khoản Admin
+      const { user: adminAccount, isNew } =
+        await this.usersService.createOrPromoteCompanyAdmin({
+          name: adminName,
+          email: adminEmail,
+          phone: adminPhone,
+          companyId: savedCompany._id,
+        });
+
+      // Bước 3: Gửi email tương ứng
+      if (isNew) {
+        // "sanity check", nếu isNew là true, adminAccount.accountActivationToken PHẢI tồn tại.
+        if (!adminAccount.accountActivationToken) {
+          throw new InternalServerErrorException(
+            'Lỗi hệ thống: Không thể tạo token kích hoạt cho tài khoản quản trị.',
+          );
+        }
+
+        await this.mailService.sendCompanyAdminActivationEmail(
+          adminAccount.email,
+          adminAccount.name,
+          adminAccount.accountActivationToken,
+        );
+      } else {
+        await this.mailService.sendCompanyAdminPromotionEmail(
+          adminAccount.email,
+          adminAccount.name,
+          savedCompany.name,
+        );
+      }
+      await session.commitTransaction();
+      return savedCompany;
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      await session.endSession();
+    }
   }
 
   async findAll(): Promise<CompanyDocument[]> {

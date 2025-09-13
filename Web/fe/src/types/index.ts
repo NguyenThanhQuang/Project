@@ -1,6 +1,7 @@
 import type dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
 import type { Vehicle } from "../features/admin/types/vehicle";
+import type { LocationData } from "../features/trips/types/location";
 
 export type UserRole = "user" | "company_admin" | "admin";
 export type LocationType =
@@ -54,19 +55,6 @@ export interface SeatMap {
   rows: number;
   cols: number;
   layout: (string | number | null)[][];
-}
-
-export interface Location {
-  _id: string;
-  name: string;
-  province: string;
-  fullAddress: string;
-  location: {
-    type: "Point";
-    coordinates: [number, number];
-  };
-  type: string;
-  isActive: boolean;
 }
 
 interface Seat {
@@ -137,23 +125,6 @@ export interface Trip {
   seats: Seat[];
 }
 
-export interface PopulatedTrip {
-  _id: string;
-  companyId: Company;
-  vehicleId: Vehicle;
-  route: {
-    fromLocationId: Location;
-    toLocationId: Location;
-    stops: (Omit<TripStopInfo, "locationId"> & { locationId: Location })[];
-    polyline?: string;
-  };
-  departureTime: string;
-  expectedArrivalTime: string;
-  price: number;
-  status: TripStatus;
-  seats: Seat[];
-}
-
 export interface TripSearchResult {
   _id: string;
   companyId: {
@@ -166,8 +137,8 @@ export interface TripSearchResult {
     type: string;
   };
   route: {
-    fromLocationId: Location;
-    toLocationId: Location;
+    fromLocationId: LocationData;
+    toLocationId: LocationData;
   };
   departureTime: string;
   expectedArrivalTime: string;
@@ -250,15 +221,15 @@ export interface RouteStepperModalProps {
 }
 
 export type SearchState = {
-  from: Location | null;
-  to: Location | null;
+  from: LocationData | null;
+  to: LocationData | null;
   date: dayjs.Dayjs;
   passengers: number;
 };
 
 export interface SearchData {
-  from: Location | null;
-  to: Location | null;
+  from: LocationData | null;
+  to: LocationData | null;
   date: Dayjs;
   passengers: number;
 }

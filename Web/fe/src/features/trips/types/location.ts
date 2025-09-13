@@ -6,7 +6,7 @@ export type LocationType =
   | "city"
   | "other";
 
-export interface Location {
+export interface LocationData {
   _id: string;
   name: string;
   slug: string;

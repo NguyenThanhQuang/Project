@@ -2,29 +2,21 @@ import React from "react";
 import { Box, Container, Typography, Grid, Chip } from "@mui/material";
 import dayjs, { Dayjs } from "dayjs";
 import { SearchForm } from "./SearchForm";
-import type { Location } from "../../../../types";
+import type { LocationData } from "../../../trips/types/location";
+import type { SearchData } from "../../../../types";
 
 interface HeroSectionProps {
-  searchData: {
-    from: Location | null;
-    to: Location | null;
-    date: Dayjs;
-    passengers: number;
-  };
-  setSearchData: React.Dispatch<
-    React.SetStateAction<{
-      from: Location | null;
-      to: Location | null;
-      date: Dayjs;
-      passengers: number;
-    }>
-  >;
+  searchData: SearchData;
+  setSearchData: React.Dispatch<React.SetStateAction<SearchData>>;
+  fromOptions: readonly LocationData[];
+  fromLoading: boolean;
+  onFromInputChange: (value: string) => void;
+  toOptions: readonly LocationData[];
+  toLoading: boolean;
+  onToInputChange: (value: string) => void;
 }
 
-export const HeroSection: React.FC<HeroSectionProps> = ({
-  searchData,
-  setSearchData,
-}) => {
+export const HeroSection: React.FC<HeroSectionProps> = (props) => {
   return (
     <Box
       id="hero-section"
@@ -94,7 +86,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
               variant="h5"
               sx={{ mb: 4, opacity: 0.95, fontWeight: 400 }}
             >
-              Hơn 5000+ tuyến đường và 2000+ nhà xe uy tín trên toàn quốc.
+              ____________________________________________________________________
             </Typography>
 
             <Grid container spacing={3} sx={{ mb: 4 }}>
@@ -141,7 +133,7 @@ export const HeroSection: React.FC<HeroSectionProps> = ({
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <SearchForm searchData={searchData} setSearchData={setSearchData} />
+            <SearchForm {...props} />
           </Grid>
         </Grid>
       </Container>

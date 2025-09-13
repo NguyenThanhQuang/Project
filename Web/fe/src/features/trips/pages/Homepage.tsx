@@ -12,32 +12,48 @@ import {
   PopularRoutes,
   WhyChooseUs,
 } from "../components/homepage";
-import type { Location } from "../../../types";
+import type { LocationData } from "../../trips/types/location";
+import { useLocationSearch } from "../hooks/useLocationSearch";
 
 const Homepage: React.FC = () => {
   const [searchData, setSearchData] = useState({
-    from: null as Location | null,
-    to: null as Location | null,
+    from: null as LocationData | null,
+    to: null as LocationData | null,
     date: dayjs(),
     passengers: 1,
   });
 
-  const handlePopularRouteSelect = (from: Location, to: Location) => {
+  const fromSearch = useLocationSearch();
+  const toSearch = useLocationSearch();
+
+  const handlePopularRouteSelect = (from: LocationData, to: LocationData) => {
     setSearchData({
       from: from,
       to: to,
       date: dayjs(),
       passengers: 1,
     });
+    fromSearch.setOptions([from]);
+    toSearch.setOptions([to]);
     const heroSection = document.getElementById("hero-section");
     if (heroSection) {
       heroSection.scrollIntoView({ behavior: "smooth" });
     }
   };
+
   return (
     <LocalizationProvider dateAdapter={AdapterDayjs}>
       <Box>
-        <HeroSection searchData={searchData} setSearchData={setSearchData} />
+        <HeroSection
+          searchData={searchData}
+          setSearchData={setSearchData}
+          fromOptions={fromSearch.options}
+          fromLoading={fromSearch.loading}
+          onFromInputChange={fromSearch.handleInputChange}
+          toOptions={toSearch.options}
+          toLoading={toSearch.loading}
+          onToInputChange={toSearch.handleInputChange}
+        />
         <PopularRoutes onRouteSelect={handlePopularRouteSelect} />
         <WhyChooseUs />
         <CustomerReviews />

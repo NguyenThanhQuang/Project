@@ -22,6 +22,7 @@ import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationEmailDto } from './dto/resend-verification-email.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { ActivateAccountDto } from './dto/activate-account.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -140,5 +141,11 @@ export class AuthController {
       );
     }
     return result;
+  }
+
+  @Post('activate-account')
+  @HttpCode(HttpStatus.OK)
+  async activateAccount(@Body() activateDto: ActivateAccountDto) {
+    return this.authService.activateCompanyAdminAccount(activateDto);
   }
 }

@@ -1,18 +1,22 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
+import dayjs from 'dayjs';
 import { FilterQuery, Model } from 'mongoose';
 import { TripStatus } from 'src/trips/schemas/trip.schema';
 import { BookingsService } from '../bookings/bookings.service';
-import { BookingStatus } from '../bookings/schemas/booking.schema';
 import { TripsService } from '../trips/trips.service';
 import { UserDocument } from '../users/schemas/user.schema';
+import { CreateGuestReviewDto } from './dto/create-guest-review.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryReviewDto } from './dto/query-review.dto';
+import { UpdateUserReviewDto } from './dto/update-user-review.dto';
 import { Review, ReviewDocument } from './schemas/review.schema';
 
 @Injectable()
@@ -21,36 +25,45 @@ export class ReviewsService {
     @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
     private readonly bookingsService: BookingsService,
     private readonly tripsService: TripsService,
+    private readonly configService: ConfigService,
   ) {}
+
+  private async validateAndPrepareReview(bookingId: any, tripId: any) {
+    const booking = await this.bookingsService.findOneByCondition({
+      _id: bookingId,
+    });
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt vé.');
+
+    const trip = await this.tripsService.findOne(tripId.toString());
+    if (booking.tripId.toString() !== trip._id.toString()) {
+      throw new BadRequestException('Đơn đặt vé không thuộc chuyến đi này.');
+    }
+    if (trip.status !== TripStatus.ARRIVED) {
+      throw new BadRequestException(
+        'Chỉ có thể đánh giá chuyến đi đã hoàn thành.',
+      );
+    }
+    const existingReview = await this.reviewModel.findOne({ bookingId }).exec();
+    if (existingReview) {
+      throw new ConflictException('Bạn đã đánh giá cho chuyến đi này rồi.');
+    }
+    return { booking, trip };
+  }
 
   async create(
     createReviewDto: CreateReviewDto,
     user: UserDocument,
   ): Promise<ReviewDocument> {
     const { bookingId, tripId, rating, comment, isAnonymous } = createReviewDto;
+    const { booking, trip } = await this.validateAndPrepareReview(
+      bookingId,
+      tripId,
+    );
 
-    const booking = await this.bookingsService.findOne(bookingId, user);
-    const trip = await this.tripsService.findOne(tripId.toString());
-
-    if (booking.tripId.toString() !== trip._id.toString()) {
-      throw new BadRequestException('Đơn đặt vé không thuộc chuyến đi này.');
-    }
-
-    if (booking.status !== BookingStatus.CONFIRMED) {
-      throw new BadRequestException(
-        'Chỉ có thể đánh giá các chuyến đi đã được xác nhận.',
+    if (booking.userId?.toString() !== user._id.toString()) {
+      throw new ForbiddenException(
+        'Bạn không có quyền đánh giá đơn đặt vé này.',
       );
-    }
-
-    if (trip.status !== TripStatus.ARRIVED) {
-      throw new BadRequestException(
-        'Chỉ có thể đánh giá các chuyến đi đã hoàn thành (đã đến nơi).',
-      );
-    }
-
-    const existingReview = await this.reviewModel.findOne({ bookingId }).exec();
-    if (existingReview) {
-      throw new ConflictException('Bạn đã đánh giá cho chuyến đi này rồi.');
     }
 
     const newReview = new this.reviewModel({
@@ -61,17 +74,87 @@ export class ReviewsService {
       rating,
       comment,
       isAnonymous: isAnonymous || false,
+      displayName: isAnonymous ? user.name.charAt(0).toUpperCase() : user.name,
     });
 
-    try {
-      const savedReview = await newReview.save();
-      return savedReview;
-    } catch (error) {
-      if ((error as { code: number }).code === 11000) {
-        throw new ConflictException('Bạn đã đánh giá cho chuyến đi này rồi.');
-      }
-      throw error;
+    const savedReview = await newReview.save();
+
+    booking.reviewId = savedReview._id;
+    await booking.save();
+
+    return savedReview;
+  }
+
+  async createAsGuest(
+    createGuestReviewDto: CreateGuestReviewDto,
+  ): Promise<ReviewDocument> {
+    const { bookingId, tripId, rating, comment, isAnonymous, contactPhone } =
+      createGuestReviewDto;
+    const { booking, trip } = await this.validateAndPrepareReview(
+      bookingId,
+      tripId,
+    );
+
+    if (booking.contactPhone !== contactPhone) {
+      throw new ForbiddenException('Số điện thoại không khớp với đơn đặt vé.');
     }
+    if (booking.userId) {
+      throw new BadRequestException(
+        'Đơn đặt vé này thuộc về một tài khoản đã đăng ký. Vui lòng đăng nhập để đánh giá.',
+      );
+    }
+
+    const newReview = new this.reviewModel({
+      tripId,
+      bookingId,
+      companyId: trip.companyId,
+      rating,
+      comment,
+      isAnonymous: isAnonymous || false,
+      displayName: isAnonymous
+        ? booking.contactName.charAt(0).toUpperCase()
+        : booking.contactName,
+    });
+
+    const savedReview = await newReview.save();
+
+    booking.reviewId = savedReview._id;
+    await booking.save();
+
+    return savedReview;
+  }
+
+  async updateUserReview(
+    id: string,
+    user: UserDocument,
+    updateUserReviewDto: UpdateUserReviewDto,
+  ): Promise<ReviewDocument> {
+    const review = await this.findOne(id);
+
+    if (review.userId?.toString() !== user._id.toString()) {
+      throw new ForbiddenException('Bạn không có quyền sửa đánh giá này.');
+    }
+    if (review.editCount > 0) {
+      throw new ForbiddenException(
+        'Bạn chỉ có thể sửa đánh giá một lần duy nhất.',
+      );
+    }
+
+    const editWindowDays = this.configService.get<number>(
+      'REVIEW_EDIT_WINDOW_DAYS',
+      7,
+    );
+    if (dayjs().diff(dayjs(review.createdAt), 'day') > editWindowDays) {
+      throw new ForbiddenException(
+        `Bạn chỉ có thể sửa đánh giá trong vòng ${editWindowDays} ngày sau khi đăng.`,
+      );
+    }
+
+    Object.assign(review, updateUserReviewDto);
+    review.editCount += 1;
+    review.lastEditedAt = new Date();
+
+    return review.save();
   }
 
   async findAll(queryDto: QueryReviewDto): Promise<ReviewDocument[]> {
@@ -84,20 +167,9 @@ export class ReviewsService {
 
     return this.reviewModel
       .find(query)
-      .populate({
-        path: 'userId',
-        select: 'name',
-      })
+      .select('-userId')
       .sort({ createdAt: -1 })
-      .exec()
-      .then((reviews) => {
-        return reviews.map((review) => {
-          if (review.isAnonymous) {
-            (review.userId as any) = { name: 'Người dùng ẩn danh' };
-          }
-          return review;
-        });
-      });
+      .exec();
   }
 
   async findAllForAdmin(queryDto: QueryReviewDto): Promise<ReviewDocument[]> {

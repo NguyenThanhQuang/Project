@@ -11,11 +11,11 @@ import {
 } from "@mui/material";
 import { DirectionsBus } from "@mui/icons-material";
 import { getPopularRoutes } from "../../../trips/services/tripService";
-import type { Location } from "../../../../types";
 import type { PopularRoute } from "../../types/trip";
+import type { LocationData } from "../../types/location";
 
 interface PopularRoutesProps {
-  onRouteSelect: (from: Location, to: Location) => void;
+  onRouteSelect: (from: LocationData, to: LocationData) => void;
 }
 
 export const PopularRoutes: React.FC<PopularRoutesProps> = ({

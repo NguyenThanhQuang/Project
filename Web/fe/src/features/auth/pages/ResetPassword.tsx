@@ -15,11 +15,8 @@ import {
   InputAdornment,
   IconButton,
   Alert,
-  LinearProgress,
-  Divider,
-  Card,
-  CardContent,
   CircularProgress,
+  Divider,
 } from "@mui/material";
 import {
   Visibility,
@@ -29,6 +26,9 @@ import {
   Cancel,
   Security,
 } from "@mui/icons-material";
+
+import { validatePassword } from "../utils/passwordValidator";
+import PasswordStrengthIndicator from "../components/PasswordStrengthIndicator";
 
 const ResetPassword: React.FC = () => {
   const navigate = useNavigate();
@@ -81,38 +81,6 @@ const ResetPassword: React.FC = () => {
     validateToken();
   }, [token, dispatch]);
 
-  const validatePassword = (password: string) => {
-    const minLength = password.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumbers = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    const validCount = [
-      minLength,
-      hasUpperCase,
-      hasLowerCase,
-      hasNumbers,
-      hasSpecialChar,
-    ].filter(Boolean).length;
-
-    return {
-      isValid:
-        minLength &&
-        hasUpperCase &&
-        hasLowerCase &&
-        hasNumbers &&
-        hasSpecialChar,
-      strength: validCount,
-      checks: {
-        minLength,
-        hasUpperCase,
-        hasLowerCase,
-        hasNumbers,
-        hasSpecialChar,
-      },
-    };
-  };
   const passwordValidation = validatePassword(formData.password);
   const isPasswordMatch =
     formData.password === formData.confirmPassword &&
@@ -141,20 +109,6 @@ const ResetPassword: React.FC = () => {
         confirmNewPassword: formData.confirmPassword,
       })
     );
-  };
-
-  const getPasswordStrengthColor = (strength: number) => {
-    if (strength <= 2) return "error";
-    if (strength <= 3) return "warning";
-    if (strength <= 4) return "info";
-    return "success";
-  };
-
-  const getPasswordStrengthLabel = (strength: number) => {
-    if (strength <= 2) return "Yếu";
-    if (strength <= 3) return "Trung bình";
-    if (strength <= 4) return "Mạnh";
-    return "Rất mạnh";
   };
 
   if (isValidating) {
@@ -255,103 +209,9 @@ const ResetPassword: React.FC = () => {
             }}
           />
 
-          {formData.password && (
-            <>
-              <Box sx={{ mb: 2 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "center",
-                    mb: 1,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary">
-                    Độ mạnh mật khẩu:
-                  </Typography>
-                  <Typography
-                    variant="body2"
-                    sx={{
-                      color: `${getPasswordStrengthColor(
-                        passwordValidation.strength
-                      )}.main`,
-                      fontWeight: 600,
-                    }}
-                  >
-                    {getPasswordStrengthLabel(passwordValidation.strength)}
-                  </Typography>
-                </Box>
-                <LinearProgress
-                  variant="determinate"
-                  value={(passwordValidation.strength / 5) * 100}
-                  color={getPasswordStrengthColor(passwordValidation.strength)}
-                  sx={{ height: 6, borderRadius: 3 }}
-                />
-              </Box>
-              <Card sx={{ mb: 2, bgcolor: "grey.50" }}>
-                <CardContent sx={{ p: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                    Yêu cầu mật khẩu:
-                  </Typography>
-                  <Box
-                    sx={{
-                      display: "grid",
-                      gridTemplateColumns: "1fr 1fr",
-                      gap: 1,
-                    }}
-                  >
-                    {[
-                      {
-                        check: passwordValidation.checks.minLength,
-                        text: "Ít nhất 8 ký tự",
-                      },
-                      {
-                        check: passwordValidation.checks.hasUpperCase,
-                        text: "Có chữ hoa",
-                      },
-                      {
-                        check: passwordValidation.checks.hasLowerCase,
-                        text: "Có chữ thường",
-                      },
-                      {
-                        check: passwordValidation.checks.hasNumbers,
-                        text: "Có số",
-                      },
-                      {
-                        check: passwordValidation.checks.hasSpecialChar,
-                        text: "Có ký tự đặc biệt",
-                      },
-                    ].map((requirement, index) => (
-                      <Box
-                        key={index}
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        {requirement.check ? (
-                          <CheckCircle
-                            sx={{ color: "success.main", fontSize: 16 }}
-                          />
-                        ) : (
-                          <Cancel sx={{ color: "error.main", fontSize: 16 }} />
-                        )}
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: requirement.check
-                              ? "success.main"
-                              : "error.main",
-                            fontSize: "0.75rem",
-                            fontWeight: requirement.check ? 600 : 400,
-                          }}
-                        >
-                          {requirement.text}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </CardContent>
-              </Card>
-            </>
-          )}
+          <Box sx={{ mb: 2 }}>
+            <PasswordStrengthIndicator password={formData.password} />
+          </Box>
 
           <TextField
             fullWidth

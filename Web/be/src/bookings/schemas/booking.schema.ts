@@ -99,6 +99,9 @@ export class Booking {
 
   @Prop({ type: Number, unique: true, sparse: true, index: true })
   paymentOrderCode?: number;
+
+  @Prop({ type: Types.ObjectId, ref: 'Review', required: false, index: true })
+  reviewId?: Types.ObjectId;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);

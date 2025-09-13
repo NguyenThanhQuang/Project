@@ -3,12 +3,12 @@ import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useNotification } from "../../../components/common/NotificationProvider";
 import type { RootState } from "../../../store";
-import type { Location } from "../../../types";
 import { useTripFormLogic } from "../../company/hooks/useTripFormLogic";
+import type { LocationData } from "../../trips/types/location";
 import { createTripForCompany } from "../services/tripAdminService";
 
 interface UseAdminAddTripFormProps {
-  allLocations: Location[];
+  allLocations: LocationData[];
 }
 
 export const useAdminAddTripForm = ({

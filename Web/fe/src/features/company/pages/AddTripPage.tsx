@@ -20,9 +20,9 @@ import PricingStep from "../components/add-trip/PricingStep";
 import PreviewStep from "../components/add-trip/PreviewStep";
 import type { RootState } from "../../../store";
 import { getVehiclesByCompany } from "../../admin/services/vehicleAdminService";
-import type { Location } from "../../../types";
 import type { Vehicle } from "../../admin/types/vehicle";
 import { getAllLocations } from "../../../services/locationService";
+import type { LocationData } from "../../trips/types/location";
 
 const steps = ["Thông tin cơ bản", "Lịch trình", "Giá vé", "Xem trước & Lưu"];
 
@@ -30,7 +30,7 @@ const AddTripPage: React.FC = () => {
   const { user } = useSelector((state: RootState) => state.auth);
   const isAdmin = user?.roles.includes("admin");
 
-  const [allLocations, setAllLocations] = useState<Location[]>([]);
+  const [allLocations, setAllLocations] = useState<LocationData[]>([]);
   const [companyVehicles, setCompanyVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(false);
   const [loadingLocations, setLoadingLocations] = useState(true);

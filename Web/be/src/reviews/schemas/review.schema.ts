@@ -9,8 +9,11 @@ export type ReviewDocument = HydratedDocument<Review>;
 
 @Schema({ timestamps: true })
 export class Review {
-  @Prop({ type: Types.ObjectId, ref: User.name, required: true, index: true })
-  userId: Types.ObjectId;
+  @Prop({ type: Types.ObjectId, ref: User.name, index: true, required: false })
+  userId?: Types.ObjectId;
+
+  @Prop({ type: String, required: true })
+  displayName: string;
 
   @Prop({ type: Types.ObjectId, ref: Trip.name, required: true, index: true })
   tripId: Types.ObjectId;
@@ -40,6 +43,18 @@ export class Review {
 
   @Prop({ type: Boolean, default: false })
   isAnonymous: boolean;
+
+  @Prop({ type: Number, default: 0 })
+  editCount: number;
+
+  @Prop({ type: Date })
+  lastEditedAt?: Date;
+
+  @Prop()
+  createdAt: Date;
+
+  @Prop()
+  updatedAt: Date;
 
   @Prop({ type: Boolean, default: true, index: true })
   isVisible: boolean; // Admin có thể dùng để ẩn/hiện review

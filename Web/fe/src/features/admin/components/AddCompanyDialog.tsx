@@ -7,6 +7,8 @@ import {
   Button,
   TextField,
   Grid,
+  Typography,
+  Divider,
   // FormControl,
   // InputLabel,
   // Select,
@@ -19,12 +21,10 @@ import type { SelectChangeEvent } from "@mui/material";
 interface AddCompanyDialogProps {
   open: boolean;
   onClose: () => void;
-  // onSave nhận thêm companyId (optional)
   onSave: (
     companyData: CreateCompanyPayload | Partial<CreateCompanyPayload>,
     companyId?: string
   ) => void;
-  // Prop mới để truyền dữ liệu nhà xe cần sửa
   companyToEdit?: CompanyWithStats | null;
 }
 
@@ -35,6 +35,9 @@ const initialCompanyState: CreateCompanyPayload = {
   phone: "",
   address: "",
   status: "active",
+  adminName: "",
+  adminEmail: "",
+  adminPhone: "",
 };
 
 const AddCompanyDialog: React.FC<AddCompanyDialogProps> = ({
@@ -46,7 +49,6 @@ const AddCompanyDialog: React.FC<AddCompanyDialogProps> = ({
   const [companyData, setCompanyData] = useState<
     CreateCompanyPayload | Partial<CreateCompanyPayload>
   >(initialCompanyState);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   const [error, setError] = useState<string>("");
 
   const isEditMode = !!companyToEdit;
@@ -54,7 +56,6 @@ const AddCompanyDialog: React.FC<AddCompanyDialogProps> = ({
   useEffect(() => {
     if (open) {
       if (isEditMode && companyToEdit) {
-        // Nếu là chế độ sửa, điền form với dữ liệu có sẵn
         setCompanyData({
           name: companyToEdit.name,
           code: companyToEdit.code,
@@ -64,7 +65,6 @@ const AddCompanyDialog: React.FC<AddCompanyDialogProps> = ({
           status: companyToEdit.status,
         });
       } else {
-        // Nếu là chế độ thêm mới, reset form
         setCompanyData(initialCompanyState);
       }
       setError("");
@@ -86,14 +86,14 @@ const AddCompanyDialog: React.FC<AddCompanyDialogProps> = ({
     if (
       !companyData.name ||
       !companyData.code ||
-      !companyData.email ||
-      !companyData.phone
+      !companyData.adminName ||
+      !companyData.adminEmail ||
+      !companyData.adminPhone
     ) {
       setError("Vui lòng điền đầy đủ các trường bắt buộc.");
       return;
     }
     setError("");
-    // Gọi onSave với id nếu là chế độ sửa
     onSave(companyData, companyToEdit?._id);
   };
 
@@ -103,6 +103,9 @@ const AddCompanyDialog: React.FC<AddCompanyDialogProps> = ({
         {isEditMode ? "Chỉnh sửa nhà xe" : "Thêm nhà xe mới"}
       </DialogTitle>
       <DialogContent>
+        <Typography variant="h6" sx={{ mb: 2, mt: 1 }}>
+          Thông tin nhà xe
+        </Typography>
         <Grid container spacing={2} sx={{ mt: 1 }}>
           <Grid size={{ xs: 12 }}>
             <TextField
@@ -170,6 +173,43 @@ const AddCompanyDialog: React.FC<AddCompanyDialogProps> = ({
               </Select>
             </FormControl>
           </Grid> */}
+        </Grid>
+        <Divider sx={{ my: 3 }} />
+        <Typography variant="h6" sx={{ mb: 2 }}>
+          Thông tin tài khoản Quản trị viên
+        </Typography>
+        <Grid container spacing={2}>
+          <Grid size={{ xs: 12 }}>
+            <TextField
+              fullWidth
+              label="Tên Quản trị viên nhà xe"
+              name="adminName"
+              value={companyData.adminName || ""}
+              onChange={handleChange}
+              required
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              label="Email Quản trị viên nhà xe"
+              name="adminEmail"
+              type="email"
+              value={companyData.adminEmail || ""}
+              onChange={handleChange}
+              required
+            />
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6 }}>
+            <TextField
+              fullWidth
+              label="SĐT Quản trị viên nhà xe"
+              name="adminPhone"
+              value={companyData.adminPhone || ""}
+              onChange={handleChange}
+              required
+            />
+          </Grid>
         </Grid>
       </DialogContent>
       <DialogActions>

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unused-vars */
 import {
   BadRequestException,
   ConflictException,
@@ -6,9 +5,12 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
+import { randomBytes } from 'crypto';
 import { Model, Types } from 'mongoose';
+import { Booking, BookingDocument } from 'src/bookings/schemas/booking.schema';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
@@ -28,7 +30,12 @@ export interface InternalCreateUserPayload extends CreateUserDto {
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectModel(User.name) private userModel: Model<UserDocument>) {}
+  constructor(
+    @InjectModel(User.name)
+    private userModel: Model<UserDocument>,
+    private readonly configService: ConfigService,
+    @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+  ) {}
 
   async create(payload: InternalCreateUserPayload): Promise<UserDocument> {
     const { password, ...restOfPayload } = payload;
@@ -295,7 +302,7 @@ export class UsersService {
     userId: string | Types.ObjectId,
     isBanned: boolean,
   ): Promise<SanitizedUser> {
-    const user = await this.findById(userId); // Sử dụng lại hàm findById đã có
+    const user = await this.findById(userId);
 
     if (user.roles.includes(UserRole.ADMIN)) {
       throw new ForbiddenException('Không thể thay đổi trạng thái của Admin.');
@@ -305,5 +312,111 @@ export class UsersService {
     await user.save();
 
     return this.sanitizeUser(user);
+  }
+
+  async createOrPromoteCompanyAdmin(payload: {
+    name: string;
+    email: string;
+    phone: string;
+    companyId: Types.ObjectId;
+  }): Promise<{ user: UserDocument; isNew: boolean }> {
+    const emailLower = payload.email.toLowerCase();
+    const existingUser = await this.userModel
+      .findOne({
+        $or: [{ email: emailLower }, { phone: payload.phone }],
+      })
+      .exec();
+
+    // TRƯỜNG HỢP 2: USER ĐÃ TỒN TẠI
+    if (existingUser) {
+      if (existingUser.companyId) {
+        throw new ConflictException(
+          'Người dùng này đã là quản trị của một nhà xe khác.',
+        );
+      }
+      // "Thăng cấp" cho user
+      existingUser.roles = [
+        ...new Set([...existingUser.roles, UserRole.COMPANY_ADMIN]),
+      ];
+      existingUser.companyId = payload.companyId;
+      existingUser.isEmailVerified = true; // Tin tưởng email vì admin đã nhập
+
+      const updatedUser = await existingUser.save();
+      return { user: updatedUser, isNew: false };
+    }
+
+    // TRƯỜG HỢP 1: USER CHƯA TỒN TẠI -> TẠO MỚI Ở TRẠNG THÁI CHỜ
+    const activationToken = randomBytes(32).toString('hex');
+    const expiresInMs = parseInt(
+      this.configService.get<string>(
+        'EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_MS',
+        '86400000',
+      ),
+      10,
+    );
+
+    const newUser = new this.userModel({
+      name: payload.name,
+      email: emailLower,
+      phone: payload.phone,
+      companyId: payload.companyId,
+      roles: [UserRole.USER, UserRole.COMPANY_ADMIN],
+      isEmailVerified: false,
+      accountActivationToken: activationToken,
+      accountActivationExpires: new Date(Date.now() + expiresInMs),
+      // passwordHash lúc này là null
+    });
+
+    const savedUser = await newUser.save();
+    return { user: savedUser, isNew: true };
+  }
+  async findUserBookings(userId: string): Promise<any[]> {
+    const bookings = await this.bookingModel
+      .find({ userId: userId })
+      .sort({ bookingTime: -1 })
+      .populate({
+        path: 'tripId',
+        select:
+          'status departureTime expectedArrivalTime companyId route vehicleId',
+        populate: [
+          { path: 'companyId', select: 'name logoUrl' },
+          { path: 'vehicleId', select: 'type' },
+          { path: 'route.fromLocationId', select: 'name province' },
+          { path: 'route.toLocationId', select: 'name province' },
+        ],
+      })
+      .exec();
+
+    return bookings
+      .map((booking) => {
+        const trip = booking.tripId as any;
+        if (!trip) return null;
+
+        return {
+          id: booking._id,
+          ticketCode: booking.ticketCode,
+          status: booking.status,
+          totalAmount: booking.totalAmount,
+          bookingTime: booking.bookingTime.toISOString(),
+          isReviewed: !!booking.reviewId,
+          trip: {
+            id: trip._id,
+            companyName: trip.companyId?.name || 'N/A',
+            companyLogo: trip.companyId?.logoUrl,
+            vehicleType: trip.vehicleId?.type || 'N/A',
+            departureTime: trip.departureTime.toISOString(),
+            arrivalTime: trip.expectedArrivalTime.toISOString(),
+            fromLocation: trip.route.fromLocationId?.name || 'N/A',
+            toLocation: trip.route.toLocationId?.name || 'N/A',
+            departureDate: trip.departureTime.toISOString().split('T')[0],
+            status: trip.status,
+          },
+          seats: booking.passengers.map((p) => ({
+            seatNumber: p.seatNumber,
+            passengerName: p.name,
+          })),
+        };
+      })
+      .filter((b) => b !== null);
   }
 }

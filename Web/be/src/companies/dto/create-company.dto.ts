@@ -3,6 +3,7 @@ import {
   IsEnum,
   IsNotEmpty,
   IsOptional,
+  IsPhoneNumber,
   IsString,
   Matches,
   MaxLength,
@@ -53,4 +54,18 @@ export class CreateCompanyDto {
   @IsOptional()
   @IsEnum(CompanyStatus, { message: 'Trạng thái không hợp lệ.' })
   status?: CompanyStatus;
+
+  @IsNotEmpty({ message: 'Tên quản trị viên không được để trống' })
+  @IsString()
+  adminName: string;
+
+  @IsNotEmpty({ message: 'Email quản trị viên không được để trống' })
+  @IsEmail({}, { message: 'Email quản trị viên không đúng định dạng' })
+  adminEmail: string;
+
+  @IsNotEmpty({ message: 'SĐT quản trị viên không được để trống' })
+  @IsPhoneNumber('VN', {
+    message: 'SĐT quản trị viên không đúng định dạng Việt Nam',
+  })
+  adminPhone: string;
 }

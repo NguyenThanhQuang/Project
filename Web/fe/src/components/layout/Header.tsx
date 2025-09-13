@@ -18,7 +18,6 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuthModal }) => {
   const { user } = useSelector(
     (state: RootState) => state.auth as RootState["auth"]
   );
-  const navigate = useNavigate();
 
   return (
     <AppBar
@@ -28,27 +27,6 @@ const Header: React.FC<HeaderProps> = ({ onOpenAuthModal }) => {
     >
       <Toolbar sx={{ justifyContent: "space-between", py: 1 }}>
         <Logo />
-
-        <Box sx={{ flex: 1, display: "flex", justifyContent: "center", px: 2 }}>
-          <TextField
-            placeholder="Tìm kiếm chuyến đi..."
-            size="small"
-            sx={{
-              maxWidth: 400,
-              width: "100%",
-              display: { xs: "none", md: "block" },
-            }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <SearchIcon color="action" />
-                </InputAdornment>
-              ),
-              sx: { borderRadius: 3, backgroundColor: "#f8fafb" },
-            }}
-            onFocus={() => navigate("/trips")}
-          />
-        </Box>
 
         <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
           <DesktopNav />

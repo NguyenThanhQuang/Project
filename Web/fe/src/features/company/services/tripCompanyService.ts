@@ -1,6 +1,7 @@
 import api from "../../../services/api";
-import type { Location, Trip } from "../../../types";
+import type { Trip } from "../../../types";
 import type { Vehicle } from "../../admin/types/vehicle";
+import type { LocationData } from "../../trips/types/location";
 import type { CreateTripPayload } from "../types/trip";
 
 export const createTrip = async (payload: CreateTripPayload): Promise<Trip> => {
@@ -17,7 +18,9 @@ export const getVehiclesByCompany = async (
 
 export const searchTripLocations = async (
   query: string
-): Promise<Location[]> => {
-  const response = await api.get<Location[]>(`/locations/search?q=${query}`);
+): Promise<LocationData[]> => {
+  const response = await api.get<LocationData[]>(
+    `/locations/search?q=${query}`
+  );
   return response.data;
 };

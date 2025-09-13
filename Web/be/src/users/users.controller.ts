@@ -13,15 +13,15 @@ import {
 } from '@nestjs/common';
 import { Request } from 'express';
 import { Types } from 'mongoose';
+import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id.pipe';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SanitizedUser, UserRole } from './schemas/user.schema';
 import { UsersService } from './users.service';
-import { ParseMongoIdPipe } from 'src/common/pipes/parse-mongo-id.pipe';
-import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 interface AuthenticatedRequest extends Request {
   user: { userId: string; email: string; role: UserRole };
 }
@@ -139,5 +139,10 @@ export class UsersController {
       userId,
       updateUserStatusDto.isBanned,
     );
+  }
+  @Get('me/bookings')
+  @UseGuards(JwtAuthGuard)
+  getMyBookings(@Req() req: AuthenticatedRequest) {
+    return this.usersService.findUserBookings(req.user.userId);
   }
 }

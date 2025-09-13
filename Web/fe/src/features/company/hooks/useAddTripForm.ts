@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import type { RootState } from "../../../store";
-import type { Location } from "../../../types";
 import { getCompanyDetails } from "../../admin/services/vehicleAdminService";
+import type { LocationData } from "../../trips/types/location";
 import { createTrip } from "../services/tripCompanyService";
 import { useTripFormLogic } from "./useTripFormLogic";
 
 interface UseAddTripFormProps {
-  allLocations: Location[];
+  allLocations: LocationData[];
 }
 
 export const useAddTripForm = ({ allLocations }: UseAddTripFormProps) => {

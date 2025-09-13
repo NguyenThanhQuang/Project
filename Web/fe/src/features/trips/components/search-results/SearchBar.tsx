@@ -12,7 +12,8 @@ import {
 } from "@mui/material";
 import { DatePicker } from "@mui/x-date-pickers/DatePicker";
 import { Search, SwapHoriz, LocationOn } from "@mui/icons-material";
-import type { Location, SearchData } from "../../../../types";
+import type { SearchData } from "../../../../types";
+import type { LocationData } from "../../../trips/types/location";
 import dayjs from "dayjs";
 
 interface SearchBarProps {
@@ -24,8 +25,8 @@ interface SearchBarProps {
   onSearch: () => void;
   onSwapLocations: () => void;
   // Props cho Autocomplete
-  fromOptions: readonly Location[];
-  toOptions: readonly Location[];
+  fromOptions: readonly LocationData[];
+  toOptions: readonly LocationData[];
   onFromInputChange: (value: string) => void;
   onToInputChange: (value: string) => void;
   loadingFrom: boolean;

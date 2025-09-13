@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../../components/common/NotificationProvider";
 import { calculateRouteInfo } from "../../../services/mapService";
-import type { Location } from "../../../types";
+
 import { getErrorMessage } from "../../../utils/getErrorMessage";
+import type { LocationData } from "../../trips/types/location";
 import type {
   AddTripFormState,
   CreateTripPayload,
@@ -15,7 +16,7 @@ interface UseTripFormLogicProps {
   initialCompanyId: string;
   saveFunction: (payload: CreateTripPayload) => Promise<unknown>;
   onSuccessRedirectPath: (companyId: string) => string;
-  allLocations: Location[];
+  allLocations: LocationData[];
 }
 
 export const useTripFormLogic = ({

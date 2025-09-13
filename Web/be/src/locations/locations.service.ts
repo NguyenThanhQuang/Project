@@ -48,18 +48,22 @@ export class LocationsService {
     return this.locationModel.find(query).sort({ province: 1, name: 1 }).exec();
   }
 
-  // Hàm tìm kiếm gợi ý (autocomplete)
   async search(keyword: string): Promise<LocationDocument[]> {
     if (!keyword || keyword.trim().length < 2) {
       return [];
     }
+
+    const searchRegex = new RegExp(keyword, 'i');
+
     return this.locationModel
-      .find(
-        { $text: { $search: keyword } },
-        { score: { $meta: 'textScore' } }, // Thêm điểm để sắp xếp theo độ liên quan
-      )
-      .sort({ score: { $meta: 'textScore' } })
-      .limit(10)
+      .find({
+        $or: [
+          { name: { $regex: searchRegex } },
+          { province: { $regex: searchRegex } },
+        ],
+      })
+      .sort({ province: 1, name: 1 })
+      .limit(15)
       .exec();
   }
 

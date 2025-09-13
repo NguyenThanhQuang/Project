@@ -1,4 +1,6 @@
 import axios from "axios";
+import { logout } from "../store/authSlice";
+import { store } from "../store";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -14,6 +16,18 @@ const api = axios.create({
     "Content-Type": "application/json",
   },
 });
+
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response && error.response.status === 401) {
+
+      const { dispatch } = store;
+      dispatch(logout());
+    }
+    return Promise.reject(error);
+  }
+);
 
 api.interceptors.request.use(
   (config) => {

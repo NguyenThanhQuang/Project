@@ -275,4 +275,73 @@ export class MailService {
       );
     }
   }
+
+  async sendCompanyAdminActivationEmail(
+    email: string,
+    name: string,
+    token: string,
+  ) {
+    const clientUrl = this.configService.get<string>(
+      'CLIENT_URL',
+      'http://localhost:5173',
+    );
+    const activationUrl = `${clientUrl}/activate-account?token=${token}`;
+    const mailFromName = this.configService.get<string>(
+      'MAIL_FROM_NAME',
+      'Online Bus Ticket Platform',
+    );
+    const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
+
+    const mailOptions = {
+      from: `"${mailFromName}" <${mailFromAddress}>`,
+      to: email,
+      subject: `[${mailFromName}] Kích hoạt tài khoản Quản trị Nhà xe của bạn`,
+      html: `
+            <div style="font-family: Arial, sans-serif; ...">
+                <h2>Chào ${name},</h2>
+                <p>Một tài khoản quản trị nhà xe đã được tạo cho bạn trên hệ thống <strong>${mailFromName}</strong>.</p>
+                <p>Để hoàn tất, vui lòng nhấp vào nút bên dưới để kích hoạt tài khoản và đặt mật khẩu của riêng bạn:</p>
+                <p style="text-align: center;">
+                    <a href="${activationUrl}" style="...">Kích hoạt Tài khoản & Đặt Mật khẩu</a>
+                </p>
+                <p>Liên kết này sẽ có hiệu lực trong vòng 24 giờ.</p>
+                <p>Nếu bạn không thực hiện yêu cầu này, vui lòng bỏ qua email.</p>
+            </div>
+        `,
+    };
+    await this.transporter.sendMail(mailOptions);
+  }
+
+  async sendCompanyAdminPromotionEmail(
+    email: string,
+    name: string,
+    companyName: string,
+  ) {
+    const clientUrl = this.configService.get<string>(
+      'CLIENT_URL',
+      'http://localhost:5173',
+    );
+    const mailFromName = this.configService.get<string>(
+      'MAIL_FROM_NAME',
+      'Online Bus Ticket Platform',
+    );
+    const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
+
+    const mailOptions = {
+      from: `"${mailFromName}" <${mailFromAddress}>`,
+      to: email,
+      subject: `[${mailFromName}] Tài khoản của bạn đã được nâng cấp quyền`,
+      html: `
+            <div style="font-family: Arial, sans-serif; ...">
+                <h2>Chào ${name},</h2>
+                <p>Chúng tôi xin thông báo tài khoản của bạn trên hệ thống <strong>${mailFromName}</strong> đã được cấp quyền Quản trị cho nhà xe <strong>${companyName}</strong>.</p>
+                <p>Bạn có thể đăng nhập ngay bây giờ bằng mật khẩu hiện tại của mình để bắt đầu quản lý.</p>
+                <p style="text-align: center;">
+                    <a href="${clientUrl}/login" style="...">Đăng nhập ngay</a>
+                </p>
+            </div>
+        `,
+    };
+    await this.transporter.sendMail(mailOptions);
+  }
 }

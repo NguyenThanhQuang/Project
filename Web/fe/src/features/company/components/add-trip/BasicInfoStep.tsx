@@ -1,8 +1,8 @@
 import React, { useMemo } from "react";
 import { Grid, TextField, Autocomplete, Box, Typography } from "@mui/material";
 import type { AddTripFormState } from "../../types/trip";
-import type { Location } from "../../../../types";
 import type { Vehicle } from "../../../admin/types/vehicle";
+import type { LocationData } from "../../../trips/types/location";
 
 interface BasicInfoStepProps {
   formData: AddTripFormState;
@@ -11,7 +11,7 @@ interface BasicInfoStepProps {
     value: AddTripFormState[K]
   ) => void;
   companyVehicles: Vehicle[];
-  allLocations: Location[];
+  allLocations: LocationData[];
   loadingVehicles: boolean;
   loadingLocations: boolean;
 }

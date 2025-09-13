@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   Logger,
@@ -31,6 +32,7 @@ import {
   InternalCreateUserPayload,
   UsersService,
 } from '../users/users.service';
+import { ActivateAccountDto } from './dto/activate-account.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
@@ -176,16 +178,6 @@ export class AuthService {
       );
     }
 
-    // if (newUser && newUser.emailVerificationToken) {
-    //   this.logger.log(
-    //     `[TESTING] New user ${newUser.email} created. Verification Token: ${newUser.emailVerificationToken}`,
-    //   );
-    // } else {
-    //   this.logger.error(
-    //     `[CRITICAL] New user ${newUser?.email} created BUT emailVerificationToken is MISSING.`,
-    //   );
-    // }
-
     try {
       if (!newUser.emailVerificationToken) {
         this.logger.error(
@@ -246,6 +238,13 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(
         'Email/Số điện thoại hoặc mật khẩu không chính xác.',
+      );
+    }
+
+    if (user.isBanned) {
+      this.logger.warn(`Login attempt for BANNED user: ${user.email}`);
+      throw new ForbiddenException(
+        'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản trị viên để biết thêm chi tiết.',
       );
     }
 
@@ -557,5 +556,50 @@ export class AuthService {
     }
 
     return { isValid: true, email: user.email };
+  }
+
+  async activateCompanyAdminAccount(
+    activateDto: ActivateAccountDto,
+  ): Promise<{ accessToken: string; user: SanitizedUser }> {
+    const { token, newPassword, confirmNewPassword } = activateDto;
+
+    if (newPassword !== confirmNewPassword) {
+      throw new BadRequestException(
+        'Mật khẩu mới và xác nhận mật khẩu không khớp.',
+      );
+    }
+
+    const user = await this.userModel.findOne({
+      accountActivationToken: token,
+      accountActivationExpires: { $gt: new Date() },
+    });
+
+    if (!user) {
+      throw new BadRequestException(
+        'Token không hợp lệ hoặc đã hết hạn. Vui lòng thử lại.',
+      );
+    }
+
+    user.passwordHash = newPassword;
+    user.isEmailVerified = true;
+    user.accountActivationToken = undefined;
+    user.accountActivationExpires = undefined;
+    user.lastLoginDate = new Date(); // Có thể ghi nhận lần đăng nhập đầu tiên
+
+    await user.save();
+
+    // Tự động đăng nhập cho người dùng
+    const payload: JwtPayload = {
+      email: user.email,
+      sub: user._id.toString(),
+      roles: user.roles,
+      companyId: user.companyId?.toString(),
+    };
+    const accessToken = this.jwtService.sign(payload);
+
+    return {
+      accessToken,
+      user: this.usersService.sanitizeUser(user),
+    };
   }
 }

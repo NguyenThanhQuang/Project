@@ -17,9 +17,11 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
 import { UserDocument, UserRole } from '../users/schemas/user.schema';
+import { CreateGuestReviewDto } from './dto/create-guest-review.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryReviewDto } from './dto/query-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
+import { UpdateUserReviewDto } from './dto/update-user-review.dto';
 import { ReviewsService } from './reviews.service';
 
 interface AuthenticatedRequest extends Request {
@@ -31,7 +33,7 @@ export class ReviewsController {
   constructor(private readonly reviewsService: ReviewsService) {}
 
   /**
-   * @description [PUBLIC] Lấy danh sách đánh giá (đã được kiểm duyệt)
+   * @description [PUBLIC] Lấy danh sách đánh giá (đã được kiểm duyệt và hiển thị)
    * @route GET /api/reviews
    */
   @Get()
@@ -40,12 +42,11 @@ export class ReviewsController {
   }
 
   /**
-   * @description [USER] Tạo một đánh giá mới
+   * @description [USER] Tạo một đánh giá mới (dành cho người dùng đã đăng nhập)
    * @route POST /api/reviews
    */
   @Post()
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.USER)
+  @UseGuards(JwtAuthGuard)
   create(
     @Body() createReviewDto: CreateReviewDto,
     @Req() req: AuthenticatedRequest,
@@ -53,10 +54,37 @@ export class ReviewsController {
     return this.reviewsService.create(createReviewDto, req.user);
   }
 
+  /**
+   * @description [GUEST] Tạo một đánh giá mới (dành cho khách vãng lai)
+   * @route POST /api/reviews/guest
+   */
+  @Post('guest')
+  createAsGuest(@Body() createGuestReviewDto: CreateGuestReviewDto) {
+    return this.reviewsService.createAsGuest(createGuestReviewDto);
+  }
+
+  /**
+   * @description [USER] Sửa đánh giá của chính mình
+   * @route PATCH /api/reviews/:id/my-review
+   */
+  @Patch(':id/my-review')
+  @UseGuards(JwtAuthGuard)
+  updateUserReview(
+    @Param('id', ParseMongoIdPipe) id: string,
+    @Req() req: AuthenticatedRequest,
+    @Body() updateUserReviewDto: UpdateUserReviewDto,
+  ) {
+    return this.reviewsService.updateUserReview(
+      id,
+      req.user,
+      updateUserReviewDto,
+    );
+  }
+
   // --- ADMIN ROUTES ---
 
   /**
-   * @description [ADMIN] Lấy tất cả đánh giá (bao gồm cả đánh giá bị ẩn)
+   * @description [ADMIN] Lấy tất cả đánh giá (bao gồm cả đánh giá bị ẩn) để quản lý
    * @route GET /api/reviews/admin/all
    */
   @Get('admin/all')
@@ -73,7 +101,7 @@ export class ReviewsController {
   @Patch(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles(UserRole.ADMIN)
-  update(
+  updateVisibility(
     @Param('id', ParseMongoIdPipe) id: string,
     @Body() updateReviewDto: UpdateReviewDto,
   ) {

@@ -58,4 +58,5 @@ export class BookingsController {
   lookupBooking(@Body() lookupDto: LookupBookingDto) {
     return this.bookingsService.lookupBooking(lookupDto);
   }
+  
 }

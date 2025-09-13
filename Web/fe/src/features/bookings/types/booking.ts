@@ -1,3 +1,6 @@
+import type { Company } from "../../../types";
+import type { LocationData } from "../../trips/types/location";
+
 export interface PassengerPayload {
   name: string;
   phone: string;
@@ -83,4 +86,56 @@ export interface LookedUpBooking {
       };
     };
   };
+}
+
+export interface PopulatedBookingLookupResult {
+  _id: string;
+  ticketCode?: string;
+  status: "pending" | "held" | "confirmed" | "cancelled" | "expired";
+  totalAmount: number;
+  contactName: string;
+  contactPhone: string;
+  passengers: { name: string; phone: string; seatNumber: string }[];
+  tripId: {
+    _id: string;
+    status: "scheduled" | "departed" | "arrived" | "cancelled";
+    departureTime: string;
+    expectedArrivalTime: string;
+    companyId: Pick<Company, "_id" | "name" | "logoUrl">;
+    route: {
+      fromLocationId: Pick<LocationData, "_id" | "name" | "province">;
+      toLocationId: Pick<LocationData, "_id" | "name" | "province">;
+    };
+  };
+  isReviewed: boolean;
+}
+
+export interface BookingLookupParams {
+  identifier: string;
+  contactPhone: string;
+}
+
+export interface MyBooking {
+  id: string;
+  ticketCode: string;
+  status: "confirmed" | "held" | "cancelled" | "expired" | "completed";
+  totalAmount: number;
+  bookingTime: string;
+  isReviewed: boolean;
+  trip: {
+    id: string;
+    companyName: string;
+    companyLogo?: string;
+    vehicleType: string;
+    departureTime: string;
+    arrivalTime: string;
+    fromLocation: string;
+    toLocation: string;
+    departureDate: string;
+    status: "scheduled" | "departed" | "arrived" | "cancelled";
+  };
+  seats: {
+    seatNumber: string;
+    passengerName: string;
+  }[];
 }

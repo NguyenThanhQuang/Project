@@ -16,15 +16,19 @@ import {
   AttachMoney,
 } from "@mui/icons-material";
 import type { AddTripFormState } from "../../types/trip";
-import type { Location } from "../../../../types";
+
 import type { Vehicle } from "../../../admin/types/vehicle";
+import type { LocationData } from "../../../trips/types/location";
 
 interface PreviewStepProps {
   formData: AddTripFormState;
   vehicleData?: Vehicle;
-  fromLocationData?: Location;
-  toLocationData?: Location;
-  stopsData: (Location & { arrivalTime?: string; departureTime?: string })[];
+  fromLocationData?: LocationData;
+  toLocationData?: LocationData;
+  stopsData: (LocationData & {
+    arrivalTime?: string;
+    departureTime?: string;
+  })[];
 }
 
 const InfoRow: React.FC<{ label: string; value: React.ReactNode }> = ({

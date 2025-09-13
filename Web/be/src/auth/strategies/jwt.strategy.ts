@@ -47,6 +47,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
         'Người dùng không tồn tại hoặc token không hợp lệ.',
       );
     }
+
+    if (user.isBanned) {
+      throw new UnauthorizedException('Tài khoản đã bị khóa.');
+    }
+
     return {
       userId: payload.sub,
       email: payload.email,

@@ -34,6 +34,9 @@ export interface CreateCompanyPayload {
   phone: string;
   address?: string;
   status: CompanyStatus;
+  adminName: string;
+  adminEmail: string;
+  adminPhone: string;
 }
 
 export type UpdateCompanyPayload = Partial<CreateCompanyPayload>;

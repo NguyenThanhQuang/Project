@@ -31,6 +31,7 @@ import {
   Logout,
   NavigateNext,
   Notifications,
+  RateReview,
   // AirportShuttle,
 } from "@mui/icons-material";
 import { useNavigate, useLocation, Outlet } from "react-router-dom";
@@ -93,13 +94,13 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       path: "/admin/companies",
       description: "Quản lý các nhà xe đăng ký",
     },
-    // {
-    //   id: "vehicles",
-    //   title: "Quản lý Xe",
-    //   icon: <AirportShuttle />,
-    //   path: "/admin/vehicles",
-    //   description: "Quản lý các loại xe của nhà xe",
-    // },
+    {
+      id: "reviews",
+      title: "Quản lý Đánh giá",
+      icon: <RateReview />,
+      path: "/admin/reviews",
+      description: "Kiểm duyệt và quản lý phản hồi",
+    },
     {
       id: "users",
       title: "Quản lý Người dùng",
