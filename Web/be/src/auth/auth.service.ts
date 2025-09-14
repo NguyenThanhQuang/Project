@@ -584,11 +584,10 @@ export class AuthService {
     user.isEmailVerified = true;
     user.accountActivationToken = undefined;
     user.accountActivationExpires = undefined;
-    user.lastLoginDate = new Date(); // Có thể ghi nhận lần đăng nhập đầu tiên
+    user.lastLoginDate = new Date();
 
     await user.save();
 
-    // Tự động đăng nhập cho người dùng
     const payload: JwtPayload = {
       email: user.email,
       sub: user._id.toString(),
@@ -601,5 +600,31 @@ export class AuthService {
       accessToken,
       user: this.usersService.sanitizeUser(user),
     };
+  }
+
+  async validateActivationToken(token: string): Promise<{
+    isValid: boolean;
+    message?: string;
+    userName?: string;
+    companyName?: string;
+  }> {
+    if (!token) {
+      return { isValid: false, message: 'Token không được cung cấp.' };
+    }
+
+    const user = await this.userModel
+      .findOne({
+        accountActivationToken: token,
+        accountActivationExpires: { $gt: new Date() },
+      })
+      .populate('companyId', 'name');
+
+    if (!user) {
+      return { isValid: false, message: 'Token không hợp lệ hoặc đã hết hạn.' };
+    }
+
+    const companyName = (user.companyId as any)?.name || 'Không xác định';
+
+    return { isValid: true, userName: user.name, companyName: companyName };
   }
 }

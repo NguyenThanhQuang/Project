@@ -8,14 +8,19 @@ import {
   Button,
   CircularProgress,
   Alert,
+  InputAdornment,
+  IconButton,
 } from "@mui/material";
 import { useActivateAccount } from "../hooks/useActivateAccount";
 import PasswordStrengthIndicator from "../components/PasswordStrengthIndicator";
+import { Visibility, VisibilityOff } from "@mui/icons-material";
 
 const ActivateAccountPage: React.FC = () => {
   const { status, error, userInfo, handleSubmit } = useActivateAccount();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const onFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -65,19 +70,34 @@ const ActivateAccountPage: React.FC = () => {
             required
             sx={{ mb: 2 }}
             label="Mật khẩu mới"
-            type="password"
+            type={showPassword ? "text" : "password"}
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowPassword(!showPassword)}
+                    edge="end"
+                  >
+                    {showPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
+
           <Box sx={{ mb: 2 }}>
             <PasswordStrengthIndicator password={password} />
           </Box>
+
           <TextField
             fullWidth
             required
             sx={{ mb: 3 }}
             label="Xác nhận mật khẩu"
-            type="password"
+            type={showConfirmPassword ? "text" : "password"}
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             error={password !== confirmPassword && confirmPassword !== ""}
@@ -86,6 +106,19 @@ const ActivateAccountPage: React.FC = () => {
                 ? "Mật khẩu không khớp"
                 : ""
             }
+            InputProps={{
+              endAdornment: (
+                <InputAdornment position="end">
+                  <IconButton
+                    aria-label="toggle password visibility"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    edge="end"
+                  >
+                    {showConfirmPassword ? <VisibilityOff /> : <Visibility />}
+                  </IconButton>
+                </InputAdornment>
+              ),
+            }}
           />
           <Button
             type="submit"

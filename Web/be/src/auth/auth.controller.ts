@@ -17,12 +17,12 @@ import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthService } from './auth.service';
+import { ActivateAccountDto } from './dto/activate-account.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResendVerificationEmailDto } from './dto/resend-verification-email.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ActivateAccountDto } from './dto/activate-account.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -147,5 +147,19 @@ export class AuthController {
   @HttpCode(HttpStatus.OK)
   async activateAccount(@Body() activateDto: ActivateAccountDto) {
     return this.authService.activateCompanyAdminAccount(activateDto);
+  }
+
+  @Get('validate-activation-token')
+  async validateActivationToken(@Query('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Token không được cung cấp.');
+    }
+    const result = await this.authService.validateActivationToken(token);
+    if (!result.isValid) {
+      throw new BadRequestException(
+        result.message || 'Token không hợp lệ hoặc đã hết hạn.',
+      );
+    }
+    return result;
   }
 }
