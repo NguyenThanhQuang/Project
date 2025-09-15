@@ -67,9 +67,11 @@ export const BookingDetailsCard: React.FC<BookingDetailsCardProps> = ({
 
   const canReview = trip.status === "arrived" && !booking.isReviewed;
 
-  const handleGuestReviewSubmit = async (
-    data: Omit<ReviewFormData, "bookingId" | "tripId" | "contactPhone">
-  ) => {
+  const handleGuestReviewSubmit = async (data: {
+    rating: number;
+    comment?: string;
+    isAnonymous: boolean;
+  }) => {
     await submitReview({
       ...data,
       bookingId: booking._id,
@@ -180,7 +182,6 @@ export const BookingDetailsCard: React.FC<BookingDetailsCardProps> = ({
 
         <Divider sx={{ my: 3 }} />
 
-        {/* Tổng tiền */}
         <Box
           sx={{
             display: "flex",

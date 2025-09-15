@@ -9,10 +9,10 @@ import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import dayjs from 'dayjs';
 import { FilterQuery, Model } from 'mongoose';
+import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { TripStatus } from 'src/trips/schemas/trip.schema';
 import { BookingsService } from '../bookings/bookings.service';
 import { TripsService } from '../trips/trips.service';
-import { UserDocument } from '../users/schemas/user.schema';
 import { CreateGuestReviewDto } from './dto/create-guest-review.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryReviewDto } from './dto/query-review.dto';
@@ -52,29 +52,48 @@ export class ReviewsService {
 
   async create(
     createReviewDto: CreateReviewDto,
-    user: UserDocument,
+    user: AuthenticatedUser,
   ): Promise<ReviewDocument> {
     const { bookingId, tripId, rating, comment, isAnonymous } = createReviewDto;
-    const { booking, trip } = await this.validateAndPrepareReview(
-      bookingId,
-      tripId,
+
+    const booking = await this.bookingsService.findOne(bookingId, user);
+    const trip = await this.tripsService.findOne(
+      createReviewDto.tripId.toString(),
     );
 
-    if (booking.userId?.toString() !== user._id.toString()) {
+    if (!booking.userId) {
+      throw new ForbiddenException(
+        'Booking này không thuộc về tài khoản của bạn. Vui lòng sử dụng chức năng tra cứu vé để đánh giá.',
+      );
+    }
+
+    if (booking.userId.toString() !== user._id.toString()) {
       throw new ForbiddenException(
         'Bạn không có quyền đánh giá đơn đặt vé này.',
       );
     }
 
+    if (trip.status !== TripStatus.ARRIVED) {
+      throw new BadRequestException(
+        'Chỉ có thể đánh giá chuyến đi đã hoàn thành.',
+      );
+    }
+    const existingReview = await this.reviewModel.findOne({ bookingId }).exec();
+    if (existingReview) {
+      throw new ConflictException('Bạn đã đánh giá cho chuyến đi này rồi.');
+    }
+
     const newReview = new this.reviewModel({
-      userId: user._id,
+      userId: user.userId,
       tripId,
       bookingId,
       companyId: trip.companyId,
       rating,
       comment,
       isAnonymous: isAnonymous || false,
-      displayName: isAnonymous ? user.name.charAt(0).toUpperCase() : user.name,
+      displayName: createReviewDto.isAnonymous
+        ? user.name.charAt(0).toUpperCase()
+        : user.name,
     });
 
     const savedReview = await newReview.save();
@@ -126,7 +145,7 @@ export class ReviewsService {
 
   async updateUserReview(
     id: string,
-    user: UserDocument,
+    user: AuthenticatedUser,
     updateUserReviewDto: UpdateUserReviewDto,
   ): Promise<ReviewDocument> {
     const review = await this.findOne(id);

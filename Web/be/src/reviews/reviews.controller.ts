@@ -12,11 +12,12 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
-import { UserDocument, UserRole } from '../users/schemas/user.schema';
+import { UserRole } from '../users/schemas/user.schema';
 import { CreateGuestReviewDto } from './dto/create-guest-review.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryReviewDto } from './dto/query-review.dto';
@@ -25,7 +26,7 @@ import { UpdateUserReviewDto } from './dto/update-user-review.dto';
 import { ReviewsService } from './reviews.service';
 
 interface AuthenticatedRequest extends Request {
-  user: UserDocument;
+  user: AuthenticatedUser;
 }
 
 @Controller('reviews')

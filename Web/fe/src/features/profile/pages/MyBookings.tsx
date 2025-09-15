@@ -193,7 +193,7 @@ const MyBookings: React.FC = () => {
         maxWidth="sm"
         fullWidth
       >
-        <DialogTitle sx={{ pr: 6 }}>
+        <DialogTitle>
           Đánh giá chuyến đi
           <IconButton
             onClick={handleCloseReviewDialog}

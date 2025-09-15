@@ -16,6 +16,15 @@ export interface JwtPayload {
   companyId?: string;
 }
 
+export interface AuthenticatedUser {
+  userId: string;
+  _id: string;
+  email: string;
+  name: string;
+  roles: UserRole[];
+  companyId?: string;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(
@@ -40,7 +49,7 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  async validate(payload: JwtPayload): Promise<any> {
+  async validate(payload: JwtPayload): Promise<AuthenticatedUser> {
     const user = await this.usersService.findById(payload.sub);
     if (!user) {
       throw new UnauthorizedException(
@@ -53,10 +62,12 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     }
 
     return {
-      userId: payload.sub,
-      email: payload.email,
+      userId: user._id.toString(),
+      _id: user._id.toString(),
+      email: user.email,
+      name: user.name,
       roles: user.roles,
-      companyId: user.companyId,
+      companyId: user.companyId?.toString(),
     };
   }
 }

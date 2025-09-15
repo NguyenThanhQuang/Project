@@ -11,6 +11,7 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import { FilterQuery, Model, Types } from 'mongoose';
+import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { UsersService } from 'src/users/users.service';
 import { SeatStatus, TripStatus } from '../trips/schemas/trip.schema';
 import { TripsService } from '../trips/trips.service';
@@ -114,7 +115,6 @@ export class BookingsService {
       }),
     );
 
-    // Tính thời gian hết hạn giữ chỗ
     const holdDurationMinutes = this.configService.get<number>(
       'SEAT_HOLD_DURATION_MINUTES',
       15,
@@ -207,9 +207,9 @@ export class BookingsService {
       booking.status = BookingStatus.CONFIRMED;
       booking.paymentStatus = PaymentStatus.PAID;
       booking.paymentMethod = paymentMethod;
-      booking.heldUntil = undefined; // Xóa thời gian hết hạn giữ chỗ
+      booking.heldUntil = undefined;
       booking.ticketCode = await this.generateTicketCode();
-      booking.paymentGatewayTransactionId = transactionDateTime; // Lưu thời gian giao dịch
+      booking.paymentGatewayTransactionId = transactionDateTime;
 
       const savedBooking = await booking.save();
 
@@ -333,7 +333,7 @@ export class BookingsService {
    */
   async findOne(
     id: string | Types.ObjectId,
-    user?: UserDocument,
+    user?: AuthenticatedUser | UserDocument,
   ): Promise<BookingDocument> {
     const booking = await this.bookingModel.findById(id).exec();
 
@@ -343,18 +343,13 @@ export class BookingsService {
       );
     }
 
-    // Nếu có user được truyền vào, thực hiện kiểm tra quyền
-    if (
-      user &&
-      booking.userId &&
-      user._id.toString() !== booking.userId.toString()
-    ) {
-      // Chỉ kiểm tra quyền nếu booking này có userId (không phải guest booking)
-      throw new ForbiddenException(
-        'Bạn không có quyền truy cập đơn đặt vé này.',
-      );
+    if (user && booking.userId) {
+      if (user._id.toString() !== booking.userId.toString()) {
+        throw new ForbiddenException(
+          'Bạn không có quyền truy cập đơn đặt vé này.',
+        );
+      }
     }
-
     return booking;
   }
   async findOneByCondition(
