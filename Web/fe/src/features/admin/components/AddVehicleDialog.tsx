@@ -21,6 +21,7 @@ import {
   Alert,
 } from "@mui/material";
 import type { Vehicle, VehiclePayload, VehicleStatus } from "../types/vehicle";
+import { vehiclePresets } from "../../../data/car";
 
 interface AddVehicleDialogProps {
   open: boolean;
@@ -29,30 +30,6 @@ interface AddVehicleDialogProps {
   vehicleToEdit: Vehicle | null;
   companyId: string;
 }
-
-const vehiclePresets = [
-  {
-    label: "Xe giường nằm 40-44 chỗ",
-    floors: 2,
-    seatColumns: 3,
-    seatRows: 7,
-    aislePositions: [2],
-  },
-  {
-    label: "Xe ghế ngồi 45 chỗ",
-    floors: 1,
-    seatColumns: 4,
-    seatRows: 11,
-    aislePositions: [2],
-  },
-  {
-    label: "Limousine 9 chỗ",
-    floors: 1,
-    seatColumns: 3,
-    seatRows: 3,
-    aislePositions: [1],
-  },
-];
 
 const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
   open,
