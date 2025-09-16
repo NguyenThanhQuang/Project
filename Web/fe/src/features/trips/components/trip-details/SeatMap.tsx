@@ -169,7 +169,7 @@ export const SeatMap: React.FC<SeatMapProps> = ({
           )
         )}
         {/* Legend */}
-        // Vị trí: Phần JSX của "Chú thích" ở cuối file SeatMap.tsx
+        Chú thích:
         <Box
           sx={{
             mt: 4,
