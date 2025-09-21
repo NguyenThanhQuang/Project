@@ -11,6 +11,7 @@ import timezone from 'dayjs/plugin/timezone';
 import utc from 'dayjs/plugin/utc';
 import { Connection, Model, Types } from 'mongoose';
 import { CompanyStatus } from 'src/companies/schemas/company.schema';
+import { Review, ReviewDocument } from 'src/reviews/schemas/review.schema';
 import {
   Booking,
   BookingDocument,
@@ -38,6 +39,7 @@ dayjs.extend(utc);
 dayjs.extend(timezone);
 
 interface PopulatedPublicTrip {
+  seats: Seat[];
   _id: Types.ObjectId;
   companyId?: {
     _id: Types.ObjectId;
@@ -76,37 +78,39 @@ export class TripsService {
     private readonly vehiclesService: VehiclesService,
     private readonly locationsService: LocationsService,
     private readonly mapsService: MapsService,
+    @InjectModel(Review.name)
+    private readonly reviewModel: Model<ReviewDocument>,
   ) {}
 
-  private extractFilterOptions(trips: PopulatedTripForFiltering[]) {
-    const companies = new Map<string, { _id: string; name: string }>();
-    const vehicleTypes = new Set<string>();
-    let maxPrice = 0;
+  // private extractFilterOptions(trips: PopulatedTripForFiltering[]) {
+  //   const companies = new Map<string, { _id: string; name: string }>();
+  //   const vehicleTypes = new Set<string>();
+  //   let maxPrice = 0;
 
-    trips.forEach((trip) => {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const companyIdStr = trip.companyId._id.toString();
-      if (trip.companyId && typeof trip.companyId === 'object') {
-        const companyIdStr = trip.companyId._id.toString();
-        if (!companies.has(companyIdStr)) {
-          companies.set(companyIdStr, {
-            _id: companyIdStr,
-            name: trip.companyId.name,
-          });
-        }
-      }
-      vehicleTypes.add(trip.vehicleId.type);
-      if (trip.price > maxPrice) {
-        maxPrice = trip.price;
-      }
-    });
+  //   trips.forEach((trip) => {
+  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  //     const companyIdStr = trip.companyId._id.toString();
+  //     if (trip.companyId && typeof trip.companyId === 'object') {
+  //       const companyIdStr = trip.companyId._id.toString();
+  //       if (!companies.has(companyIdStr)) {
+  //         companies.set(companyIdStr, {
+  //           _id: companyIdStr,
+  //           name: trip.companyId.name,
+  //         });
+  //       }
+  //     }
+  //     vehicleTypes.add(trip.vehicleId.type);
+  //     if (trip.price > maxPrice) {
+  //       maxPrice = trip.price;
+  //     }
+  //   });
 
-    return {
-      companies: Array.from(companies.values()),
-      vehicleTypes: Array.from(vehicleTypes),
-      maxPrice,
-    };
-  }
+  //   return {
+  //     companies: Array.from(companies.values()),
+  //     vehicleTypes: Array.from(vehicleTypes),
+  //     maxPrice,
+  //   };
+  // }
 
   async create(createTripDto: CreateTripDto): Promise<TripDocument> {
     const { companyId, vehicleId, route } = createTripDto;
@@ -293,29 +297,73 @@ export class TripsService {
         path: 'route.toLocationId',
         select: 'name province',
       })
-      .lean()
+      .lean() // <-- Sử dụng .lean() để có object JS thuần, dễ dàng thêm thuộc tính
       .exec();
 
-    const finalTrips = (tripsInDay as PopulatedPublicTrip[]).filter((trip) => {
-      // Điều kiện 1: Nhà xe phải tồn tại và đang hoạt động
-      const isCompanyActive = trip.companyId?.status === CompanyStatus.ACTIVE;
+    // Lọc thủ công bằng code TypeScript (an toàn hơn)
+    const filteredTrips = (tripsInDay as PopulatedPublicTrip[]).filter(
+      (trip) => {
+        const isCompanyActive = trip.companyId?.status === CompanyStatus.ACTIVE;
+        const fromProvince = trip.route.fromLocationId?.province;
+        const toProvince = trip.route.toLocationId?.province;
+        const isFromMatch = fromProvince
+          ? fromProvince.toLowerCase() === from.toLowerCase()
+          : false;
+        const isToMatch = toProvince
+          ? toProvince.toLowerCase() === to.toLowerCase()
+          : false;
+        return isCompanyActive && isFromMatch && isToMatch;
+      },
+    );
 
-      // Lấy thông tin tỉnh/thành một cách an toàn
-      const fromProvince = trip.route.fromLocationId?.province;
-      const toProvince = trip.route.toLocationId?.province;
+    // Nếu không có chuyến đi nào sau khi lọc, trả về mảng rỗng ngay
+    if (filteredTrips.length === 0) {
+      return [];
+    }
 
-      // Điều kiện 2 & 3: Tỉnh đi và đến phải tồn tại và khớp
-      const isFromMatch = fromProvince
-        ? fromProvince.toLowerCase() === from.toLowerCase()
-        : false;
-      const isToMatch = toProvince
-        ? toProvince.toLowerCase() === to.toLowerCase()
-        : false;
+    // BƯỚC 2: Thu thập ID của các chuyến đi đã lọc
+    const tripIds = filteredTrips.map((trip) => trip._id);
 
-      return isCompanyActive && isFromMatch && isToMatch;
+    // BƯỚC 3: Thực hiện một aggregation riêng biệt trên collection `reviews` để lấy rating
+    const reviewStats = await this.reviewModel.aggregate([
+      { $match: { tripId: { $in: tripIds } } },
+      {
+        $group: {
+          _id: '$tripId',
+          avgRating: { $avg: '$rating' },
+          reviewCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // BƯỚC 4: Tạo một Map để tra cứu thông tin review hiệu quả
+    const reviewStatsMap = new Map<
+      string,
+      { avgRating: number; reviewCount: number }
+    >();
+    reviewStats.forEach((stat) => {
+      reviewStatsMap.set(stat._id.toString(), {
+        avgRating: stat.avgRating,
+        reviewCount: stat.reviewCount,
+      });
     });
 
-    return finalTrips;
+    // BƯỚC 5: Kết hợp dữ liệu review vào kết quả cuối cùng
+    const finalTripsWithReviews = filteredTrips.map((trip) => {
+      const stats = reviewStatsMap.get(trip._id.toString());
+      const availableSeatsCount = trip.seats.filter(
+        (s) => s.status === SeatStatus.AVAILABLE,
+      ).length;
+
+      return {
+        ...trip,
+        avgRating: stats?.avgRating ?? null,
+        reviewCount: stats?.reviewCount ?? 0,
+        availableSeatsCount: availableSeatsCount,
+      };
+    });
+
+    return finalTripsWithReviews;
   }
   /**
    * @description Tìm kiếm chuyến đi cho mục đích quản lý.

@@ -1,6 +1,5 @@
 import type dayjs from "dayjs";
 import type { Dayjs } from "dayjs";
-import type { Vehicle } from "../features/admin/types/vehicle";
 import type { LocationData } from "../features/trips/types/location";
 
 export type UserRole = "user" | "company_admin" | "admin";
@@ -144,6 +143,8 @@ export interface TripSearchResult {
   expectedArrivalTime: string;
   price: number;
   availableSeatsCount: number;
+  avgRating: number | null;
+  reviewCount: number;
 }
 
 export interface TripDetailView {

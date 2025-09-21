@@ -65,6 +65,7 @@ export interface LookedUpBooking {
   }[];
   tripId: {
     _id: string;
+    status: "scheduled" | "departed" | "arrived" | "cancelled";
     departureTime: string;
     expectedArrivalTime: string;
     price: number;
@@ -86,25 +87,33 @@ export interface LookedUpBooking {
       };
     };
   };
+  isReviewed: boolean;
 }
 
 export interface PopulatedBookingLookupResult {
   _id: string;
   ticketCode?: string;
   status: "pending" | "held" | "confirmed" | "cancelled" | "expired";
+  paymentStatus: "pending" | "paid" | "failed";
   totalAmount: number;
   contactName: string;
   contactPhone: string;
-  passengers: { name: string; phone: string; seatNumber: string }[];
+  passengers: {
+    name: string;
+    phone: string;
+    seatNumber: string;
+    price: number;
+  }[];
   tripId: {
     _id: string;
     status: "scheduled" | "departed" | "arrived" | "cancelled";
     departureTime: string;
     expectedArrivalTime: string;
+    price: number;
     companyId: Pick<Company, "_id" | "name" | "logoUrl">;
     route: {
-      fromLocationId: Pick<LocationData, "_id" | "name" | "province">;
-      toLocationId: Pick<LocationData, "_id" | "name" | "province">;
+      fromLocationId: Pick<LocationData, "_id" | "name" | "fullAddress">;
+      toLocationId: Pick<LocationData, "_id" | "name" | "fullAddress">;
     };
   };
   isReviewed: boolean;

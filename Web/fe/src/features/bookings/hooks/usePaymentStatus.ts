@@ -43,7 +43,7 @@ export const usePaymentStatus = () => {
         }
 
         const data = await lookupBooking({
-          bookingId,
+          identifier: bookingId,
           contactPhone: tempContactPhone,
         });
 
