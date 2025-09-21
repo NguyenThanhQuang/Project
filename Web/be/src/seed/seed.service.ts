@@ -133,7 +133,6 @@ export class SeedService {
       'Hải Vân Express',
     ];
 
-    // SỬA LỖI: Sử dụng Set để đảm bảo tên không bao giờ trùng lặp
     const uniqueNames = new Set<string>();
     companyNames.forEach((name) => uniqueNames.add(name));
 
@@ -147,7 +146,6 @@ export class SeedService {
       const name = namesAsArray[i];
       const companyData: Partial<Company> = {
         name,
-        // Đảm bảo code cũng duy nhất bằng cách thêm index
         code: name.replace(/\s+/g, '').toUpperCase().substring(0, 10) + `_${i}`,
         email: faker.internet.email({ provider: 'example.com' }).toLowerCase(),
         phone: `09${faker.string.numeric(8)}`,
@@ -177,15 +175,21 @@ export class SeedService {
         passwordHash: 'password123',
         isEmailVerified: true,
         roles: [UserRole.USER],
+        lastLoginDate: new Date(),
       };
+
       if (i < adminCount && i < companies.length) {
-        userData.roles!.push(UserRole.COMPANY_ADMIN);
+        if (userData.roles) {
+          userData.roles.push(UserRole.COMPANY_ADMIN);
+        }
         userData.companyId = companies[i]._id;
       }
+
       const newUser = await this.userModel.create(userData);
       createdUsers.push(newUser);
     }
     this.logger.log(`- Đã tạo ${createdUsers.length} người dùng.`);
+    this.logger.log(`- Trong đó có ${adminCount} tài khoản Company Admin.`);
     return createdUsers;
   }
 
