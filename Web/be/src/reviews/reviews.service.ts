@@ -8,7 +8,7 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import dayjs from 'dayjs';
-import { FilterQuery, Model } from 'mongoose';
+import { FilterQuery, Model, Types } from 'mongoose';
 import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { TripStatus } from 'src/trips/schemas/trip.schema';
 import { BookingsService } from '../bookings/bookings.service';
@@ -179,11 +179,16 @@ export class ReviewsService {
   async findAll(queryDto: QueryReviewDto): Promise<ReviewDocument[]> {
     const query: FilterQuery<ReviewDocument> = { isVisible: true };
 
-    if (queryDto.companyId) query.companyId = queryDto.companyId;
-    if (queryDto.tripId) query.tripId = queryDto.tripId;
-    if (queryDto.userId) query.userId = queryDto.userId;
+    if (queryDto.companyId && Types.ObjectId.isValid(queryDto.companyId)) {
+      query.companyId = new Types.ObjectId(queryDto.companyId);
+    }
+    if (queryDto.tripId && Types.ObjectId.isValid(queryDto.tripId)) {
+      query.tripId = new Types.ObjectId(queryDto.tripId);
+    }
+    if (queryDto.userId && Types.ObjectId.isValid(queryDto.userId)) {
+      query.userId = new Types.ObjectId(queryDto.userId);
+    }
     if (queryDto.rating) query.rating = queryDto.rating;
-
     return this.reviewModel
       .find(query)
       .select('-userId')
@@ -193,7 +198,11 @@ export class ReviewsService {
 
   async findAllForAdmin(queryDto: QueryReviewDto): Promise<ReviewDocument[]> {
     const query: FilterQuery<ReviewDocument> = {};
-    if (queryDto.companyId) query.companyId = queryDto.companyId;
+
+    if (queryDto.companyId && Types.ObjectId.isValid(queryDto.companyId)) {
+      query.companyId = new Types.ObjectId(queryDto.companyId);
+    }
+
     return this.reviewModel
       .find(query)
       .populate('userId', 'name email')

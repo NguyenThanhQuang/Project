@@ -129,7 +129,15 @@ export class VehiclesService {
   async findAll(
     companyId?: string | Types.ObjectId,
   ): Promise<VehicleDocument[]> {
-    const query = companyId ? { companyId } : {};
+    const query: any = {};
+
+    if (companyId) {
+      if (!Types.ObjectId.isValid(companyId)) {
+        return [];
+      }
+      query.companyId = new Types.ObjectId(companyId);
+    }
+
     return this.vehicleModel
       .find(query)
       .populate('companyId', 'name code')

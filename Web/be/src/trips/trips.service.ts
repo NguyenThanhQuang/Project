@@ -26,7 +26,6 @@ import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import {
-  PopulatedTripForFiltering,
   Seat,
   SeatStatus,
   Trip,
@@ -376,7 +375,10 @@ export class TripsService {
   ): Promise<TripDocument[]> {
     const query: Record<string, unknown> = {};
     if (companyId) {
-      query.companyId = companyId;
+      if (!Types.ObjectId.isValid(companyId)) {
+        return [];
+      }
+      query.companyId = new Types.ObjectId(companyId);
     }
     return this.tripModel
       .find(query)
