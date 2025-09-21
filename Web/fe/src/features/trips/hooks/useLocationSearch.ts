@@ -22,7 +22,7 @@ export const useLocationSearch = () => {
 
   const handleInputChange = useCallback(
     (query: string) => {
-      debouncedFetch(query);
+      debouncedFetch(query.trim());
     },
     [debouncedFetch]
   );

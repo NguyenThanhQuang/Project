@@ -1,20 +1,9 @@
 import React from "react";
 import { Box, Container, Typography, Grid, Chip } from "@mui/material";
-import dayjs, { Dayjs } from "dayjs";
-import { SearchForm } from "./SearchForm";
-import type { LocationData } from "../../../trips/types/location";
-import type { SearchData } from "../../../../types";
+import type { useSharedSearchForm } from "../../hooks/useSharedSearchForm";
+import { SharedSearchForm } from "../common/SharedSearchForm";
 
-interface HeroSectionProps {
-  searchData: SearchData;
-  setSearchData: React.Dispatch<React.SetStateAction<SearchData>>;
-  fromOptions: readonly LocationData[];
-  fromLoading: boolean;
-  onFromInputChange: (value: string) => void;
-  toOptions: readonly LocationData[];
-  toLoading: boolean;
-  onToInputChange: (value: string) => void;
-}
+type HeroSectionProps = ReturnType<typeof useSharedSearchForm>;
 
 export const HeroSection: React.FC<HeroSectionProps> = (props) => {
   return (
@@ -133,7 +122,7 @@ export const HeroSection: React.FC<HeroSectionProps> = (props) => {
           </Grid>
 
           <Grid size={{ xs: 12, md: 6 }}>
-            <SearchForm {...props} />
+            <SharedSearchForm {...props} variant="hero" />
           </Grid>
         </Grid>
       </Container>

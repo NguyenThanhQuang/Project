@@ -48,12 +48,18 @@ export class LocationsService {
     return this.locationModel.find(query).sort({ province: 1, name: 1 }).exec();
   }
 
+  private escapeRegex(string: string) {
+    return string.replace(/[-\/\\^$*+?.()|[\]{}]/g, '\\$&');
+  }
   async search(keyword: string): Promise<LocationDocument[]> {
     if (!keyword || keyword.trim().length < 2) {
       return [];
     }
+    const decodedKeyword = decodeURIComponent(keyword);
 
-    const searchRegex = new RegExp(keyword, 'i');
+    const escapedKeyword = this.escapeRegex(decodedKeyword.trim());
+
+    const searchRegex = new RegExp(escapedKeyword, 'i');
 
     return this.locationModel
       .find({

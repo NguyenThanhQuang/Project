@@ -1,17 +1,16 @@
 import dayjs from "dayjs";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import { searchLocations } from "../../../services/locationService";
-import type {
-  FilterOptions,
-  Filters,
-  SearchData,
-  TripSearchResult,
-} from "../../../types";
+import type { FilterOptions, Filters, TripSearchResult } from "../../../types";
 import { searchTrips } from "../services/tripService";
 
+/**
+ * 1. Đọc query params từ URL.
+ * 2. Gọi API để lấy danh sách chuyến đi gốc.
+ * 3. Quản lý state cho việc LỌC và SẮP XẾP kết quả.
+ */
 export const useTripSearch = () => {
-  const [searchParams, setSearchParams] = useSearchParams();
+  const [searchParams] = useSearchParams();
 
   const [originalTrips, setOriginalTrips] = useState<TripSearchResult[]>([]);
   const [filterOptions, setFilterOptions] = useState<FilterOptions>({
@@ -19,6 +18,7 @@ export const useTripSearch = () => {
     vehicleTypes: [],
     maxPrice: 1000000,
   });
+
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -29,36 +29,6 @@ export const useTripSearch = () => {
     priceRange: [0, 1000000],
   });
   const [sortBy, setSortBy] = useState("departureTime");
-
-  const [searchData, setSearchData] = useState<SearchData>({
-    from: null,
-    to: null,
-    date: dayjs(searchParams.get("date") || undefined),
-    passengers: parseInt(searchParams.get("passengers") || "1"),
-  });
-
-  useEffect(() => {
-    const initLocations = async () => {
-      const fromQuery = searchParams.get("from");
-      const toQuery = searchParams.get("to");
-      if (fromQuery && toQuery) {
-        try {
-          const [fromResult, toResult] = await Promise.all([
-            searchLocations(fromQuery),
-            searchLocations(toQuery),
-          ]);
-          setSearchData((prev) => ({
-            ...prev,
-            from: fromResult[0] || null,
-            to: toResult[0] || null,
-          }));
-        } catch (e) {
-          console.error("Failed to initialize locations from URL", e);
-        }
-      }
-    };
-    initLocations();
-  }, [searchParams]);
 
   useEffect(() => {
     const from = searchParams.get("from");
@@ -75,14 +45,16 @@ export const useTripSearch = () => {
           setFilterOptions(response.filters);
           setFilters((prev) => ({
             ...prev,
-            priceRange: [0, response.filters.maxPrice],
+            priceRange: [0, response.filters.maxPrice || 1000000],
           }));
         })
-        .catch((err: any) => setError(err.message))
+        .catch((err: any) =>
+          setError(err.message || "Lỗi khi tìm kiếm chuyến đi.")
+        )
         .finally(() => setIsLoading(false));
     } else {
       setIsLoading(false);
-      setError("Thông tin tìm kiếm không đầy đủ trên URL.");
+      setOriginalTrips([]);
     }
   }, [searchParams]);
 
@@ -120,10 +92,16 @@ export const useTripSearch = () => {
 
     result.sort((a, b) => {
       switch (sortBy) {
-        case "priceAsc":
+        case "price":
           return a.price - b.price;
-        case "priceDesc":
-          return b.price - a.price;
+        case "duration":
+          const durationA = dayjs(a.expectedArrivalTime).diff(
+            dayjs(a.departureTime)
+          );
+          const durationB = dayjs(b.expectedArrivalTime).diff(
+            dayjs(b.departureTime)
+          );
+          return durationA - durationB;
         case "departureTime":
         default:
           return (
@@ -136,39 +114,10 @@ export const useTripSearch = () => {
     return result;
   }, [originalTrips, filters, sortBy]);
 
-  const handleSearch = () => {
-    if (searchData.from && searchData.to) {
-      setSearchParams({
-        from: searchData.from.province,
-        to: searchData.to.province,
-        date: searchData.date.format("YYYY-MM-DD"),
-        passengers: String(searchData.passengers),
-      });
-    }
-  };
-
-  const handleFiltersChange = useCallback((newFilters: Filters) => {
-    setFilters(newFilters);
-  }, []);
-
-  const handleSortChange = useCallback((newSortBy: string) => {
-    setSortBy(newSortBy);
-  }, []);
-
-  const handleSearchDataChange = useCallback(
-    <K extends keyof SearchData>(field: K, value: SearchData[K]) => {
-      setSearchData((prev) => ({ ...prev, [field]: value }));
-    },
-    []
-  );
-
   return {
     isLoading,
     error,
     displayedTrips,
-    searchData,
-    setSearchData,
-    handleSearch,
     filters,
     setFilters,
     filterOptions,

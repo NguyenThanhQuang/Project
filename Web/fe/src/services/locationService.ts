@@ -24,9 +24,10 @@ export const getAllLocations = async (): Promise<LocationData[]> => {
 export const searchLocations = async (
   keyword: string
 ): Promise<LocationData[]> => {
-  if (!keyword || keyword.trim().length < 2) return [];
+  const trimmedKeyword = keyword.trim();
+  if (!trimmedKeyword || trimmedKeyword.length < 1) return [];
   const response = await api.get<LocationData[]>(
-    `/locations/search?q=${keyword}`
+    `/locations/search?q=${trimmedKeyword}`
   );
   return response.data;
 };

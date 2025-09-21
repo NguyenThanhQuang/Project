@@ -9,11 +9,6 @@ import {
   Grid,
   Typography,
   Divider,
-  // FormControl,
-  // InputLabel,
-  // Select,
-  // MenuItem,
-  // Alert,
 } from "@mui/material";
 import type { CompanyWithStats, CreateCompanyPayload } from "../types/company";
 import type { SelectChangeEvent } from "@mui/material";

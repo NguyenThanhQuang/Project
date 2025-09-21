@@ -8,11 +8,11 @@ export class AdminLoginLoggerMiddleware implements NestMiddleware {
   use(req: Request, res: Response, next: NextFunction) {
     const sourceHeader = req.headers['x-request-source'];
 
-    if (sourceHeader === 'admin-portal') {
-      this.logger.log(
-        `[ADMIN PORTAL] Login attempt received. IP: ${req.ip}, User-Agent: ${req.headers['user-agent']}`,
-      );
-    }
+    // if (sourceHeader === 'admin-portal') {
+    //   this.logger.log(
+    //     `[ADMIN PORTAL] Login attempt received. IP: ${req.ip}, User-Agent: ${req.headers['user-agent']}`,
+    //   );
+    // }
     next();
   }
 }
