@@ -5,13 +5,12 @@ import type {
   Company,
   FilterOptions,
   FrontendSeat,
-  PopulatedTrip,
   SearchTripsResponse,
   SeatStatus,
   TripDetailView,
   TripSearchResult,
 } from "../../../types";
-import type { PopularRoute } from "../types/trip";
+import type { PopularRoute, PopulatedTrip } from "../types/trip";
 dayjs.extend(duration);
 
 interface SearchTripsParams {

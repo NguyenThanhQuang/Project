@@ -143,6 +143,8 @@ export interface TripSearchResult {
   expectedArrivalTime: string;
   price: number;
   availableSeatsCount: number;
+  companyAvgRating: number | null;
+  companyReviewCount: number;
   avgRating: number | null;
   reviewCount: number;
 }

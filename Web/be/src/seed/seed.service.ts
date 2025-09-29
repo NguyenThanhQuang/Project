@@ -258,40 +258,55 @@ export class SeedService {
     vehicles: VehicleDocument[],
     locations: LocationDocument[],
   ): Promise<TripDocument[]> {
-    this.logger.log(`>>> Bước 6: Seeding Trips (1 đi, 1 về cho mỗi xe)...`);
+    this.logger.log(`>>> Bước 6: Seeding Trips (Quá khứ & Hôm nay)...`);
     const createdTrips: TripDocument[] = [];
-    const busStations = locations.filter((l) => l.type === 'bus_station');
 
-    for (const vehicle of vehicles) {
+    // SỬA LỖI 3: Loại trừ trạm dừng nghỉ khỏi danh sách điểm đi/đến
+    const validEndpoints = locations.filter((l) => l.type !== 'rest_stop');
+    if (validEndpoints.length < 2) {
+      this.logger.error(
+        "Dừng seeding: Cần ít nhất 2 địa điểm không phải 'rest_stop'.",
+      );
+      return [];
+    }
+
+    // SỬA LỖI 1: Chia đôi danh sách xe
+    const halfwayIndex = Math.floor(vehicles.length / 2);
+    const pastTripVehicles = vehicles.slice(0, halfwayIndex);
+    const todayTripVehicles = vehicles.slice(halfwayIndex);
+
+    // --- TẠO CHUYẾN ĐI QUÁ KHỨ ---
+    for (const vehicle of pastTripVehicles) {
       const [fromLocation, toLocation] = faker.helpers
-        .shuffle(busStations)
+        .shuffle(validEndpoints)
         .slice(0, 2);
       const seats: Seat[] = (this.tripsService as any).generateSeatsFromVehicle(
         vehicle,
       );
 
       const departureTime = dayjs()
-        .add(faker.number.int({ min: 1, max: 3 }), 'day')
+        .subtract(1, 'day')
         .hour(faker.number.int({ min: 5, max: 22 }))
         .minute(0)
         .second(0)
         .toDate();
-      const expectedArrivalTime = dayjs(departureTime)
+      const arrivalTime = dayjs(departureTime)
         .add(faker.number.int({ min: 4, max: 8 }), 'hour')
         .toDate();
 
-      const baseTripData = {
+      const tripData: Partial<Trip> = {
         companyId: vehicle.companyId,
         vehicleId: vehicle._id,
         departureTime,
-        expectedArrivalTime,
+        expectedArrivalTime: arrivalTime,
         price: faker.number.int({ min: 15, max: 50 }) * 10000,
-        status: TripStatus.SCHEDULED,
         seats,
+        // Tất cả chuyến đi quá khứ đều đã hoàn thành để có thể review
+        status: TripStatus.ARRIVED,
       };
 
       const tripGo = await this.tripModel.create({
-        ...baseTripData,
+        ...tripData,
         route: {
           fromLocationId: fromLocation._id,
           toLocationId: toLocation._id,
@@ -299,17 +314,70 @@ export class SeedService {
         },
       });
       const tripReturn = await this.tripModel.create({
-        ...baseTripData,
+        ...tripData,
         route: {
           fromLocationId: toLocation._id,
           toLocationId: fromLocation._id,
           stops: [],
         },
       });
-
       createdTrips.push(tripGo, tripReturn);
     }
-    this.logger.log(`- Đã tạo ${createdTrips.length} chuyến đi.`);
+    this.logger.log(
+      `- Đã tạo ${pastTripVehicles.length * 2} chuyến đi trong quá khứ.`,
+    );
+
+    // --- TẠO CHUYẾN ĐI HÔM NAY ---
+    for (const vehicle of todayTripVehicles) {
+      const [fromLocation, toLocation] = faker.helpers
+        .shuffle(validEndpoints)
+        .slice(0, 2);
+      const seats: Seat[] = (this.tripsService as any).generateSeatsFromVehicle(
+        vehicle,
+      );
+
+      const departureTime = dayjs()
+        .hour(faker.number.int({ min: 1, max: 23 }))
+        .minute(0)
+        .second(0)
+        .toDate();
+      const arrivalTime = dayjs(departureTime)
+        .add(faker.number.int({ min: 4, max: 8 }), 'hour')
+        .toDate();
+
+      const tripData: Partial<Trip> = {
+        companyId: vehicle.companyId,
+        vehicleId: vehicle._id,
+        departureTime,
+        expectedArrivalTime: arrivalTime,
+        price: faker.number.int({ min: 15, max: 50 }) * 10000,
+        seats,
+        status: TripStatus.SCHEDULED,
+      };
+
+      const tripGo = await this.tripModel.create({
+        ...tripData,
+        route: {
+          fromLocationId: fromLocation._id,
+          toLocationId: toLocation._id,
+          stops: [],
+        },
+      });
+      const tripReturn = await this.tripModel.create({
+        ...tripData,
+        route: {
+          fromLocationId: toLocation._id,
+          toLocationId: fromLocation._id,
+          stops: [],
+        },
+      });
+      createdTrips.push(tripGo, tripReturn);
+    }
+    this.logger.log(
+      `- Đã tạo ${todayTripVehicles.length * 2} chuyến đi cho hôm nay.`,
+    );
+
+    this.logger.log(`- Tổng cộng đã tạo ${createdTrips.length} chuyến đi.`);
     return createdTrips;
   }
 
@@ -317,11 +385,17 @@ export class SeedService {
     trips: TripDocument[],
     users: UserDocument[],
   ) {
-    this.logger.log('>>> Bước 7: Seeding Bookings và Reviews (tuần tự)...');
+    this.logger.log('>>> Bước 7: Seeding Bookings và Reviews...');
+
+    // SỬA LỖI 2: Chỉ tạo booking cho các chuyến đã 'ARRIVED'
+    const pastTrips = trips.filter(
+      (trip) => trip.status === TripStatus.ARRIVED,
+    );
     let bookingCount = 0;
     let reviewCount = 0;
 
-    for (const trip of trips) {
+    for (let i = 0; i < pastTrips.length; i++) {
+      const trip = pastTrips[i];
       const user = faker.helpers.arrayElement(
         users.filter((u) => u.roles.includes(UserRole.USER)),
       );
@@ -331,6 +405,7 @@ export class SeedService {
 
       if (seatToBook && user) {
         const bookingData: Partial<Booking> = {
+          // ... (dữ liệu booking giữ nguyên)
           userId: user._id,
           tripId: trip._id,
           companyId: trip.companyId,
@@ -352,20 +427,25 @@ export class SeedService {
         const createdBooking = await this.bookingModel.create(bookingData);
         bookingCount++;
 
-        const reviewData: Partial<Review> = {
-          userId: user._id,
-          displayName: user.name,
-          tripId: trip._id,
-          companyId: trip.companyId,
-          bookingId: createdBooking._id,
-          rating: faker.number.int({ min: 4, max: 5 }),
-          comment: faker.lorem.sentence(),
-        };
-        await this.reviewModel.create(reviewData);
-        reviewCount++;
+        // SỬA LỖI 2: Chỉ tạo review cho nửa đầu của các booking
+        if (i < pastTrips.length / 2) {
+          const reviewData: Partial<Review> = {
+            userId: user._id,
+            displayName: user.name,
+            tripId: trip._id,
+            companyId: trip.companyId,
+            bookingId: createdBooking._id,
+            rating: faker.number.int({ min: 3, max: 5 }),
+            comment: faker.lorem.sentence(),
+          };
+          await this.reviewModel.create(reviewData);
+          reviewCount++;
+        }
       }
     }
-    this.logger.log(`- Đã tạo ${bookingCount} lượt đặt vé.`);
-    this.logger.log(`- Đã tạo ${reviewCount} đánh giá.`);
+    this.logger.log(
+      `- Đã tạo ${bookingCount} lượt đặt vé cho các chuyến đã hoàn thành.`,
+    );
+    this.logger.log(`- Đã tạo ${reviewCount} đánh giá (một nửa số booking).`);
   }
 }

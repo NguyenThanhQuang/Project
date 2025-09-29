@@ -4,12 +4,17 @@ export interface PopulatedUser {
   email: string;
 }
 
+export interface PopulatedCompany {
+  _id: string;
+  name: string;
+}
+
 export interface AdminReview {
   _id: string;
   userId?: PopulatedUser;
   displayName: string;
   tripId: string;
-  companyId: string;
+  companyId: PopulatedCompany;
   bookingId: string;
   rating: number;
   comment?: string;

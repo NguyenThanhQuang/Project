@@ -19,6 +19,7 @@ export interface CompanyTrip {
     seatNumber: string;
     status: "available" | "held" | "booked";
   }[];
+  isRecurrenceTemplate: boolean;
 }
 
 /**

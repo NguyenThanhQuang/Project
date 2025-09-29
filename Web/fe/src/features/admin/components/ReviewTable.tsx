@@ -56,6 +56,7 @@ const ReviewTable: React.FC<ReviewTableProps> = ({
           <TableHead>
             <TableRow sx={{ bgcolor: "grey.100" }}>
               <TableCell sx={{ fontWeight: 600 }}>Người đánh giá</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Nhà xe</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Đánh giá</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Bình luận</TableCell>
               <TableCell sx={{ fontWeight: 600 }}>Ngày</TableCell>
@@ -87,6 +88,11 @@ const ReviewTable: React.FC<ReviewTableProps> = ({
                       </Typography>
                     </Box>
                   </Box>
+                </TableCell>
+                <TableCell>
+                  <Typography variant="body2" sx={{ fontWeight: 500 }}>
+                    {review.companyId?.name || "Không xác định"}
+                  </Typography>
                 </TableCell>
                 <TableCell>
                   <Rating value={review.rating} readOnly />

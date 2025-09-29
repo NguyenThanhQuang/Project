@@ -38,3 +38,15 @@ export const createTripForCompany = async (
   const response = await api.post<AdminTrip>("/trips", payload);
   return response.data;
 };
+
+export const updateTrip = async (
+  tripId: string,
+  payload: UpdateTripPayload
+): Promise<AdminTrip> => {
+  const response = await api.put<AdminTrip>(`/trips/${tripId}`, payload);
+  return response.data;
+};
+
+export type UpdateTripPayload = Partial<CreateTripPayload> & {
+  isRecurrenceTemplate?: boolean;
+};

@@ -5,6 +5,7 @@ export interface ManagedUser {
   name: string;
   email: string;
   phone: string;
+  roles: Array<"user" | "company_admin" | "admin">;
   createdAt: string;
   lastLoginDate?: string;
   status: UserStatus;

@@ -288,6 +288,7 @@ export class UsersService {
           name: 1,
           email: 1,
           phone: 1,
+          roles: 1,
           createdAt: 1,
           lastLoginDate: 1,
           status: 1,

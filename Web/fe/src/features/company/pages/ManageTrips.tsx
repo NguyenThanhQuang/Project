@@ -22,6 +22,7 @@ import {
   TableHead,
   TableRow,
   Divider,
+  Switch,
 } from "@mui/material";
 import {
   Add,
@@ -63,118 +64,77 @@ const getStatusInfo = (status: string) => {
   }
 };
 
-const TripsView: React.FC<{ trips: CompanyTrip[] }> = ({ trips }) => {
+const TripsView: React.FC<{
+  trips: CompanyTrip[];
+  handleToggleRecurrence: (trip: CompanyTrip) => void;
+}> = ({ trips, handleToggleRecurrence }) => {
   const navigate = useNavigate();
 
+  if (trips.length === 0) {
+    return (
+      <Alert severity="info">
+        Bạn chưa có chuyến xe nào. Hãy tạo một chuyến mới!
+      </Alert>
+    );
+  }
+
   return (
-    <Grid container spacing={3}>
-      {trips.length === 0 ? (
-        <Grid size={{ xs: 12 }}>
-          <Alert severity="info">
-            Bạn chưa có chuyến xe nào. Hãy tạo một chuyến mới!
-          </Alert>
-        </Grid>
-      ) : (
-        trips.map((trip) => (
-          <Grid size={{ xs: 12, md: 6, lg: 4 }} key={trip._id}>
-            <Card
-              elevation={2}
-              sx={{
-                borderRadius: 3,
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-              }}
-            >
-              <CardContent sx={{ flexGrow: 1 }}>
-                <Box
-                  sx={{
-                    display: "flex",
-                    justifyContent: "space-between",
-                    alignItems: "flex-start",
-                    mb: 2,
-                  }}
-                >
-                  <Box>
-                    <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                      {trip.route.fromLocationId.name} -{" "}
-                      {trip.route.toLocationId.name}
-                    </Typography>
-                    <Chip
-                      label={getStatusInfo(trip.status).text}
-                      color={getStatusInfo(trip.status).color}
-                      size="small"
-                    />
-                  </Box>
-                  <IconButton size="small">
-                    <MoreVert />
+    <Paper elevation={2} sx={{ borderRadius: 3, overflow: "hidden" }}>
+      <TableContainer>
+        <Table>
+          <TableHead>
+            <TableRow sx={{ bgcolor: "#f5f7fa" }}>
+              <TableCell sx={{ fontWeight: 600 }}>Tuyến đường</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Xe</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Khởi hành</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Giá vé</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Trạng thái</TableCell>
+              <TableCell sx={{ fontWeight: 600 }}>Lặp lại hàng ngày</TableCell>
+              <TableCell sx={{ fontWeight: 600, textAlign: "center" }}>
+                Thao tác
+              </TableCell>
+            </TableRow>
+          </TableHead>
+          <TableBody>
+            {trips.map((trip) => (
+              <TableRow key={trip._id} hover>
+                <TableCell sx={{ fontWeight: 500 }}>
+                  {trip.route.fromLocationId.name} →{" "}
+                  {trip.route.toLocationId.name}
+                </TableCell>
+                <TableCell>
+                  {trip.vehicleId.type} ({trip.vehicleId.vehicleNumber})
+                </TableCell>
+                <TableCell>{formatDate(trip.departureTime)}</TableCell>
+                <TableCell>{formatCurrency(trip.price)}</TableCell>
+                <TableCell>
+                  <Chip
+                    label={getStatusInfo(trip.status).text}
+                    color={getStatusInfo(trip.status).color}
+                    size="small"
+                  />
+                </TableCell>
+                <TableCell>
+                  <Switch
+                    checked={!!trip.isRecurrenceTemplate}
+                    onChange={() => handleToggleRecurrence(trip)}
+                    disabled={trip.status !== "scheduled"}
+                  />
+                </TableCell>
+                <TableCell align="center">
+                  <IconButton onClick={() => navigate(`/trips/${trip._id}`)}>
+                    <Visibility />
                   </IconButton>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    mb: 1,
-                    color: "text.secondary",
-                  }}
-                >
-                  <Schedule sx={{ fontSize: 18, mr: 1.5 }} />
-                  <Typography variant="body2">
-                    {formatDate(trip.departureTime)}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    mb: 1,
-                    color: "text.secondary",
-                  }}
-                >
-                  <DirectionsBus sx={{ fontSize: 18, mr: 1.5 }} />
-                  <Typography variant="body2">
-                    {trip.vehicleId.type} - {trip.vehicleId.vehicleNumber}
-                  </Typography>
-                </Box>
-                <Box
-                  sx={{
-                    display: "flex",
-                    alignItems: "center",
-                    mb: 1,
-                    color: "text.secondary",
-                  }}
-                >
-                  <AttachMoney sx={{ fontSize: 18, mr: 1.5 }} />
-                  <Typography variant="body2">
-                    {formatCurrency(trip.price)}
-                  </Typography>
-                </Box>
-              </CardContent>
-              <Divider />
-              <Box
-                sx={{
-                  p: 2,
-                  display: "flex",
-                  justifyContent: "flex-end",
-                  gap: 1,
-                }}
-              >
-                <Button
-                  size="small"
-                  startIcon={<Visibility />}
-                  onClick={() => navigate(`/trips/${trip._id}`)}
-                >
-                  Xem chi tiết
-                </Button>
-                <Button size="small" startIcon={<Edit />}>
-                  Chỉnh sửa
-                </Button>
-              </Box>
-            </Card>
-          </Grid>
-        ))
-      )}
-    </Grid>
+                  <IconButton>
+                    <Edit />
+                  </IconButton>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </TableContainer>
+    </Paper>
   );
 };
 
@@ -226,9 +186,9 @@ const VehiclesView: React.FC<{
   </Paper>
 );
 
-// --- Main Component ---
 const ManageTrips: React.FC = () => {
   const navigate = useNavigate();
+
   const {
     user,
     loading,
@@ -244,6 +204,7 @@ const ManageTrips: React.FC = () => {
     handleSaveVehicle,
     handleOpenCreateDialog,
     handleOpenEditDialog,
+    handleToggleRecurrence,
   } = useCompanyDashboard();
 
   if (loading) {
@@ -380,7 +341,12 @@ const ManageTrips: React.FC = () => {
       </Paper>
 
       <Box sx={{ mt: 4 }}>
-        {activeTab === 0 && <TripsView trips={trips} />}
+        {activeTab === 0 && (
+          <TripsView
+            trips={trips}
+            handleToggleRecurrence={handleToggleRecurrence}
+          />
+        )}
         {activeTab === 1 && (
           <>
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
@@ -401,7 +367,6 @@ const ManageTrips: React.FC = () => {
         )}
       </Box>
 
-      {/* Dialog for Adding/Editing Vehicle */}
       {user?.companyId && (
         <AddVehicleDialog
           open={vehicleDialogOpen}

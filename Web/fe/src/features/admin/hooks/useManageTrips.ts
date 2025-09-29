@@ -2,7 +2,11 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { getErrorMessage } from "../../../utils/getErrorMessage";
 import { getCompanyDetails } from "../services/companyAdminService";
-import { cancelTrip, getTripsByCompany } from "../services/tripAdminService";
+import {
+  cancelTrip,
+  getTripsByCompany,
+  updateTrip,
+} from "../services/tripAdminService";
 import type { AdminTrip } from "../types/trip";
 
 /**
@@ -129,6 +133,28 @@ export const useManageTrips = () => {
     }
   };
 
+  const handleToggleRecurrence = async (tripToUpdate: AdminTrip) => {
+    clearMessages();
+    try {
+      setTrips((trips) =>
+        trips.map((trip) =>
+          trip._id === tripToUpdate._id
+            ? { ...trip, isRecurrenceTemplate: !trip.isRecurrenceTemplate }
+            : trip
+        )
+      );
+
+      await updateTrip(tripToUpdate._id, {
+        isRecurrenceTemplate: !tripToUpdate.isRecurrenceTemplate,
+      });
+
+      setSuccessMessage("Cập nhật trạng thái lặp lại thành công!");
+    } catch (err) {
+      setError(getErrorMessage(err, "Cập nhật thất bại."));
+      fetchData();
+    }
+  };
+
   return {
     loading,
     error,
@@ -150,5 +176,6 @@ export const useManageTrips = () => {
     handleOpenCancelDialog,
     confirmCancelTrip,
     setCancelDialogOpen,
+    handleToggleRecurrence,
   };
 };

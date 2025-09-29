@@ -275,6 +275,7 @@ export class TripsService {
     const startOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).startOf('day').toDate();
     const endOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).endOf('day').toDate();
 
+    // BƯỚC 1: Lấy danh sách các chuyến đi hợp lệ, populate thông tin cần thiết
     const tripsInDay = await this.tripModel
       .find({
         departureTime: { $gte: startOfDay, $lte: endOfDay },
@@ -296,46 +297,40 @@ export class TripsService {
         path: 'route.toLocationId',
         select: 'name province',
       })
-      .lean() // <-- Sử dụng .lean() để có object JS thuần, dễ dàng thêm thuộc tính
+      .lean()
       .exec();
 
-    // Lọc thủ công bằng code TypeScript (an toàn hơn)
     const filteredTrips = (tripsInDay as PopulatedPublicTrip[]).filter(
       (trip) => {
-        const isCompanyActive = trip.companyId?.status === CompanyStatus.ACTIVE;
-        const fromProvince = trip.route.fromLocationId?.province;
-        const toProvince = trip.route.toLocationId?.province;
-        const isFromMatch = fromProvince
-          ? fromProvince.toLowerCase() === from.toLowerCase()
-          : false;
-        const isToMatch = toProvince
-          ? toProvince.toLowerCase() === to.toLowerCase()
-          : false;
-        return isCompanyActive && isFromMatch && isToMatch;
+        // Lọc an toàn, đảm bảo các trường populate không bị null
+        return (
+          trip.companyId?.status === CompanyStatus.ACTIVE &&
+          trip.route?.fromLocationId?.province?.toLowerCase() ===
+            from.toLowerCase() &&
+          trip.route?.toLocationId?.province?.toLowerCase() === to.toLowerCase()
+        );
       },
     );
 
-    // Nếu không có chuyến đi nào sau khi lọc, trả về mảng rỗng ngay
     if (filteredTrips.length === 0) {
       return [];
     }
 
-    // BƯỚC 2: Thu thập ID của các chuyến đi đã lọc
-    const tripIds = filteredTrips.map((trip) => trip._id);
+    const companyIds = [
+      ...new Set(filteredTrips.map((trip) => trip.companyId?._id)),
+    ];
 
-    // BƯỚC 3: Thực hiện một aggregation riêng biệt trên collection `reviews` để lấy rating
     const reviewStats = await this.reviewModel.aggregate([
-      { $match: { tripId: { $in: tripIds } } },
+      { $match: { companyId: { $in: companyIds } } },
       {
         $group: {
-          _id: '$tripId',
+          _id: '$companyId',
           avgRating: { $avg: '$rating' },
           reviewCount: { $sum: 1 },
         },
       },
     ]);
 
-    // BƯỚC 4: Tạo một Map để tra cứu thông tin review hiệu quả
     const reviewStatsMap = new Map<
       string,
       { avgRating: number; reviewCount: number }
@@ -347,22 +342,19 @@ export class TripsService {
       });
     });
 
-    // BƯỚC 5: Kết hợp dữ liệu review vào kết quả cuối cùng
-    const finalTripsWithReviews = filteredTrips.map((trip) => {
-      const stats = reviewStatsMap.get(trip._id.toString());
-      const availableSeatsCount = trip.seats.filter(
-        (s) => s.status === SeatStatus.AVAILABLE,
-      ).length;
-
+    const finalTrips = filteredTrips.map((trip) => {
+      const companyStats = reviewStatsMap.get(trip.companyId!._id.toString());
       return {
         ...trip,
-        avgRating: stats?.avgRating ?? null,
-        reviewCount: stats?.reviewCount ?? 0,
-        availableSeatsCount: availableSeatsCount,
+        companyAvgRating: companyStats?.avgRating ?? null,
+        companyReviewCount: companyStats?.reviewCount ?? 0,
+        availableSeatsCount: trip.seats.filter(
+          (s) => s.status === SeatStatus.AVAILABLE,
+        ).length,
       };
     });
 
-    return finalTripsWithReviews;
+    return finalTrips;
   }
   /**
    * @description Tìm kiếm chuyến đi cho mục đích quản lý.

@@ -117,11 +117,11 @@ export class ReviewsService {
     if (booking.contactPhone !== contactPhone) {
       throw new ForbiddenException('Số điện thoại không khớp với đơn đặt vé.');
     }
-    if (booking.userId) {
-      throw new BadRequestException(
-        'Đơn đặt vé này thuộc về một tài khoản đã đăng ký. Vui lòng đăng nhập để đánh giá.',
-      );
-    }
+    // if (booking.userId) {
+    //   throw new BadRequestException(
+    //     'Đơn đặt vé này thuộc về một tài khoản đã đăng ký. Vui lòng đăng nhập để đánh giá.',
+    //   );
+    // }
 
     const newReview = new this.reviewModel({
       tripId,
@@ -206,6 +206,7 @@ export class ReviewsService {
     return this.reviewModel
       .find(query)
       .populate('userId', 'name email')
+      .populate('companyId', 'name')
       .sort({ createdAt: -1 })
       .exec();
   }

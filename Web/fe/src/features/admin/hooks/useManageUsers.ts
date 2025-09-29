@@ -4,20 +4,20 @@ import {
   getManagedUsers,
   updateUserStatus,
 } from "../services/userAdminService";
-import type { ManagedUser, UserStatus } from "../types/user";
+import type { ManagedUser } from "../types/user";
 
-// NOTE: Cần tạo các service functions cho ban/unban user sau
-// import { banUser, unbanUser } from "../services/userAdminService";
+type UserFilterTab = "all" | "customer" | "company_admin" | "banned";
 
 export const useManageUsers = () => {
   const [users, setUsers] = useState<ManagedUser[]>([]);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
   const [searchTerm, setSearchTerm] = useState("");
-  const [activeTab, setActiveTab] = useState<UserStatus | "all">("all");
+  const [activeTab, setActiveTab] = useState<UserFilterTab>("all");
 
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedUser, setSelectedUser] = useState<ManagedUser | null>(null);
@@ -41,11 +41,42 @@ export const useManageUsers = () => {
     fetchData();
   }, [fetchData]);
 
+  const stats = useMemo(
+    () => ({
+      total: users.length,
+      customers: users.filter(
+        (u) => u.roles.length === 1 && u.roles[0] === "user"
+      ).length,
+      companyAdmins: users.filter((u) => u.roles.includes("company_admin"))
+        .length,
+      banned: users.filter((u) => u.status === "banned").length,
+    }),
+    [users]
+  );
+
   const filteredUsers = useMemo(() => {
     let filtered = users;
-    if (activeTab !== "all") {
-      filtered = filtered.filter((user) => user.status === activeTab);
+
+    switch (activeTab) {
+      case "customer":
+        filtered = filtered.filter(
+          (user) =>
+            user.roles && user.roles.length === 1 && user.roles[0] === "user"
+        );
+        break;
+      case "company_admin":
+        filtered = filtered.filter(
+          (user) => user.roles && user.roles.includes("company_admin")
+        );
+        break;
+      case "banned":
+        filtered = filtered.filter((user) => user.status === "banned");
+        break;
+      case "all":
+      default:
+        break;
     }
+
     if (searchTerm) {
       const lowercasedFilter = searchTerm.toLowerCase();
       filtered = filtered.filter(
@@ -58,18 +89,10 @@ export const useManageUsers = () => {
     return filtered;
   }, [users, activeTab, searchTerm]);
 
-  const stats = useMemo(
-    () => ({
-      total: users.length,
-      active: users.filter((u) => u.status === "active").length,
-      inactive: users.filter((u) => u.status === "inactive").length,
-      banned: users.filter((u) => u.status === "banned").length,
-    }),
-    [users]
-  );
-
-  const handleChangePage = (event: unknown, newPage: number) =>
+  const handleChangePage = (event: unknown, newPage: number) => {
     setPage(newPage);
+  };
+
   const handleChangeRowsPerPage = (
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
@@ -84,7 +107,10 @@ export const useManageUsers = () => {
     setAnchorEl(event.currentTarget);
     setSelectedUser(user);
   };
-  const handleMenuClose = () => setAnchorEl(null);
+
+  const handleMenuClose = () => {
+    setAnchorEl(null);
+  };
 
   const handleAction = (type: "ban" | "unban") => {
     setActionType(type);
@@ -96,16 +122,9 @@ export const useManageUsers = () => {
     if (!selectedUser || !actionType) return;
 
     const isBanned = actionType === "ban";
-
     try {
       await updateUserStatus(selectedUser._id, { isBanned });
-      setUsers((prevUsers) =>
-        prevUsers.map((u) =>
-          u._id === selectedUser._id
-            ? { ...u, status: isBanned ? "banned" : "active" }
-            : u
-        )
-      );
+      fetchData();
     } catch (err) {
       setError(getErrorMessage(err, "Cập nhật trạng thái thất bại."));
     } finally {
@@ -114,7 +133,6 @@ export const useManageUsers = () => {
   };
 
   return {
-    users,
     loading,
     error,
     stats,

@@ -12,33 +12,29 @@ import {
 
 export type TripDocument = HydratedDocument<Trip>;
 
-// Enum định nghĩa các trạng thái có thể có của một chuyến đi
 export enum TripStatus {
-  SCHEDULED = 'scheduled', // Chuyến đi đã được lên lịch, sẵn sàng để đặt vé
-  DEPARTED = 'departed', // Chuyến đi đã khởi hành
-  ARRIVED = 'arrived', // Chuyến đi đã đến nơi
-  CANCELLED = 'cancelled', // Chuyến đi đã bị hủy
+  SCHEDULED = 'scheduled',
+  DEPARTED = 'departed',
+  ARRIVED = 'arrived',
+  CANCELLED = 'cancelled',
 }
 
-// Enum định nghĩa các trạng thái của một ghế ngồi
 export enum SeatStatus {
-  AVAILABLE = 'available', // Ghế còn trống
-  HELD = 'held', // Ghế đang được giữ chỗ (ví dụ: trong quá trình thanh toán)
-  BOOKED = 'booked', // Ghế đã được đặt thành công
+  AVAILABLE = 'available',
+  HELD = 'held',
+  BOOKED = 'booked',
 }
 
-// Enum định nghĩa trạng thái của một điểm dừng trong hành trình
 export enum TripStopStatus {
-  PENDING = 'pending', // Điểm dừng chưa đến
-  ARRIVED = 'arrived', // Đã đến điểm dừng
-  DEPARTED = 'departed', // Đã rời khỏi điểm dừng
+  PENDING = 'pending',
+  ARRIVED = 'arrived',
+  DEPARTED = 'departed',
 }
 
-// Schema cho một ghế ngồi, không tạo collection riêng (_id: false)
 @Schema({ _id: false })
 export class Seat {
   @Prop({ type: String, required: true })
-  seatNumber: string; // Số hiệu ghế, ví dụ: "A1", "B5"
+  seatNumber: string;
 
   @Prop({
     type: String,
@@ -53,28 +49,26 @@ export class Seat {
 }
 export const SeatSchema = SchemaFactory.createForClass(Seat);
 
-// Schema cho thông tin một điểm dừng trong chuyến đi
 @Schema({ _id: false })
 export class TripStopInfo {
   @Prop({ type: Types.ObjectId, ref: Location.name, required: true })
-  locationId: Types.ObjectId; // Tham chiếu đến collection 'locations'
+  locationId: Types.ObjectId;
 
   @Prop({ type: Date, required: true })
-  expectedArrivalTime: Date; // Thời gian dự kiến đến điểm dừng
+  expectedArrivalTime: Date;
 
   @Prop({ type: Date })
-  expectedDepartureTime?: Date; // Thời gian dự kiến rời đi (có thể không có nếu là điểm dừng ngắn)
+  expectedDepartureTime?: Date;
 
   @Prop({
     type: String,
     enum: Object.values(TripStopStatus),
     default: TripStopStatus.PENDING,
   })
-  status: TripStopStatus; // Trạng thái của điểm dừng
+  status: TripStopStatus;
 }
 export const TripStopInfoSchema = SchemaFactory.createForClass(TripStopInfo);
 
-// Schema cho thông tin tuyến đường của chuyến đi
 @Schema({ _id: false })
 export class RouteInfo {
   @Prop({
@@ -83,7 +77,7 @@ export class RouteInfo {
     required: true,
     index: true,
   })
-  fromLocationId: Types.ObjectId; // ID của địa điểm đi
+  fromLocationId: Types.ObjectId;
 
   @Prop({
     type: Types.ObjectId,
@@ -91,24 +85,23 @@ export class RouteInfo {
     required: true,
     index: true,
   })
-  toLocationId: Types.ObjectId; // ID của địa điểm đến
+  toLocationId: Types.ObjectId;
 
   @Prop({ type: [TripStopInfoSchema], default: [] })
-  stops: TripStopInfo[]; // Mảng các điểm dừng trên hành trình
+  stops: TripStopInfo[];
 
   @Prop({ type: String })
-  polyline?: string; // Chuỗi mã hóa polyline để vẽ trên bản đồ
+  polyline?: string;
 
   @Prop({ type: Number })
-  duration?: number; // Thời gian di chuyển (giây)
+  duration?: number;
 
   @Prop({ type: Number })
-  distance?: number; // Quãng đường (mét)
+  distance?: number;
 }
 export const RouteInfoSchema = SchemaFactory.createForClass(RouteInfo);
 
-// Schema chính cho collection 'trips'
-@Schema({ timestamps: true }) // Tự động thêm createdAt và updatedAt
+@Schema({ timestamps: true })
 export class Trip {
   @Prop({
     type: Types.ObjectId,
@@ -116,7 +109,7 @@ export class Trip {
     required: true,
     index: true,
   })
-  companyId: Types.ObjectId; // Liên kết tới nhà xe
+  companyId: Types.ObjectId;
 
   @Prop({
     type: Types.ObjectId,
@@ -124,19 +117,19 @@ export class Trip {
     required: true,
     index: true,
   })
-  vehicleId: Types.ObjectId; // Liên kết tới loại xe
+  vehicleId: Types.ObjectId;
 
   @Prop({ type: RouteInfoSchema, required: true })
-  route: RouteInfo; // Thông tin tuyến đường nhúng
+  route: RouteInfo;
 
   @Prop({ type: Date, required: true, index: true })
-  departureTime: Date; // Thời gian khởi hành
+  departureTime: Date;
 
   @Prop({ type: Date, required: true })
-  expectedArrivalTime: Date; // Thời gian dự kiến đến
+  expectedArrivalTime: Date;
 
   @Prop({ type: Number, required: true, min: 0 })
-  price: number; // Giá vé
+  price: number;
 
   @Prop({
     type: String,
@@ -144,15 +137,20 @@ export class Trip {
     default: TripStatus.SCHEDULED,
     index: true,
   })
-  status: TripStatus; // Trạng thái chung của chuyến đi
+  status: TripStatus;
 
   @Prop({ type: [SeatSchema], required: true, default: [] })
-  seats: Seat[]; // Mảng các ghế ngồi và trạng thái của chúng
+  seats: Seat[];
+
+  @Prop({ type: Boolean, default: false, index: true })
+  isRecurrenceTemplate: boolean;
+
+  @Prop({ type: Date, index: true })
+  recurrenceParentId?: Types.ObjectId;
 }
 
 export const TripSchema = SchemaFactory.createForClass(Trip);
 
-// Tạo index tổng hợp để tối ưu hóa truy vấn tìm kiếm chuyến đi
 TripSchema.index({
   'route.fromLocationId': 1,
   'route.toLocationId': 1,

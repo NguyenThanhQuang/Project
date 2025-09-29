@@ -99,17 +99,17 @@ export const TripCard: React.FC<TripCardProps> = ({ trip }) => {
                   <Typography variant="body2" color="text.secondary">
                     {trip.vehicleId.type}
                   </Typography>
-                  {trip.reviewCount > 0 ? (
+                  <Typography color="text.secondary">•</Typography>
+                  {trip.companyReviewCount > 0 ? (
                     <>
                       <Rating
-                        value={trip.avgRating}
+                        value={trip.companyAvgRating}
                         precision={0.5}
                         readOnly
                         size="small"
-                        sx={{ verticalAlign: "middle", mt: "-2px" }}
                       />
                       <Typography variant="body2" color="text.secondary">
-                        ({trip.reviewCount} đánh giá)
+                        ({trip.companyReviewCount} đánh giá)
                       </Typography>
                     </>
                   ) : (

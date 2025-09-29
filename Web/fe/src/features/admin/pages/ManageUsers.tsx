@@ -41,6 +41,8 @@ import {
   DateRange,
   Timer,
   History,
+  Person,
+  Business,
 } from "@mui/icons-material";
 import { useManageUsers } from "../hooks/useManageUsers";
 import type { UserStatus } from "../types/user";
@@ -143,10 +145,10 @@ const ManageUsers: React.FC = () => {
                 variant="h4"
                 sx={{ fontWeight: 700, color: "#2e7d32", mb: 1 }}
               >
-                {stats.active}
+                {stats.customers}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Đang hoạt động
+                Khách hàng
               </Typography>
             </CardContent>
           </Card>
@@ -160,10 +162,10 @@ const ManageUsers: React.FC = () => {
                 variant="h4"
                 sx={{ fontWeight: 700, color: "#f57c00", mb: 1 }}
               >
-                {stats.inactive}
+                {stats.companyAdmins}
               </Typography>
               <Typography variant="body2" color="text.secondary">
-                Không hoạt động
+                Quản trị viên nhà xe
               </Typography>
             </CardContent>
           </Card>
@@ -209,16 +211,16 @@ const ManageUsers: React.FC = () => {
             value="all"
           />
           <Tab
-            icon={<CheckCircle />}
+            icon={<Person />}
             iconPosition="start"
-            label={`Hoạt động (${stats.active})`}
-            value="active"
+            label={`Khách hàng (${stats.customers})`}
+            value="customer"
           />
           <Tab
-            icon={<Timer />}
+            icon={<Business />}
             iconPosition="start"
-            label={`Không hoạt động (${stats.inactive})`}
-            value="inactive"
+            label={`Quản trị viên nhà xe (${stats.companyAdmins})`}
+            value="company_admin"
           />
           <Tab
             icon={<Block />}

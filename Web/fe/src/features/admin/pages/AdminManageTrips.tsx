@@ -24,6 +24,7 @@ import {
   DialogContentText,
   DialogActions,
   Collapse,
+  Switch,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { MoreVert, Cancel, Close, Add, ArrowBack } from "@mui/icons-material";
@@ -52,6 +53,7 @@ const AdminManageTrips: React.FC = () => {
     handleOpenCancelDialog,
     confirmCancelTrip,
     setCancelDialogOpen,
+    handleToggleRecurrence,
   } = useManageTrips();
 
   const getStatusInfo = (status: string) => {
@@ -167,6 +169,9 @@ const AdminManageTrips: React.FC = () => {
                 <TableCell sx={{ fontWeight: 600 }}>Giá vé</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Trạng thái</TableCell>
                 <TableCell sx={{ fontWeight: 600, textAlign: "center" }}>
+                  Lặp lại hàng ngày
+                </TableCell>
+                <TableCell sx={{ fontWeight: 600, textAlign: "center" }}>
                   Thao tác
                 </TableCell>
               </TableRow>
@@ -179,7 +184,6 @@ const AdminManageTrips: React.FC = () => {
                       <Typography color="text.secondary">
                         Nhà xe này chưa có chuyến đi nào.
                       </Typography>
-                      {/* Thêm nút tạo chuyến đi sau này */}
                     </Box>
                   </TableCell>
                 </TableRow>
@@ -201,6 +205,13 @@ const AdminManageTrips: React.FC = () => {
                         label={getStatusInfo(trip.status).text}
                         color={getStatusInfo(trip.status).color}
                         size="small"
+                      />
+                    </TableCell>
+                    <TableCell align="center">
+                      <Switch
+                        checked={trip.isRecurrenceTemplate}
+                        onChange={() => handleToggleRecurrence(trip)}
+                        color="primary"
                       />
                     </TableCell>
                     <TableCell align="center">

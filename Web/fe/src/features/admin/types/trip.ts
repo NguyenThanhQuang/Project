@@ -19,4 +19,9 @@ export interface AdminTrip {
   }[];
   createdAt: string;
   updatedAt: string;
+  isRecurrenceTemplate: boolean;
 }
+
+export type UpdateTripPayload = {
+  isRecurrenceTemplate?: boolean;
+};

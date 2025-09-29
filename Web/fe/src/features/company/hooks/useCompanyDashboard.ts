@@ -11,6 +11,7 @@ import {
   getMyVehicles,
 } from "../services/companyDashboardService";
 import type { CompanyTrip, CompanyVehicle } from "../types/dashboard";
+import { updateTrip } from "../services/tripCompanyService";
 
 export const useCompanyDashboard = () => {
   // State & Hooks cơ bản
@@ -118,6 +119,27 @@ export const useCompanyDashboard = () => {
     }
   };
 
+  const handleToggleRecurrence = async (tripToUpdate: CompanyTrip) => {
+    try {
+      setTrips((currentTrips) =>
+        currentTrips.map((trip) =>
+          trip._id === tripToUpdate._id
+            ? { ...trip, isRecurrenceTemplate: !trip.isRecurrenceTemplate }
+            : trip
+        )
+      );
+
+      await updateTrip(tripToUpdate._id, {
+        isRecurrenceTemplate: !tripToUpdate.isRecurrenceTemplate,
+      });
+
+      showNotification("Cập nhật trạng thái lặp lại thành công!", "success");
+    } catch (error) {
+      showNotification(getErrorMessage(error, "Cập nhật thất bại."), "error");
+      fetchData();
+    }
+  };
+
   /**
    * Tính toán các chỉ số thống kê cho chuyến xe.
    * Dùng useMemo để chỉ tính lại khi danh sách `trips` thay đổi.
@@ -155,5 +177,6 @@ export const useCompanyDashboard = () => {
     handleSaveVehicle,
     handleOpenCreateDialog,
     handleOpenEditDialog,
+    handleToggleRecurrence,
   };
 };
