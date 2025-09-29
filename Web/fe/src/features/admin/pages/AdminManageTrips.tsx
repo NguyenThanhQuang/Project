@@ -154,7 +154,7 @@ const AdminManageTrips: React.FC = () => {
                 background: "linear-gradient(135deg, #43a047 0%, #2e7d32 100%)",
               }}
             >
-              Tạo Mẫu lặp lại Mới
+              Tạo mẫu lặp lại mới
             </Button>
           ) : (
             <Button

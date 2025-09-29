@@ -20,6 +20,7 @@ export interface CompanyTrip {
     status: "available" | "held" | "booked";
   }[];
   isRecurrenceTemplate: boolean;
+  isRecurrenceActive: boolean;
 }
 
 /**

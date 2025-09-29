@@ -118,9 +118,7 @@ export class AuthService {
           );
         }
       }
-      throw new ConflictException(
-        'Địa chỉ email này đã được sử dụng và đã xác thực (hoặc không thể gửi lại email xác thực).',
-      );
+      throw new ConflictException('Địa chỉ email này đã được sử dụng.');
     }
 
     const existingUserByPhone = await this.usersService.findOneByPhone(

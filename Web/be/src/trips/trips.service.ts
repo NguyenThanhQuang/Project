@@ -189,11 +189,11 @@ export class TripsService {
         departureTime,
       })
       .exec();
-    if (existingTrip) {
-      throw new ConflictException(
-        'Chuyến đi tương tự đã tồn tại (cùng nhà xe, xe, tuyến đường, giờ khởi hành).',
-      );
-    }
+    // if (existingTrip) {
+    //   throw new ConflictException(
+    //     'Chuyến đi tương tự đã tồn tại (cùng nhà xe, xe, tuyến đường, giờ khởi hành).',
+    //   );
+    // }
 
     const newTripData = {
       ...createTripDto,
