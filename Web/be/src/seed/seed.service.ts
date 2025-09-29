@@ -261,7 +261,6 @@ export class SeedService {
     this.logger.log(`>>> Bước 6: Seeding Trips (Quá khứ & Hôm nay)...`);
     const createdTrips: TripDocument[] = [];
 
-    // SỬA LỖI 3: Loại trừ trạm dừng nghỉ khỏi danh sách điểm đi/đến
     const validEndpoints = locations.filter((l) => l.type !== 'rest_stop');
     if (validEndpoints.length < 2) {
       this.logger.error(
@@ -270,7 +269,6 @@ export class SeedService {
       return [];
     }
 
-    // SỬA LỖI 1: Chia đôi danh sách xe
     const halfwayIndex = Math.floor(vehicles.length / 2);
     const pastTripVehicles = vehicles.slice(0, halfwayIndex);
     const todayTripVehicles = vehicles.slice(halfwayIndex);
@@ -301,7 +299,6 @@ export class SeedService {
         expectedArrivalTime: arrivalTime,
         price: faker.number.int({ min: 15, max: 50 }) * 10000,
         seats,
-        // Tất cả chuyến đi quá khứ đều đã hoàn thành để có thể review
         status: TripStatus.ARRIVED,
       };
 
@@ -387,7 +384,6 @@ export class SeedService {
   ) {
     this.logger.log('>>> Bước 7: Seeding Bookings và Reviews...');
 
-    // SỬA LỖI 2: Chỉ tạo booking cho các chuyến đã 'ARRIVED'
     const pastTrips = trips.filter(
       (trip) => trip.status === TripStatus.ARRIVED,
     );
@@ -405,7 +401,6 @@ export class SeedService {
 
       if (seatToBook && user) {
         const bookingData: Partial<Booking> = {
-          // ... (dữ liệu booking giữ nguyên)
           userId: user._id,
           tripId: trip._id,
           companyId: trip.companyId,
@@ -427,7 +422,6 @@ export class SeedService {
         const createdBooking = await this.bookingModel.create(bookingData);
         bookingCount++;
 
-        // SỬA LỖI 2: Chỉ tạo review cho nửa đầu của các booking
         if (i < pastTrips.length / 2) {
           const reviewData: Partial<Review> = {
             userId: user._id,
