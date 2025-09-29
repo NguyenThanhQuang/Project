@@ -1,15 +1,20 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { getCompaniesWithStats } from "../services/companyAdminService";
 import {
   deleteReview,
   getAllReviews,
   updateReviewVisibility,
 } from "../services/reviewAdminService";
+import type { CompanyWithStats } from "../types/company";
 import type { AdminReview } from "../types/review";
 
 export const useManageReviews = () => {
   const [reviews, setReviews] = useState<AdminReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  const [companies, setCompanies] = useState<CompanyWithStats[]>([]);
+  const [selectedCompany, setSelectedCompany] = useState<string | null>(null);
 
   const [filter, setFilter] = useState<"all" | "visible" | "hidden">("all");
   const [searchTerm, setSearchTerm] = useState("");
@@ -24,11 +29,15 @@ export const useManageReviews = () => {
     null
   );
 
-  const fetchReviews = useCallback(async () => {
+  const fetchInitialData = useCallback(async () => {
     setLoading(true);
     try {
-      const data = await getAllReviews();
-      setReviews(data);
+      const [reviewsData, companiesData] = await Promise.all([
+        getAllReviews(),
+        getCompaniesWithStats(),
+      ]);
+      setReviews(reviewsData);
+      setCompanies(companiesData);
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -37,8 +46,8 @@ export const useManageReviews = () => {
   }, []);
 
   useEffect(() => {
-    fetchReviews();
-  }, [fetchReviews]);
+    fetchInitialData();
+  }, [fetchInitialData]);
 
   const filteredReviews = useMemo(() => {
     return reviews
@@ -47,13 +56,19 @@ export const useManageReviews = () => {
         if (filter === "hidden") return !review.isVisible;
         return true;
       })
+      .filter((review) => {
+        if (selectedCompany) {
+          return review.companyId?._id === selectedCompany;
+        }
+        return true;
+      })
       .filter(
         (review) =>
           review.comment?.toLowerCase().includes(searchTerm.toLowerCase()) ||
           review.displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
           review.userId?.email.toLowerCase().includes(searchTerm.toLowerCase())
       );
-  }, [reviews, filter, searchTerm]);
+  }, [reviews, filter, searchTerm, selectedCompany]); // Thêm selectedCompany
 
   const handleAction = (type: "toggle" | "delete", review: AdminReview) => {
     setSelectedReview(review);
@@ -73,7 +88,15 @@ export const useManageReviews = () => {
       } else if (actionType === "delete") {
         await deleteReview(selectedReview._id);
       }
-      await fetchReviews();
+      if (actionType === "delete") {
+        setReviews((prev) => prev.filter((r) => r._id !== selectedReview._id));
+      } else {
+        setReviews((prev) =>
+          prev.map((r) =>
+            r._id === selectedReview._id ? { ...r, isVisible: !r.isVisible } : r
+          )
+        );
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -99,5 +122,8 @@ export const useManageReviews = () => {
     handleAction,
     confirmAction,
     setActionDialogOpen,
+    companies,
+    selectedCompany,
+    setSelectedCompany,
   };
 };

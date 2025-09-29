@@ -1,4 +1,4 @@
-import { IsEnum, IsOptional } from 'class-validator';
+import { IsDateString, IsEnum, IsMongoId, IsOptional } from 'class-validator';
 
 export enum ReportPeriod {
   WEEK = '7d',
@@ -13,5 +13,17 @@ export class FinanceReportQueryDto {
     message:
       'Khoảng thời gian không hợp lệ. Vui lòng chọn 7d, 30d, 90d, hoặc 365d.',
   })
+  
   period: ReportPeriod = ReportPeriod.MONTH;
+  @IsOptional()
+  @IsMongoId()
+  companyId?: string;
+
+  @IsOptional()
+  @IsDateString()
+  startDate?: string;
+
+  @IsOptional()
+  @IsDateString()
+  endDate?: string;
 }

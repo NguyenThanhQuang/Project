@@ -35,6 +35,9 @@ const ManageReviewsPage: React.FC = () => {
     handleAction,
     confirmAction,
     setActionDialogOpen,
+    companies,
+    selectedCompany,
+    setSelectedCompany,
   } = useManageReviews();
 
   if (loading) {
@@ -66,6 +69,9 @@ const ManageReviewsPage: React.FC = () => {
         onFilterChange={setFilter}
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
+        companies={companies}
+        selectedCompany={selectedCompany}
+        onCompanyChange={setSelectedCompany}
       />
 
       <ReviewTable
@@ -80,7 +86,7 @@ const ManageReviewsPage: React.FC = () => {
         onAction={handleAction}
       />
 
-      {/* Dialog xác nhận hành động */}
+      {/* Dialog xác nhận hành động*/}
       <Dialog
         open={actionDialogOpen}
         onClose={() => setActionDialogOpen(false)}

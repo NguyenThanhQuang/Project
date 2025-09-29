@@ -17,24 +17,25 @@ export const useAdminAddTripForm = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { showNotification } = useNotification();
-
   const { user } = useSelector((state: RootState) => state.auth);
-  const isAdmin = user?.roles.includes("admin");
 
-  const companyInfo = location.state as {
+  const isAdmin = user?.roles.includes("admin");
+  const companyInfoFromState = location.state as {
     companyId: string;
     companyName: string;
+    isCreatingTemplate?: boolean;
   } | null;
 
   useEffect(() => {
-    if (isAdmin && !companyInfo?.companyId) {
+    if (isAdmin && !companyInfoFromState?.companyId) {
       showNotification("Vui lòng chọn một nhà xe để thêm chuyến đi.", "error");
       navigate("/admin/companies");
     }
-  }, [isAdmin, companyInfo, navigate, showNotification]);
+  }, [isAdmin, companyInfoFromState, navigate, showNotification]);
 
   const tripFormLogic = useTripFormLogic({
-    initialCompanyId: companyInfo?.companyId || "",
+    initialCompanyId: companyInfoFromState?.companyId || "",
+    isCreatingTemplate: companyInfoFromState?.isCreatingTemplate || false,
     saveFunction: createTripForCompany,
     onSuccessRedirectPath: (companyId) => `/admin/companies/${companyId}/trips`,
     allLocations: allLocations,
@@ -42,6 +43,6 @@ export const useAdminAddTripForm = ({
 
   return {
     ...tripFormLogic,
-    companyName: companyInfo?.companyName || "Nhà xe",
+    companyName: companyInfoFromState?.companyName || "Nhà xe không xác định",
   };
 };

@@ -20,7 +20,10 @@ import {
 import { CompaniesService } from '../companies/companies.service';
 import { LocationsService } from '../locations/locations.service';
 import { MapsService } from '../maps/maps.service';
-import { VehicleDocument } from '../vehicles/schemas/vehicle.schema';
+import {
+  VehicleDocument,
+  VehicleStatus,
+} from '../vehicles/schemas/vehicle.schema';
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
@@ -135,6 +138,13 @@ export class TripsService {
         }`,
       );
     });
+
+    if (vehicle.status !== VehicleStatus.ACTIVE) {
+      throw new BadRequestException(
+        `Không thể tạo chuyến đi. Xe "${vehicle.vehicleNumber}" đang ở trạng thái "${vehicle.status}".`,
+      );
+    }
+
     if (company.status !== CompanyStatus.ACTIVE) {
       throw new BadRequestException(
         `Không thể tạo chuyến đi cho nhà xe đang ở trạng thái "${company.status}".`,
@@ -688,5 +698,27 @@ export class TripsService {
         },
       },
     ]);
+  }
+  /**
+   * @description Kích hoạt hoặc vô hiệu hóa một mẫu chuyến đi lặp lại.
+   * Chỉ áp dụng cho các chuyến đi có isRecurrenceTemplate = true.
+   * @param {string | Types.ObjectId} tripId - ID của chuyến đi mẫu.
+   * @param {boolean} isActive - Trạng thái kích hoạt mới.
+   * @returns {Promise<TripDocument>} - Chuyến đi mẫu sau khi cập nhật.
+   */
+  async toggleRecurrence(
+    tripId: string | Types.ObjectId,
+    isActive: boolean,
+  ): Promise<TripDocument> {
+    const tripTemplate = await this.findOne(tripId.toString());
+
+    if (!tripTemplate.isRecurrenceTemplate) {
+      throw new BadRequestException(
+        'Chức năng này chỉ áp dụng cho các chuyến đi mẫu.',
+      );
+    }
+
+    tripTemplate.isRecurrenceActive = isActive;
+    return tripTemplate.save();
   }
 }

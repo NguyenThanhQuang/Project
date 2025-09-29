@@ -11,8 +11,8 @@ import {
   TableHead,
   TableRow,
   TablePagination,
-  Chip,
   Button,
+  Chip,
   CircularProgress,
   Alert,
   IconButton,
@@ -25,6 +25,9 @@ import {
   DialogActions,
   Collapse,
   Switch,
+  Tabs,
+  Tab,
+  Tooltip,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
 import { MoreVert, Cancel, Close, Add, ArrowBack } from "@mui/icons-material";
@@ -40,7 +43,7 @@ const AdminManageTrips: React.FC = () => {
     clearMessages,
     companyName,
     paginatedTrips,
-    trips,
+    tripsToDisplay,
     page,
     rowsPerPage,
     handleChangePage,
@@ -54,6 +57,8 @@ const AdminManageTrips: React.FC = () => {
     confirmCancelTrip,
     setCancelDialogOpen,
     handleToggleRecurrence,
+    activeTab,
+    setActiveTab,
   } = useManageTrips();
 
   const getStatusInfo = (status: string) => {
@@ -72,12 +77,13 @@ const AdminManageTrips: React.FC = () => {
   };
 
   const calculateSeats = (seats: { status: string }[]) => {
+    if (!seats) return "0 / 0";
     const total = seats.length;
     const booked = seats.filter((s) => s.status === "booked").length;
     return `${booked} / ${total}`;
   };
 
-  if (loading && trips.length === 0) {
+  if (loading && paginatedTrips.length === 0) {
     return (
       <Container sx={{ textAlign: "center", mt: 10 }}>
         <CircularProgress />
@@ -120,6 +126,8 @@ const AdminManageTrips: React.FC = () => {
           justifyContent: "space-between",
           alignItems: "center",
           mb: 4,
+          flexWrap: "wrap",
+          gap: 2,
         }}
       >
         <Box>
@@ -132,26 +140,59 @@ const AdminManageTrips: React.FC = () => {
             </Typography>
           )}
         </Box>
-        <Button
-          variant="contained"
-          startIcon={<Add />}
-          onClick={() =>
-            navigate("/admin/add-trip", { state: { companyId, companyName } })
-          }
-          sx={{
-            background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
-          }}
-        >
-          Thêm chuyến xe mới
-        </Button>
-        <Button
-          variant="contained"
-          startIcon={<ArrowBack />}
-          onClick={() => navigate("/admin/companies")}
-        >
-          Quay lại danh sách nhà xe
-        </Button>
+        <Box sx={{ display: "flex", gap: 2 }}>
+          {activeTab === "templates" ? (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() =>
+                navigate("/admin/add-trip", {
+                  state: { companyId, companyName, isCreatingTemplate: true },
+                })
+              }
+              sx={{
+                background: "linear-gradient(135deg, #43a047 0%, #2e7d32 100%)",
+              }}
+            >
+              Tạo Mẫu lặp lại Mới
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              startIcon={<Add />}
+              onClick={() =>
+                navigate("/admin/add-trip", {
+                  state: { companyId, companyName },
+                })
+              }
+              sx={{
+                background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
+              }}
+            >
+              Thêm chuyến đi
+            </Button>
+          )}
+          <Button
+            variant="outlined"
+            startIcon={<ArrowBack />}
+            onClick={() => navigate("/admin/companies")}
+          >
+            Quay lại danh sách nhà xe
+          </Button>
+        </Box>
       </Box>
+
+      <Paper elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, newVal) => setActiveTab(newVal)}
+          variant="fullWidth"
+        >
+          <Tab label="Chuyến sắp tới" value="upcoming" />
+          <Tab label="Lịch sử chuyến đi" value="history" />
+          <Tab label="Mẫu lặp lại" value="templates" />
+        </Tabs>
+      </Paper>
 
       <Paper elevation={2} sx={{ borderRadius: 3, overflow: "hidden" }}>
         <TableContainer>
@@ -161,16 +202,20 @@ const AdminManageTrips: React.FC = () => {
                 <TableCell sx={{ fontWeight: 600 }}>Tuyến đường</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Xe</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
-                  Thời gian khởi hành
+                  {activeTab === "templates"
+                    ? "Thời gian gốc"
+                    : "Thời gian khởi hành"}
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>
                   Số ghế (Đã đặt/Tổng)
                 </TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Giá vé</TableCell>
                 <TableCell sx={{ fontWeight: 600 }}>Trạng thái</TableCell>
-                <TableCell sx={{ fontWeight: 600, textAlign: "center" }}>
-                  Lặp lại hàng ngày
-                </TableCell>
+                {activeTab === "templates" && (
+                  <TableCell sx={{ fontWeight: 600, textAlign: "center" }}>
+                    Kích hoạt Lặp Lại
+                  </TableCell>
+                )}
                 <TableCell sx={{ fontWeight: 600, textAlign: "center" }}>
                   Thao tác
                 </TableCell>
@@ -179,10 +224,10 @@ const AdminManageTrips: React.FC = () => {
             <TableBody>
               {paginatedTrips.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} align="center">
+                  <TableCell colSpan={8} align="center">
                     <Box sx={{ p: 4 }}>
                       <Typography color="text.secondary">
-                        Nhà xe này chưa có chuyến đi nào.
+                        Không có chuyến đi nào trong danh mục này.
                       </Typography>
                     </Box>
                   </TableCell>
@@ -190,13 +235,18 @@ const AdminManageTrips: React.FC = () => {
               ) : (
                 paginatedTrips.map((trip) => (
                   <TableRow key={trip._id} hover>
-                    <TableCell sx={{ fontWeight: 600 }}>
-                      {trip.route.fromLocationId.name} -{" "}
+                    <TableCell sx={{ fontWeight: 500 }}>
+                      {trip.route.fromLocationId.name} →{" "}
                       {trip.route.toLocationId.name}
                     </TableCell>
                     <TableCell>{trip.vehicleId.vehicleNumber}</TableCell>
                     <TableCell>
-                      {new Date(trip.departureTime).toLocaleString("vi-VN")}
+                      {activeTab === "templates"
+                        ? new Date(trip.departureTime).toLocaleTimeString(
+                            "vi-VN",
+                            { hour: "2-digit", minute: "2-digit" }
+                          )
+                        : new Date(trip.departureTime).toLocaleString("vi-VN")}
                     </TableCell>
                     <TableCell>{calculateSeats(trip.seats)}</TableCell>
                     <TableCell>{trip.price.toLocaleString("vi-VN")}đ</TableCell>
@@ -207,20 +257,44 @@ const AdminManageTrips: React.FC = () => {
                         size="small"
                       />
                     </TableCell>
+                    {activeTab === "templates" && (
+                      <TableCell align="center">
+                        <Tooltip
+                          title={
+                            trip.isRecurrenceActive
+                              ? "Đang hoạt động"
+                              : "Đang tắt"
+                          }
+                        >
+                          <Switch
+                            checked={trip.isRecurrenceActive}
+                            onChange={() => handleToggleRecurrence(trip)}
+                            color="primary"
+                          />
+                        </Tooltip>
+                      </TableCell>
+                    )}
                     <TableCell align="center">
-                      <Switch
-                        checked={trip.isRecurrenceTemplate}
-                        onChange={() => handleToggleRecurrence(trip)}
-                        color="primary"
-                      />
-                    </TableCell>
-                    <TableCell align="center">
-                      <IconButton
-                        onClick={(e) => handleMenuOpen(e, trip)}
-                        disabled={trip.status !== "scheduled"}
+                      <Tooltip
+                        title={
+                          trip.status !== "scheduled" &&
+                          activeTab !== "templates"
+                            ? "Chỉ có thể thao tác với chuyến đi đã lên lịch"
+                            : "Thêm thao tác"
+                        }
                       >
-                        <MoreVert />
-                      </IconButton>
+                        <span>
+                          <IconButton
+                            onClick={(e) => handleMenuOpen(e, trip)}
+                            disabled={
+                              trip.status !== "scheduled" &&
+                              activeTab !== "templates"
+                            }
+                          >
+                            <MoreVert />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
                     </TableCell>
                   </TableRow>
                 ))
@@ -231,7 +305,7 @@ const AdminManageTrips: React.FC = () => {
         <TablePagination
           rowsPerPageOptions={[5, 10, 25]}
           component="div"
-          count={trips.length}
+          count={tripsToDisplay.length}
           rowsPerPage={rowsPerPage}
           page={page}
           onPageChange={handleChangePage}
@@ -277,7 +351,7 @@ const AdminManageTrips: React.FC = () => {
             <br />
             <br />
             Hành động này không thể hoàn tác. Tất cả các vé đã đặt sẽ được tự
-            động hủy và hoàn tiền (nếu có chính sách).
+            động hủy.
           </DialogContentText>
         </DialogContent>
         <DialogActions>

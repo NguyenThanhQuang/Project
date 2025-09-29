@@ -34,7 +34,7 @@ export const useManageVehicles = () => {
   const [vehicleToEdit, setVehicleToEdit] = useState<Vehicle | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [actionType, setActionType] = useState<
-    "deactivate" | "activate" | null
+    "deactivate" | "activate" | "maintenance" | null
   >(null);
 
   const fetchData = useCallback(async () => {
@@ -148,7 +148,7 @@ export const useManageVehicles = () => {
     }
   };
 
-  const handleAction = (type: "deactivate" | "activate") => {
+  const handleAction = (type: "deactivate" | "activate" | "maintenance") => {
     setActionType(type);
     setDeleteDialogOpen(true);
     handleMenuClose();
@@ -167,14 +167,16 @@ export const useManageVehicles = () => {
       if (actionType === "deactivate") {
         await deleteVehicle(selectedVehicle._id); // API "xóa mềm"
         successMsg = `Đã vô hiệu hóa xe "${selectedVehicle.vehicleNumber}" thành công.`;
-      } else {
-        // actionType === 'activate'
+      } else if (actionType === "activate") {
         await updateVehicle(selectedVehicle._id, { status: "active" });
         successMsg = `Đã kích hoạt lại xe "${selectedVehicle.vehicleNumber}" thành công.`;
+      } else if (actionType === "maintenance") {
+        await updateVehicle(selectedVehicle._id, { status: "maintenance" });
+        successMsg = `Đã chuyển xe "${selectedVehicle.vehicleNumber}" sang trạng thái bảo trì.`;
       }
 
       setSuccessMessage(successMsg);
-      await fetchData(); // Tải lại dữ liệu
+      await fetchData();
     } catch (err) {
       setError(
         getErrorMessage(err, "Thao tác thất bại. Xe có thể đang được sử dụng.")
@@ -185,7 +187,6 @@ export const useManageVehicles = () => {
     }
   };
 
-  // Giữ lại hàm này để tương thích với component cũ, nhưng nó chỉ là một trường hợp của handleAction
   const handleDeleteVehicle = confirmAction;
 
   return {

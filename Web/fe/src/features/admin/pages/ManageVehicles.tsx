@@ -28,6 +28,7 @@ import {
   ArrowBack,
   Visibility,
   VisibilityOff,
+  Build,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
 import { useManageVehicles } from "../hooks/useManageVehicles";
@@ -209,6 +210,16 @@ const ManageVehicles: React.FC = () => {
           Chỉnh sửa
         </MenuItem>
 
+        {selectedVehicle?.status === "active" && (
+          <MenuItem
+            onClick={() => handleAction("maintenance")}
+            sx={{ color: "info.main" }}
+          >
+            <Build sx={{ mr: 1.5 }} />
+            Báo bảo trì
+          </MenuItem>
+        )}
+
         {selectedVehicle?.status === "active" ? (
           <MenuItem
             onClick={() => handleAction("deactivate")}
@@ -243,13 +254,23 @@ const ManageVehicles: React.FC = () => {
         onClose={() => setDeleteDialogOpen(false)}
       >
         <DialogTitle>
-          Xác nhận {actionType === "activate" ? "Kích hoạt" : "Vô hiệu hóa"} xe
+          Xác nhận{" "}
+          {actionType === "activate"
+            ? "Kích hoạt"
+            : actionType === "deactivate"
+            ? "Vô hiệu hóa"
+            : "Báo bảo trì"}{" "}
+          xe
         </DialogTitle>
         <DialogContent>
           <Typography>
             Bạn có chắc chắn muốn{" "}
-            {actionType === "activate" ? "kích hoạt" : "vô hiệu hóa"} xe{" "}
-            <strong>{selectedVehicle?.vehicleNumber}</strong>?
+            {actionType === "activate"
+              ? "kích hoạt lại"
+              : actionType === "deactivate"
+              ? "vô hiệu hóa"
+              : "chuyển sang trạng thái bảo trì"}{" "}
+            xe <strong>{selectedVehicle?.vehicleNumber}</strong>?
           </Typography>
         </DialogContent>
         <DialogActions>

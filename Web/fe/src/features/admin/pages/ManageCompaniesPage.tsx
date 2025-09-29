@@ -12,6 +12,8 @@ import {
   Alert,
   Collapse,
   IconButton,
+  Tab,
+  Tabs,
 } from "@mui/material";
 import {
   Search,
@@ -61,6 +63,9 @@ const ManageCompaniesPage: React.FC = () => {
     handleSaveCompany,
     setCompanyDialogOpen,
     setActionDialogOpen,
+
+    activeTab,
+    setActiveTab,
   } = useManageCompanies();
 
   useEffect(() => {
@@ -161,6 +166,24 @@ const ManageCompaniesPage: React.FC = () => {
             Thêm nhà xe mới
           </Button>
         </Box>
+      </Paper>
+
+      <Paper elevation={2} sx={{ mb: 3, borderRadius: 3 }}>
+        <Tabs
+          value={activeTab}
+          onChange={(_, newVal) => setActiveTab(newVal)}
+          sx={{
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 600,
+            },
+          }}
+        >
+          <Tab label={`Tất cả (${stats.total})`} value="all" />
+          <Tab label={`Hoạt động (${stats.active})`} value="active" />
+          <Tab label={`Chờ duyệt (${stats.pending})`} value="pending" />
+          <Tab label={`Tạm ngưng (${stats.suspended})`} value="suspended" />
+        </Tabs>
       </Paper>
 
       {/* Bảng dữ liệu nhà xe */}

@@ -33,4 +33,5 @@ export interface CreateTripPayload {
   departureTime: string;
   expectedArrivalTime: string;
   price: number;
+  isRecurrenceTemplate: boolean;
 }

@@ -47,6 +47,8 @@ export interface UseManageCompaniesResult {
   actionDialogOpen: boolean;
   actionType: "suspend" | "activate" | null;
   companyToEdit: CompanyWithStats | null;
+  activeTab: "all" | "active" | "pending" | "suspended";
+  setActiveTab: (tab: "all" | "active" | "pending" | "suspended") => void;
 
   // Handlers
   setSearchTerm: (term: string) => void;
@@ -95,6 +97,10 @@ export const useManageCompanies = (): UseManageCompaniesResult => {
     null
   );
 
+  const [activeTab, setActiveTab] = useState<
+    "all" | "active" | "pending" | "suspended"
+  >("all");
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
@@ -114,13 +120,23 @@ export const useManageCompanies = (): UseManageCompaniesResult => {
   }, [fetchData]);
 
   const filteredCompanies = useMemo(() => {
-    return companies.filter(
-      (company) =>
-        company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        company.phone.includes(searchTerm)
-    );
-  }, [companies, searchTerm]);
+    let filtered = companies;
+
+    if (activeTab !== "all") {
+      filtered = filtered.filter((company) => company.status === activeTab);
+    }
+
+    if (searchTerm) {
+      const lowercasedFilter = searchTerm.toLowerCase();
+      filtered = filtered.filter(
+        (company) =>
+          company.name.toLowerCase().includes(lowercasedFilter) ||
+          company.email.toLowerCase().includes(lowercasedFilter) ||
+          company.phone.includes(searchTerm)
+      );
+    }
+    return filtered;
+  }, [companies, activeTab, searchTerm]);
 
   const stats = useMemo(
     () => ({
@@ -266,5 +282,7 @@ export const useManageCompanies = (): UseManageCompaniesResult => {
     handleSaveCompany,
     setCompanyDialogOpen,
     setActionDialogOpen,
+    activeTab,
+    setActiveTab,
   };
 };

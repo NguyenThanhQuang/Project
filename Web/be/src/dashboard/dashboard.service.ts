@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import dayjs from 'dayjs';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   Booking,
   BookingDocument,
@@ -80,12 +80,22 @@ export class DashboardService {
       newCompaniesToday,
     };
   }
+
   async getFinancialReport(
     queryDto: FinanceReportQueryDto,
   ): Promise<FinancialReportResponse> {
-    const period = queryDto.period;
-    const days = parseInt(period.replace('d', ''), 10);
-    const startDate = dayjs().subtract(days, 'day').startOf('day').toDate();
+    const { period, companyId, startDate, endDate } = queryDto;
+
+    let matchStartDate: Date;
+    let matchEndDate: Date = new Date();
+
+    if (startDate && endDate) {
+      matchStartDate = dayjs(startDate).startOf('day').toDate();
+      matchEndDate = dayjs(endDate).endOf('day').toDate();
+    } else {
+      const days = parseInt(period.replace('d', ''), 10);
+      matchStartDate = dayjs().subtract(days, 'day').startOf('day').toDate();
+    }
 
     const commissionRate =
       this.configService.get<number>('COMMISSION_RATE') ?? 0.15;
@@ -98,12 +108,18 @@ export class DashboardService {
     ]);
     const totalRevenueAllTime = totalRevenueResult[0]?.total ?? 0;
 
+    const baseMatch: any = {
+      createdAt: { $gte: matchStartDate, $lte: matchEndDate },
+      status: { $in: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED] },
+    };
+
+    if (companyId && Types.ObjectId.isValid(companyId)) {
+      baseMatch.companyId = new Types.ObjectId(companyId);
+    }
+
     const aggregationResult = await this.bookingModel.aggregate<FacetResult>([
       {
-        $match: {
-          createdAt: { $gte: startDate },
-          status: { $in: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED] },
-        },
+        $match: baseMatch,
       },
       {
         $facet: {
@@ -188,9 +204,16 @@ export class DashboardService {
     const periodBookings = confirmedStats.count;
     const periodRefunds = cancelledStats.totalAmount;
 
+    const recentBookingsQuery: any = {
+      createdAt: { $gte: matchStartDate, $lte: matchEndDate },
+    };
+    if (companyId && Types.ObjectId.isValid(companyId)) {
+      recentBookingsQuery.companyId = new Types.ObjectId(companyId);
+    }
+
     const recentBookings: RecentBookingLean[] = await this.bookingModel
       .find(
-        { createdAt: { $gte: startDate } },
+        recentBookingsQuery,
         {
           createdAt: 1,
           status: 1,

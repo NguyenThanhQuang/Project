@@ -145,8 +145,11 @@ export class Trip {
   @Prop({ type: Boolean, default: false, index: true })
   isRecurrenceTemplate: boolean;
 
-  @Prop({ type: Date, index: true })
+  @Prop({ type: Types.ObjectId, index: true })
   recurrenceParentId?: Types.ObjectId;
+
+  @Prop({ type: Boolean, default: true, index: true })
+  isRecurrenceActive: boolean;
 }
 
 export const TripSchema = SchemaFactory.createForClass(Trip);

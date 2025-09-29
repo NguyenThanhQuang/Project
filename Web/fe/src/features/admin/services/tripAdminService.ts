@@ -50,3 +50,22 @@ export const updateTrip = async (
 export type UpdateTripPayload = Partial<CreateTripPayload> & {
   isRecurrenceTemplate?: boolean;
 };
+
+/**
+ * Cập nhật trạng thái kích hoạt của một mẫu chuyến đi lặp lại.
+ * @param tripId ID của chuyến đi mẫu
+ * @param isActive Trạng thái mới (true: kích hoạt, false: vô hiệu hóa)
+ * @returns Promise chứa thông tin chuyến đi đã được cập nhật
+ */
+export const toggleTripRecurrence = async (
+  tripId: string,
+  isActive: boolean
+): Promise<AdminTrip> => {
+  const response = await api.patch<AdminTrip>(
+    `/trips/${tripId}/toggle-recurrence`,
+    {
+      isActive,
+    }
+  );
+  return response.data;
+};

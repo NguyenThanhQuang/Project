@@ -24,6 +24,8 @@ import {
   CircularProgress,
   Alert,
   type SelectChangeEvent,
+  Autocomplete,
+  TextField,
 } from "@mui/material";
 import {
   MonetizationOn,
@@ -39,8 +41,17 @@ import { useFinanceReport } from "../hooks/useFinanceReport";
 import type { ReportPeriod, Transaction } from "../types/finance";
 
 const FinanceReports: React.FC = () => {
-  const { reportData, loading, error, period, setPeriod, refetch } =
-    useFinanceReport();
+  const {
+    reportData,
+    loading,
+    error,
+    period,
+    setPeriod,
+    refetch,
+    allCompanies,
+    selectedCompany,
+    setSelectedCompany,
+  } = useFinanceReport();
 
   const handlePeriodChange = (event: SelectChangeEvent<ReportPeriod>) => {
     setPeriod(event.target.value as ReportPeriod);
@@ -151,6 +162,22 @@ const FinanceReports: React.FC = () => {
                 <MenuItem value="365d">1 năm qua</MenuItem>
               </Select>
             </FormControl>
+          </Grid>
+          <Grid size={{ xs: 12, sm: 6, md: 3 }}>
+            <Autocomplete
+              options={allCompanies}
+              getOptionLabel={(option) => option.name}
+              value={
+                allCompanies.find((c) => c._id === selectedCompany) || null
+              }
+              onChange={(_, newValue) => {
+                setSelectedCompany(newValue?._id || null);
+              }}
+              renderInput={(params) => (
+                <TextField {...params} label="Lọc theo nhà xe" />
+              )}
+              fullWidth
+            />
           </Grid>
           <Grid size={{ xs: 12, sm: 6, md: 4 }}>
             <Button

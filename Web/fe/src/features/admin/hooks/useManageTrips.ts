@@ -1,41 +1,36 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { getErrorMessage } from "../../../utils/getErrorMessage";
 import { getCompanyDetails } from "../services/companyAdminService";
 import {
   cancelTrip,
   getTripsByCompany,
-  updateTrip,
+  toggleTripRecurrence,
 } from "../services/tripAdminService";
 import type { AdminTrip } from "../types/trip";
 
-/**
- * Hook tùy chỉnh để quản lý toàn bộ logic cho trang "Quản lý chuyến đi" của Admin.
- */
 export const useManageTrips = () => {
   const { companyId } = useParams<{ companyId: string }>();
+  const navigate = useNavigate();
+  const location = useLocation();
 
-  // State cho dữ liệu
   const [trips, setTrips] = useState<AdminTrip[]>([]);
   const [companyName, setCompanyName] = useState<string>("");
 
-  // State cho trạng thái UI
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
-  // State cho phân trang
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(10);
+  const [activeTab, setActiveTab] = useState<
+    "upcoming" | "history" | "templates"
+  >("upcoming");
 
-  // State cho menu và dialog
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const [selectedTrip, setSelectedTrip] = useState<AdminTrip | null>(null);
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);
 
-  /**
-   * Hàm gọi API để lấy dữ liệu chuyến đi và thông tin nhà xe.
-   */
   const fetchData = useCallback(async () => {
     if (!companyId) {
       setError("Không tìm thấy ID nhà xe trong URL.");
@@ -67,18 +62,46 @@ export const useManageTrips = () => {
 
   useEffect(() => {
     fetchData();
-  }, [fetchData]);
+  }, [fetchData, location.state?.refresh]);
 
-  /**
-   * Tính toán danh sách chuyến đi cho trang hiện tại.
-   */
+  const { upcomingTrips, historyTrips, templateTrips } = useMemo(() => {
+    const upcoming: AdminTrip[] = [];
+    const history: AdminTrip[] = [];
+    const templates: AdminTrip[] = [];
+
+    for (const trip of trips) {
+      if (trip.isRecurrenceTemplate === true) {
+        templates.push(trip);
+      } else {
+        if (trip.status === "scheduled" || trip.status === "departed") {
+          upcoming.push(trip);
+        } else if (trip.status === "arrived" || trip.status === "cancelled") {
+          history.push(trip);
+        }
+      }
+    }
+    return { upcomingTrips, historyTrips, templateTrips };
+  }, [trips]);
+
+  const tripsToDisplay = useMemo(() => {
+    switch (activeTab) {
+      case "history":
+        return historyTrips;
+      case "templates":
+        return templateTrips;
+      case "upcoming":
+      default:
+        return upcomingTrips;
+    }
+  }, [activeTab, upcomingTrips, historyTrips, templateTrips]);
+
   const paginatedTrips = useMemo(() => {
-    return trips.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
-  }, [trips, page, rowsPerPage]);
+    return tripsToDisplay.slice(
+      page * rowsPerPage,
+      page * rowsPerPage + rowsPerPage
+    );
+  }, [tripsToDisplay, page, rowsPerPage]);
 
-  /**
-   * Xóa các thông báo lỗi hoặc thành công.
-   */
   const clearMessages = () => {
     setError(null);
     setSuccessMessage(null);
@@ -112,9 +135,6 @@ export const useManageTrips = () => {
     handleMenuClose();
   };
 
-  /**
-   * Xử lý xác nhận hủy chuyến: gọi API và cập nhật UI.
-   */
   const confirmCancelTrip = async () => {
     if (!selectedTrip) return;
     clearMessages();
@@ -134,23 +154,23 @@ export const useManageTrips = () => {
   };
 
   const handleToggleRecurrence = async (tripToUpdate: AdminTrip) => {
+    if (!tripToUpdate.isRecurrenceTemplate) return;
     clearMessages();
+    setTrips((currentTrips) =>
+      currentTrips.map((trip) =>
+        trip._id === tripToUpdate._id
+          ? { ...trip, isRecurrenceActive: !trip.isRecurrenceActive }
+          : trip
+      )
+    );
     try {
-      setTrips((trips) =>
-        trips.map((trip) =>
-          trip._id === tripToUpdate._id
-            ? { ...trip, isRecurrenceTemplate: !trip.isRecurrenceTemplate }
-            : trip
-        )
+      await toggleTripRecurrence(
+        tripToUpdate._id,
+        !tripToUpdate.isRecurrenceActive
       );
-
-      await updateTrip(tripToUpdate._id, {
-        isRecurrenceTemplate: !tripToUpdate.isRecurrenceTemplate,
-      });
-
       setSuccessMessage("Cập nhật trạng thái lặp lại thành công!");
     } catch (err) {
-      setError(getErrorMessage(err, "Cập nhật thất bại."));
+      setError(getErrorMessage(err, "Cập nhật thất bại, vui lòng thử lại."));
       fetchData();
     }
   };
@@ -163,8 +183,11 @@ export const useManageTrips = () => {
     companyName,
     companyId,
     paginatedTrips,
+    tripsToDisplay,
     page,
     rowsPerPage,
+    activeTab,
+    setActiveTab,
     anchorEl,
     selectedTrip,
     cancelDialogOpen,

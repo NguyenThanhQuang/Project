@@ -20,6 +20,7 @@ export interface AdminTrip {
   createdAt: string;
   updatedAt: string;
   isRecurrenceTemplate: boolean;
+  isRecurrenceActive: boolean;
 }
 
 export type UpdateTripPayload = {

@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useNotification } from "../../../components/common/NotificationProvider";
 import { calculateRouteInfo } from "../../../services/mapService";
-
 import { getErrorMessage } from "../../../utils/getErrorMessage";
 import type { LocationData } from "../../trips/types/location";
 import type {
@@ -14,6 +13,7 @@ import type {
 
 interface UseTripFormLogicProps {
   initialCompanyId: string;
+  isCreatingTemplate: boolean; // Thêm prop này
   saveFunction: (payload: CreateTripPayload) => Promise<unknown>;
   onSuccessRedirectPath: (companyId: string) => string;
   allLocations: LocationData[];
@@ -21,6 +21,7 @@ interface UseTripFormLogicProps {
 
 export const useTripFormLogic = ({
   initialCompanyId,
+  isCreatingTemplate, // Nhận prop mới
   saveFunction,
   onSuccessRedirectPath,
   allLocations,
@@ -55,7 +56,6 @@ export const useTripFormLogic = ({
       }
 
       const waypointsCoords: [number, number][] = [];
-
       const fromLocation = allLocations.find(
         (l) => l._id === formData.fromLocationId
       );
@@ -118,13 +118,13 @@ export const useTripFormLogic = ({
     };
 
     calculateAndSetTimes();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     formData.fromLocationId,
     formData.toLocationId,
     formData.departureTime,
     formData.stops,
-    allLocations.length,
+    allLocations,
+    showNotification,
   ]);
 
   const handleFormChange = <K extends keyof AddTripFormState>(
@@ -198,17 +198,22 @@ export const useTripFormLogic = ({
       departureTime: formData.departureTime.toISOString(),
       expectedArrivalTime: formData.expectedArrivalTime.toISOString(),
       price: formData.price,
+      // Thêm cờ isRecurrenceTemplate vào payload
+      isRecurrenceTemplate: isCreatingTemplate,
     };
 
     try {
       await saveFunction(payload);
-      showNotification("Thêm chuyến xe mới thành công!", "success");
+      const message = isCreatingTemplate
+        ? "Tạo mẫu lặp lại mới thành công!"
+        : "Thêm chuyến xe mới thành công!";
+      showNotification(message, "success");
       navigate(onSuccessRedirectPath(formData.companyId));
     } catch (err: unknown) {
-      showNotification(
-        getErrorMessage(err, "Thêm chuyến xe thất bại."),
-        "error"
-      );
+      const message = isCreatingTemplate
+        ? "Tạo mẫu lặp lại thất bại."
+        : "Thêm chuyến xe thất bại.";
+      showNotification(getErrorMessage(err, message), "error");
     } finally {
       setLoading(false);
     }

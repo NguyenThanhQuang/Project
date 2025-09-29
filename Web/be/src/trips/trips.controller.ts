@@ -26,6 +26,7 @@ import { QueryTripsDto } from './dto/query-trips.dto';
 import { UpdateTripStopStatusDto } from './dto/update-trip-stop-status.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripsService } from './trips.service';
+import { ToggleRecurrenceDto } from './dto/toggle-recurrence.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -260,5 +261,37 @@ export class TripsController {
       }
     }
     return this.tripsService.cancel(tripId.toString());
+  }
+
+  /**
+   * @description [MANAGEMENT] Kích hoạt hoặc vô hiệu hóa một mẫu chuyến đi lặp lại.
+   * @route PATCH /api/trips/:tripId/toggle-recurrence
+   */
+  @Patch(':tripId/toggle-recurrence')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async toggleRecurrence(
+    @Param('tripId', ParseMongoIdPipe) tripId: Types.ObjectId,
+    @Body() toggleRecurrenceDto: ToggleRecurrenceDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const user = req.user;
+
+    if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
+      const trip = await this.tripsService.findOne(tripId.toString());
+      if (
+        !user.companyId ||
+        trip.companyId._id.toString() !== user.companyId.toString()
+      ) {
+        throw new ForbiddenException(
+          'Bạn không có quyền thay đổi mẫu chuyến đi này.',
+        );
+      }
+    }
+
+    return this.tripsService.toggleRecurrence(
+      tripId,
+      toggleRecurrenceDto.isActive,
+    );
   }
 }
