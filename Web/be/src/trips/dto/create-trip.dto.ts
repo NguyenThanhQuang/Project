@@ -1,6 +1,7 @@
 import { Type } from 'class-transformer';
 import {
   IsArray,
+  IsBoolean,
   IsDateString,
   IsEnum,
   IsMongoId,
@@ -77,4 +78,8 @@ export class CreateTripDto {
   @IsOptional()
   @IsEnum(TripStatus)
   status?: TripStatus;
+
+  @IsOptional()
+  @IsBoolean()
+  isRecurrenceTemplate?: boolean;
 }
