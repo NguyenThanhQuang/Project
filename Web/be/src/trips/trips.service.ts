@@ -197,8 +197,12 @@ export class TripsService {
 
     const newTripData = {
       ...createTripDto,
+      companyId: new Types.ObjectId(createTripDto.companyId),
+      vehicleId: new Types.ObjectId(createTripDto.vehicleId),
       route: {
         ...createTripDto.route,
+        fromLocationId: new Types.ObjectId(createTripDto.route.fromLocationId),
+        toLocationId: new Types.ObjectId(createTripDto.route.toLocationId),
         stops,
         polyline: routeInfoFromMapService.polyline,
         duration: routeInfoFromMapService.duration,
@@ -502,7 +506,7 @@ export class TripsService {
         `Không tìm thấy điểm dừng với ID ${stopLocationId} trong chuyến đi này.`,
       );
     }
-    // TODO: Thêm logic validate, ví dụ: không thể nhảy từ 'pending' sang 'departed'.
+    // Thêm logic validate, ví dụ: không thể nhảy từ 'pending' sang 'departed'.
     stopToUpdate.status = newStatus;
     return trip.save();
   }
@@ -639,7 +643,7 @@ export class TripsService {
       // 4. Deconstruct tripInfo (nếu tripInfo rỗng, document sẽ bị loại bỏ ở đây)
       { $unwind: '$tripInfo' },
 
-      // 5. [BƯỚC MỚI] Chuyển đổi fromLocationId và toLocationId từ String sang ObjectId
+      // 5. Chuyển đổi fromLocationId và toLocationId từ String sang ObjectId
       {
         $addFields: {
           'tripInfo.route.fromLocationObjectId': {
@@ -655,8 +659,8 @@ export class TripsService {
       {
         $group: {
           _id: {
-            from: '$tripInfo.route.fromLocationObjectId', // <-- Dùng trường mới
-            to: '$tripInfo.route.toLocationObjectId', // <-- Dùng trường mới
+            from: '$tripInfo.route.fromLocationObjectId',
+            to: '$tripInfo.route.toLocationObjectId',
           },
           bookingCount: { $sum: 1 },
         },
@@ -666,7 +670,7 @@ export class TripsService {
       { $sort: { bookingCount: -1 } },
       { $limit: limit },
 
-      // 8. Join với 'locations' (Bây giờ sẽ hoạt động chính xác)
+      // 8. Join với 'locations'
       {
         $lookup: {
           from: 'locations',

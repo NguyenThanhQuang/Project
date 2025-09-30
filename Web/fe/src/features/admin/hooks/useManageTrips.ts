@@ -80,7 +80,11 @@ export const useManageTrips = () => {
         }
       }
     }
-    return { upcomingTrips, historyTrips, templateTrips };
+    return {
+      upcomingTrips: upcoming,
+      historyTrips: history,
+      templateTrips: templates,
+    };
   }, [trips]);
 
   const tripsToDisplay = useMemo(() => {

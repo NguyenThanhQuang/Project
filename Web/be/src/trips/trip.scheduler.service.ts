@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import dayjs from 'dayjs';
-import { Model } from 'mongoose';
+import { Model, Types } from 'mongoose';
 import {
   CompanyDocument,
   CompanyStatus,
@@ -104,13 +104,17 @@ export class TripSchedulerService {
       );
 
       const newTripData: Partial<Trip> = {
-        companyId: template.companyId._id,
-        vehicleId: template.vehicleId._id,
-        route: template.route,
+        companyId: new Types.ObjectId(template.companyId._id),
+        vehicleId: new Types.ObjectId(template.vehicleId._id),
+        route: {
+          ...template.route,
+          fromLocationId: new Types.ObjectId(template.route.fromLocationId),
+          toLocationId: new Types.ObjectId(template.route.toLocationId),
+        },
         price: template.price,
         isRecurrenceTemplate: false,
         isRecurrenceActive: false,
-        recurrenceParentId: template._id,
+        recurrenceParentId: new Types.ObjectId(template._id),
         departureTime: newDepartureTime,
         expectedArrivalTime: dayjs(newDepartureTime).add(tripDuration).toDate(),
         status: TripStatus.SCHEDULED,

@@ -198,7 +198,6 @@ export const useTripFormLogic = ({
       departureTime: formData.departureTime.toISOString(),
       expectedArrivalTime: formData.expectedArrivalTime.toISOString(),
       price: formData.price,
-      // Thêm cờ isRecurrenceTemplate vào payload
       isRecurrenceTemplate: isCreatingTemplate,
     };
 
@@ -208,7 +207,9 @@ export const useTripFormLogic = ({
         ? "Tạo mẫu lặp lại mới thành công!"
         : "Thêm chuyến xe mới thành công!";
       showNotification(message, "success");
-      navigate(onSuccessRedirectPath(formData.companyId));
+      navigate(onSuccessRedirectPath(formData.companyId), {
+        state: { refresh: true },
+      });
     } catch (err: unknown) {
       const message = isCreatingTemplate
         ? "Tạo mẫu lặp lại thất bại."
