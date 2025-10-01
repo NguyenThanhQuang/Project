@@ -123,7 +123,7 @@ export class BookingsService {
 
     const newBooking = new this.bookingModel({
       userId: bookingUserId,
-      tripId: createDto.tripId,
+      tripId: new Types.ObjectId(createDto.tripId),
       companyId: trip.companyId._id,
       //companyId: trip.companyId,
       status: BookingStatus.HELD,
@@ -195,9 +195,10 @@ export class BookingsService {
     const seatNumbers = booking.passengers.map((p) => p.seatNumber);
 
     try {
+      const tripIdAsObjectId = new Types.ObjectId(booking.tripId);
       // Cập nhật trạng thái ghế trong chuyến đi thành 'booked'
       await this.tripsService.updateSeatStatuses(
-        booking.tripId,
+        tripIdAsObjectId,
         seatNumbers,
         SeatStatus.BOOKED,
         booking._id,
@@ -213,13 +214,11 @@ export class BookingsService {
 
       const savedBooking = await booking.save();
 
-      // Phát sự kiện để gửi email xác nhận
       this.eventEmitter.emit('booking.confirmed', savedBooking);
 
       return savedBooking;
     } catch (error) {
       this.logger.error(`Error confirming booking ${bookingId}:`, error);
-      // Cân nhắc thêm logic rollback (trả ghế về AVAILABLE) nếu cần
       throw new InternalServerErrorException('Lỗi khi xác nhận đơn đặt vé.');
     }
   }

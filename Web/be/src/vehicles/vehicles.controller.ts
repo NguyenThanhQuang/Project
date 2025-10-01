@@ -98,7 +98,10 @@ export class VehiclesController {
     const vehicle = await this.vehiclesService.findOne(id);
 
     if (roles.includes(UserRole.COMPANY_ADMIN)) {
-      if (!companyId || vehicle.companyId.toString() !== companyId.toString()) {
+      if (
+        !companyId ||
+        vehicle.companyId._id.toString() !== companyId.toString()
+      ) {
         throw new ForbiddenException(
           'Bạn chỉ có quyền xem loại xe của công ty mình.',
         );
@@ -126,7 +129,7 @@ export class VehiclesController {
     if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (
         !companyId ||
-        vehicleToUpdate.companyId.toString() !== companyId.toString()
+        vehicleToUpdate.companyId._id.toString() !== companyId.toString()
       ) {
         throw new ForbiddenException(
           'Bạn chỉ có quyền cập nhật loại xe của công ty mình.',

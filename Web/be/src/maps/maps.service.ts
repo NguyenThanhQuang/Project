@@ -5,6 +5,7 @@ import {
   InternalServerErrorException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { firstValueFrom } from 'rxjs';
 
 export interface RouteInfo {
@@ -18,7 +19,10 @@ export class MapsService {
   private readonly logger = new Logger(MapsService.name);
   private readonly OSRM_BASE_URL = 'http://router.project-osrm.org';
 
-  constructor(private readonly httpService: HttpService) {}
+  constructor(
+    private readonly httpService: HttpService,
+    private readonly configService: ConfigService,
+  ) {}
 
   /**
    * Lấy thông tin tuyến đường (polyline, duration, distance) từ OSRM
@@ -53,12 +57,20 @@ export class MapsService {
       const route = response.data?.routes?.[0];
 
       if (response.data?.code === 'Ok' && route) {
-        this.logger.log(
-          `Successfully retrieved route info. Duration: ${route.duration}s, Distance: ${route.distance}m.`,
+        const durationMultiplier =
+          this.configService.get<number>('ROUTE_DURATION_MULTIPLIER') || 1.0;
+
+        const adjustedDuration = Math.round(
+          route.duration * durationMultiplier,
         );
+
+        this.logger.log(
+          `Successfully retrieved route. Original duration: ${route.duration}s. Multiplier: ${durationMultiplier}. Adjusted duration: ${adjustedDuration}s.`,
+        );
+
         return {
           polyline: route.geometry,
-          duration: route.duration,
+          duration: adjustedDuration,
           distance: route.distance,
         };
       } else {

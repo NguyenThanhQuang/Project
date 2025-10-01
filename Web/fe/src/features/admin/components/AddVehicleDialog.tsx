@@ -212,7 +212,7 @@ const AddVehicleDialog: React.FC<AddVehicleDialogProps> = ({
               getOptionLabel={(option) => option.label}
               onChange={handlePresetChange}
               renderInput={(params) => (
-                <TextField {...params} label="Chọn mẫu xe (Presets)" />
+                <TextField {...params} label="Chọn mẫu xe" />
               )}
             />
           </Grid>

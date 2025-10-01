@@ -13,7 +13,7 @@ import {
 import { DatePicker, TimePicker } from "@mui/x-date-pickers";
 import { Add, Delete } from "@mui/icons-material";
 import type { AddTripFormState, RouteStopFormState } from "../../types/trip";
-import type { Location } from "../../../../types";
+import type { LocationData } from "../../../trips/types/location";
 
 interface ScheduleStepProps {
   formData: AddTripFormState;
@@ -28,7 +28,7 @@ interface ScheduleStepProps {
     field: K,
     value: RouteStopFormState[K]
   ) => void;
-  allLocations: Location[];
+  allLocations: LocationData[];
   isCalculating: boolean;
 }
 
