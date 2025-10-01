@@ -23,7 +23,7 @@ interface AuthenticatedRequest extends Request {
   user: {
     userId: string;
     email: string;
-    role: UserRole;
+    roles: UserRole[];
     companyId?: Types.ObjectId;
   };
 }
@@ -76,9 +76,9 @@ export class CompaniesController {
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    const { role, companyId } = req.user;
+    const { roles, companyId } = req.user;
 
-    if (role === UserRole.COMPANY_ADMIN) {
+    if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (!companyId || companyId.toString() !== id) {
         throw new ForbiddenException(
           'Bạn chỉ có quyền xem thông tin của công ty mình.',
@@ -100,9 +100,9 @@ export class CompaniesController {
     @Body() updateCompanyDto: UpdateCompanyDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const { role, companyId } = req.user;
+    const { roles, companyId } = req.user;
 
-    if (role === UserRole.COMPANY_ADMIN) {
+    if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (!companyId || companyId.toString() !== id) {
         throw new ForbiddenException(
           'Bạn chỉ có quyền cập nhật thông tin của công ty mình.',

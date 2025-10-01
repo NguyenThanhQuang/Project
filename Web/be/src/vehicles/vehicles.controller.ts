@@ -24,7 +24,7 @@ interface AuthenticatedRequest extends Request {
   user: {
     userId: string;
     email: string;
-    role: UserRole;
+    roles: UserRole[];
     companyId?: Types.ObjectId;
   };
 }
@@ -45,10 +45,9 @@ export class VehiclesController {
     @Body() createVehicleDto: CreateVehicleDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const { role, companyId } = req.user;
+    const { roles, companyId } = req.user;
 
-    // Nếu là Company Admin, ép companyId phải là của công ty họ
-    if (role === UserRole.COMPANY_ADMIN) {
+    if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (
         !companyId ||
         createVehicleDto.companyId.toString() !== companyId.toString()
@@ -59,7 +58,6 @@ export class VehiclesController {
       }
     }
 
-    // Admin có thể tạo cho bất kỳ công ty nào, companyId được lấy từ DTO.
     return this.vehiclesService.create(createVehicleDto);
   }
 
@@ -74,19 +72,17 @@ export class VehiclesController {
     @Query('companyId') filterCompanyId: string,
     @Req() req: AuthenticatedRequest,
   ) {
-    const { role, companyId } = req.user;
+    const { roles, companyId } = req.user;
 
-    if (role === UserRole.COMPANY_ADMIN) {
+    if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (!companyId) {
         throw new ForbiddenException(
           'Tài khoản của bạn không được liên kết với nhà xe nào.',
         );
       }
-      // Bỏ qua mọi query filter, chỉ trả về xe của công ty họ
       return this.vehiclesService.findAll(companyId);
     }
 
-    // Admin có thể lọc theo companyId nếu được cung cấp
     return this.vehiclesService.findAll(filterCompanyId);
   }
 
@@ -98,10 +94,10 @@ export class VehiclesController {
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    const { role, companyId } = req.user;
+    const { roles, companyId } = req.user;
     const vehicle = await this.vehiclesService.findOne(id);
 
-    if (role === UserRole.COMPANY_ADMIN) {
+    if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (!companyId || vehicle.companyId.toString() !== companyId.toString()) {
         throw new ForbiddenException(
           'Bạn chỉ có quyền xem loại xe của công ty mình.',
@@ -124,10 +120,10 @@ export class VehiclesController {
     @Body() updateVehicleDto: UpdateVehicleDto,
     @Req() req: AuthenticatedRequest,
   ) {
-    const { role, companyId } = req.user;
+    const { roles, companyId } = req.user;
     const vehicleToUpdate = await this.vehiclesService.findOne(id);
 
-    if (role === UserRole.COMPANY_ADMIN) {
+    if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (
         !companyId ||
         vehicleToUpdate.companyId.toString() !== companyId.toString()
@@ -136,7 +132,6 @@ export class VehiclesController {
           'Bạn chỉ có quyền cập nhật loại xe của công ty mình.',
         );
       }
-      // Ngăn Company Admin thay đổi xe sang công ty khác
       if (
         updateVehicleDto.companyId &&
         updateVehicleDto.companyId.toString() !== companyId.toString()
@@ -158,10 +153,10 @@ export class VehiclesController {
   @Delete(':id')
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   async remove(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    const { role, companyId } = req.user;
+    const { roles, companyId } = req.user;
     const vehicleToDelete = await this.vehiclesService.findOne(id);
 
-    if (role === UserRole.COMPANY_ADMIN) {
+    if (roles.includes(UserRole.COMPANY_ADMIN)) {
       if (
         !companyId ||
         vehicleToDelete.companyId.toString() !== companyId.toString()
