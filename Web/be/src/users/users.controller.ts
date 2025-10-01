@@ -23,7 +23,11 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { SanitizedUser, UserRole } from './schemas/user.schema';
 import { UsersService } from './users.service';
 interface AuthenticatedRequest extends Request {
-  user: { userId: string; email: string; role: UserRole };
+  user: {
+    userId: string;
+    email: string;
+    roles: UserRole[];
+  };
 }
 
 @Controller('users')
@@ -54,7 +58,10 @@ export class UsersController {
     @Param('userId') targetUserId: string,
     @Req() req: AuthenticatedRequest,
   ): Promise<SanitizedUser> {
-    if (req.user.role !== UserRole.ADMIN && req.user.userId !== targetUserId) {
+    if (
+      !req.user.roles.includes(UserRole.ADMIN) &&
+      req.user.userId !== targetUserId
+    ) {
       throw new ForbiddenException(
         'Bạn không có quyền truy cập thông tin này.',
       );
@@ -66,43 +73,6 @@ export class UsersController {
     const user = await this.usersService.findById(targetUserId);
     return this.usersService.sanitizeUser(user);
   }
-
-  @Get('test/admin-only')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  adminOnlyRouteTest() {
-    return {
-      message:
-        'Chào mừng Admin! Bạn đã truy cập thành công vào route được bảo vệ.',
-    };
-  }
-
-  @Get('test/management-access')
-  @HttpCode(HttpStatus.OK)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
-  managementAccessRouteTest() {
-    return {
-      message: 'Chào mừng người quản lý (Admin hoặc Company Admin)!',
-    };
-  }
-
-  // (Tùy chọn) Endpoint cho Admin cập nhật thông tin của bất kỳ người dùng nào
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Roles(UserRole.ADMIN)
-  // @Patch(':userId')
-  // async updateUserByAdmin(
-  //   @Param('userId') targetUserId: string,
-  //   @Body() updateUserDto: UpdateUserDto, // Có thể cần một AdminUpdateUserDto riêng biệt
-  // ): Promise<SanitizedUser> {
-  //   if (!Types.ObjectId.isValid(targetUserId)) {
-  //     throw new NotFoundException('ID người dùng không hợp lệ.');
-  //   }
-  //   // Cần đảm bảo rằng admin không thể thay đổi vai trò hoặc các trường nhạy cảm khác một cách vô ý
-  //   // thông qua DTO chung này. Xem xét việc tạo AdminUpdateUserDto.
-  //   return this.usersService.updateProfile(targetUserId, updateUserDto);
-  // }
 
   @Patch('me/change-password')
   @UseGuards(JwtAuthGuard)
