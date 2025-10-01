@@ -116,6 +116,7 @@ export class VehiclesService {
 
     const newVehicleData = {
       ...createVehicleDto,
+      companyId: new Types.ObjectId(createVehicleDto.companyId),
       vehicleNumber: createVehicleDto.vehicleNumber.toUpperCase(),
       totalSeats,
       seatMap: floor1Result.seatMap,
@@ -253,7 +254,9 @@ export class VehiclesService {
       existingVehicle.seatMapFloor2 = seatMapFloor2;
     }
 
-    Object.assign(existingVehicle, updateVehicleDto);
+    const { companyId, ...restOfDto } = updateVehicleDto;
+    Object.assign(existingVehicle, restOfDto);
+
     if (updateVehicleDto.vehicleNumber) {
       existingVehicle.vehicleNumber =
         updateVehicleDto.vehicleNumber.toUpperCase();

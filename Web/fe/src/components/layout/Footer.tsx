@@ -37,7 +37,7 @@ const Footer: React.FC = () => {
               variant="h6"
               sx={{ fontWeight: 700, mb: 3, color: "white" }}
             >
-              VeXeRe
+              OBTP
             </Typography>
             <Typography
               variant="body2"

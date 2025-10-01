@@ -638,7 +638,7 @@ export class TripsService {
     }
   }
 
-  async findPopularRoutes(limit = 6): Promise<any> {
+  async findPopularRoutes(limit = 5): Promise<any> {
     const ninetyDaysAgo = new Date();
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
