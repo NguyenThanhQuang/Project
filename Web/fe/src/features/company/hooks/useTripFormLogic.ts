@@ -13,7 +13,7 @@ import type {
 
 interface UseTripFormLogicProps {
   initialCompanyId: string;
-  isCreatingTemplate: boolean; // Thêm prop này
+  isCreatingTemplate: boolean;
   saveFunction: (payload: CreateTripPayload) => Promise<unknown>;
   onSuccessRedirectPath: (companyId: string) => string;
   allLocations: LocationData[];
@@ -21,7 +21,7 @@ interface UseTripFormLogicProps {
 
 export const useTripFormLogic = ({
   initialCompanyId,
-  isCreatingTemplate, // Nhận prop mới
+  isCreatingTemplate,
   saveFunction,
   onSuccessRedirectPath,
   allLocations,
@@ -42,6 +42,7 @@ export const useTripFormLogic = ({
     expectedArrivalTime: null,
     price: 0,
     stops: [],
+    isRecurrenceTemplate: isCreatingTemplate,
   });
 
   useEffect(() => {
@@ -198,22 +199,22 @@ export const useTripFormLogic = ({
       departureTime: formData.departureTime.toISOString(),
       expectedArrivalTime: formData.expectedArrivalTime.toISOString(),
       price: formData.price,
-      isRecurrenceTemplate: isCreatingTemplate,
+      isRecurrenceTemplate: formData.isRecurrenceTemplate,
     };
 
     try {
       await saveFunction(payload);
-      const message = isCreatingTemplate
-        ? "Tạo mẫu lặp lại mới thành công!"
-        : "Thêm chuyến xe mới thành công!";
+      const message = formData.isRecurrenceTemplate
+        ? "Lưu mẫu lặp lại thành công!"
+        : "Lưu chuyến đi thành công!";
       showNotification(message, "success");
       navigate(onSuccessRedirectPath(formData.companyId), {
         state: { refresh: true },
       });
     } catch (err: unknown) {
-      const message = isCreatingTemplate
-        ? "Tạo mẫu lặp lại thất bại."
-        : "Thêm chuyến xe thất bại.";
+      const message = formData.isRecurrenceTemplate
+        ? "Lưu mẫu lặp lại thất bại."
+        : "Lưu chuyến đi thất bại.";
       showNotification(getErrorMessage(err, message), "error");
     } finally {
       setLoading(false);
@@ -225,6 +226,7 @@ export const useTripFormLogic = ({
     loading,
     isCalculating,
     formData,
+    setFormData,
     handleNext,
     handleBack,
     handleSave,

@@ -141,9 +141,6 @@ const ManageVehicles: React.FC = () => {
           Quay lại danh sách nhà xe
         </Button>
       </Box>
-      <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Thêm, sửa, xóa và quản lý các loại xe của nhà xe này.
-      </Typography>
 
       <VehicleStatsCards stats={stats} />
 

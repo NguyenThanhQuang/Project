@@ -16,6 +16,7 @@ export interface AddTripFormState {
   expectedArrivalTime: Dayjs | null;
   price: number;
   stops: RouteStopFormState[];
+  isRecurrenceTemplate: boolean;
 }
 
 export interface CreateTripPayload {

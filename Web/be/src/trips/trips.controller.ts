@@ -23,10 +23,10 @@ import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
 import { UserRole } from '../users/schemas/user.schema';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
+import { ToggleRecurrenceDto } from './dto/toggle-recurrence.dto';
 import { UpdateTripStopStatusDto } from './dto/update-trip-stop-status.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripsService } from './trips.service';
-import { ToggleRecurrenceDto } from './dto/toggle-recurrence.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -151,7 +151,7 @@ export class TripsController {
     @Req() req: AuthenticatedRequest,
   ) {
     const user = req.user;
-    // Kiểm tra quyền sở hữu: Company Admin chỉ được cập nhật chuyến đi của công ty mình.
+    // Company Admin chỉ được cập nhật chuyến đi của công ty mình.
     if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       const trip = await this.tripsService.findOne(tripId.toString());
       if (

@@ -64,6 +64,7 @@ export interface PopulatedTrip {
   price: number;
   status: TripStatus;
   seats: Seat[];
+  isRecurrenceTemplate: boolean;
 }
 
 /**

@@ -1,5 +1,6 @@
 import api from "../../../services/api";
 import type { CreateTripPayload } from "../../company/types/trip";
+import type { PopulatedTrip } from "../../trips/types/trip";
 import type { AdminTrip } from "../types/trip";
 
 /**
@@ -67,5 +68,12 @@ export const toggleTripRecurrence = async (
       isActive,
     }
   );
+  return response.data;
+};
+
+export const getTripForEditing = async (
+  tripId: string
+): Promise<PopulatedTrip> => {
+  const response = await api.get<PopulatedTrip>(`/trips/${tripId}`);
   return response.data;
 };

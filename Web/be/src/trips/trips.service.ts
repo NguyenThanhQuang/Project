@@ -226,7 +226,7 @@ export class TripsService {
   private generateSeatsFromVehicle(vehicle: VehicleDocument): Seat[] {
     const generatedSeats: Seat[] = [];
 
-    // Xử lý tầng 1 (luôn luôn có)
+    // Xử lý tầng 1
     if (vehicle.seatMap && vehicle.seatMap.layout) {
       vehicle.seatMap.layout.forEach((row) => {
         if (Array.isArray(row)) {
@@ -242,7 +242,7 @@ export class TripsService {
       });
     }
 
-    // Xử lý tầng 2 (nếu có)
+    // Xử lý tầng 2
     if (
       vehicle.floors > 1 &&
       vehicle.seatMapFloor2 &&
@@ -262,7 +262,6 @@ export class TripsService {
       });
     }
 
-    // Trường hợp dự phòng nếu xe không có sơ đồ ghế chi tiết
     if (generatedSeats.length === 0 && vehicle.totalSeats > 0) {
       for (let i = 1; i <= vehicle.totalSeats; i++) {
         generatedSeats.push({
@@ -289,7 +288,6 @@ export class TripsService {
     const startOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).startOf('day').toDate();
     const endOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).endOf('day').toDate();
 
-    // BƯỚC 1: Lấy danh sách các chuyến đi hợp lệ, populate thông tin cần thiết
     const tripsInDay = await this.tripModel
       .find({
         departureTime: { $gte: startOfDay, $lte: endOfDay },
@@ -316,7 +314,6 @@ export class TripsService {
 
     const filteredTrips = (tripsInDay as PopulatedPublicTrip[]).filter(
       (trip) => {
-        // Lọc an toàn, đảm bảo các trường populate không bị null
         return (
           trip.companyId?.status === CompanyStatus.ACTIVE &&
           trip.route?.fromLocationId?.province?.toLowerCase() ===
@@ -471,12 +468,39 @@ export class TripsService {
         );
         const newSeats = this.generateSeatsFromVehicle(newVehicle);
         existingTrip.seats = newSeats;
+        existingTrip.vehicleId = newVehicle._id;
       }
     }
 
-    Object.assign(existingTrip, updateTripDto);
+    if (updateTripDto.price !== undefined)
+      existingTrip.price = updateTripDto.price;
+    if (updateTripDto.status) existingTrip.status = updateTripDto.status;
+    if (updateTripDto.departureTime)
+      existingTrip.departureTime = new Date(updateTripDto.departureTime);
+    if (updateTripDto.expectedArrivalTime)
+      existingTrip.expectedArrivalTime = new Date(
+        updateTripDto.expectedArrivalTime,
+      );
+    if (updateTripDto.isRecurrenceTemplate !== undefined)
+      existingTrip.isRecurrenceTemplate = updateTripDto.isRecurrenceTemplate;
+
+    if (updateTripDto.companyId) {
+      existingTrip.companyId = new Types.ObjectId(updateTripDto.companyId);
+    }
+
+    if (updateTripDto.route) {
+      const { fromLocationId, toLocationId, stops } = updateTripDto.route;
+
+      if (fromLocationId) {
+        existingTrip.route.fromLocationId = new Types.ObjectId(fromLocationId);
+      }
+      if (toLocationId) {
+        existingTrip.route.toLocationId = new Types.ObjectId(toLocationId);
+      }
+    }
 
     const updatedTrip = await existingTrip.save();
+
     if (!updatedTrip) {
       throw new NotFoundException(
         `Không tìm thấy chuyến đi với ID: ${id} để cập nhật.`,

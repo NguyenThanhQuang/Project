@@ -30,7 +30,14 @@ import {
   Tooltip,
 } from "@mui/material";
 import { useNavigate, useParams } from "react-router-dom";
-import { MoreVert, Cancel, Close, Add, ArrowBack } from "@mui/icons-material";
+import {
+  MoreVert,
+  Cancel,
+  Close,
+  Add,
+  ArrowBack,
+  Edit,
+} from "@mui/icons-material";
 import { useManageTrips } from "../hooks/useManageTrips";
 
 const AdminManageTrips: React.FC = () => {
@@ -60,6 +67,15 @@ const AdminManageTrips: React.FC = () => {
     activeTab,
     setActiveTab,
   } = useManageTrips();
+
+  const handleOpenEditPage = () => {
+    if (selectedTrip) {
+      navigate(`/admin/companies/${companyId}/trips/${selectedTrip._id}/edit`, {
+        state: { companyName },
+      });
+    }
+    handleMenuClose();
+  };
 
   const getStatusInfo = (status: string) => {
     switch (status) {
@@ -325,6 +341,10 @@ const AdminManageTrips: React.FC = () => {
         transformOrigin={{ horizontal: "right", vertical: "top" }}
         anchorOrigin={{ horizontal: "right", vertical: "bottom" }}
       >
+        <MenuItem onClick={handleOpenEditPage}>
+          <Edit sx={{ mr: 1.5 }} />
+          Chỉnh sửa
+        </MenuItem>
         <MenuItem onClick={handleOpenCancelDialog} sx={{ color: "error.main" }}>
           <Cancel sx={{ mr: 1.5 }} />
           Hủy chuyến

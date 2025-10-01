@@ -45,6 +45,7 @@ import TermOfService from "./features/core/pages/TermsOfService";
 import BookingLookupPage from "./features/bookings/pages/BookingLookupPage";
 import ActivateAccountPage from "./features/auth/pages/ActivateAccountPage";
 import ManageReviewsPage from "./features/admin/pages/ManageReviewsPage";
+import EditTripPage from "./features/company/pages/EditTripPage";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -67,6 +68,14 @@ function App() {
             <Routes>
               <Route path="/admin/login" element={<AdminLoginPage />} />
               <Route path="/" element={<Layout />}>
+                <Route
+                  path="trips/:tripId/edit"
+                  element={
+                    <ProtectedRoute allowedRoles={["company_admin"]}>
+                      <EditTripPage />
+                    </ProtectedRoute>
+                  }
+                />
                 {/* Trang public */}
                 <Route index element={<Homepage />} />
                 <Route
@@ -157,6 +166,10 @@ function App() {
                   </ProtectedRoute>
                 }
               >
+                <Route
+                  path="companies/:companyId/trips/:tripId/edit"
+                  element={<EditTripPage />}
+                />
                 <Route index element={<AdminDashboardContent />} />
                 <Route path="companies" element={<ManageCompanies />} />
                 <Route
