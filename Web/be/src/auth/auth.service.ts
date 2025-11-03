@@ -9,7 +9,6 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { JwtService } from '@nestjs/jwt';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { isEmail } from 'class-validator';
@@ -36,7 +35,7 @@ import { ActivateAccountDto } from './dto/activate-account.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { JwtPayload } from './strategies/jwt.strategy';
+import { TokenService } from './token/token.service';
 
 @Injectable()
 export class AuthService {
@@ -46,7 +45,8 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Company.name) private companyModel: Model<CompanyDocument>,
     private usersService: UsersService,
-    private jwtService: JwtService,
+    // private jwtService: JwtService,
+    private tokenService: TokenService,
     private mailService: MailService,
     private configService: ConfigService,
   ) {}
@@ -277,13 +277,7 @@ export class AuthService {
       }
     }
 
-    const payload: JwtPayload = {
-      email: user.email,
-      sub: user._id.toString(),
-      roles: user.roles,
-      companyId: user.companyId?.toString(),
-    };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.tokenService.generateAccessToken(user);
 
     return {
       accessToken,
@@ -331,13 +325,7 @@ export class AuthService {
       this.logger.log(`Email ${user.email} verified successfully.`);
     }
 
-    const payload: JwtPayload = {
-      email: user.email,
-      sub: user._id.toString(),
-      roles: user.roles,
-      companyId: user.companyId?.toString(),
-    };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.tokenService.generateAccessToken(user);
 
     return {
       accessToken,
@@ -586,13 +574,7 @@ export class AuthService {
 
     await user.save();
 
-    const payload: JwtPayload = {
-      email: user.email,
-      sub: user._id.toString(),
-      roles: user.roles,
-      companyId: user.companyId?.toString(),
-    };
-    const accessToken = this.jwtService.sign(payload);
+    const accessToken = this.tokenService.generateAccessToken(user);
 
     return {
       accessToken,
