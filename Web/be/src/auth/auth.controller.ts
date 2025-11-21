@@ -15,6 +15,7 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Response } from 'express';
+import { UrlBuilderService } from 'src/common/utils/url-builder.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { AuthService } from './auth.service';
 import { ActivateAccountDto } from './dto/activate-account.dto';
@@ -31,6 +32,7 @@ export class AuthController {
   constructor(
     private authService: AuthService,
     private configService: ConfigService,
+    private urlBuilderService: UrlBuilderService,
   ) {}
 
   @Post('register')
@@ -47,23 +49,22 @@ export class AuthController {
 
   @Get('verify-email')
   async verifyEmailToken(@Query('token') token: string, @Res() res: Response) {
-    const clientBaseUrl = this.configService.get<string>(
-      'CLIENT_URL',
-      'http://localhost:3001',
-    );
-    const verificationResultPath = this.configService.get<string>(
-      'CLIENT_VERIFICATION_RESULT_PATH',
-      '/auth/verification-result',
-    );
-
     if (!token) {
-      const clientErrorUrl = `${clientBaseUrl}${verificationResultPath}?success=false&message=InvalidTokenLink`;
+      const clientErrorUrl = this.urlBuilderService.buildVerificationResultUrl(
+        false,
+        'InvalidTokenLink',
+      );
       return res.redirect(clientErrorUrl);
     }
 
     try {
       const result = await this.authService.processEmailVerification(token);
-      const successUrl = `${clientBaseUrl}${verificationResultPath}?success=true&message=EmailVerified&accessToken=${result.accessToken}`;
+
+      const successUrl = this.urlBuilderService.buildVerificationResultUrl(
+        true,
+        'EmailVerified',
+        result.accessToken,
+      );
       return res.redirect(successUrl);
     } catch (error) {
       let errorMessageKey = 'VerificationFailed';
@@ -77,7 +78,7 @@ export class AuthController {
           typeof response === 'string' ? response : JSON.stringify(response);
 
         if (error instanceof UnauthorizedException) {
-          errorMessageKey = logMessage.includes('hết hạn')
+          errorMessageKey = error.message.includes('hết hạn')
             ? 'TokenExpired'
             : 'TokenInvalidOrUsed';
         } else if (error instanceof BadRequestException) {
@@ -91,12 +92,14 @@ export class AuthController {
       }
 
       this.logger.error(
-        `Email verification failed: ${logMessage}`,
-        errorStack,
-        `TokenPrefix: ${token.substring(0, 10)}...`,
+        `Email verification failed for token prefix: ${token.substring(0, 10)}...`,
+        error.stack,
       );
 
-      const failureUrl = `${clientBaseUrl}${verificationResultPath}?success=false&message=${errorMessageKey}`;
+      const failureUrl = this.urlBuilderService.buildVerificationResultUrl(
+        false,
+        errorMessageKey,
+      );
       return res.redirect(failureUrl);
     }
   }

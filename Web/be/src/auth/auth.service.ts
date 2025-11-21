@@ -317,9 +317,11 @@ export class AuthService {
           'Token xác thực đã hết hạn. Vui lòng yêu cầu gửi lại.',
         );
       }
+
       user.isEmailVerified = true;
       user.emailVerificationToken = undefined;
       user.emailVerificationExpires = undefined;
+
       await user.save();
       this.logger.log(`Email ${user.email} verified successfully.`);
     }
