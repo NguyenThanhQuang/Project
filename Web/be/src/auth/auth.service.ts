@@ -9,6 +9,7 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
 import { isEmail } from 'class-validator';
@@ -19,7 +20,6 @@ import {
   CompanyDocument,
   CompanyStatus,
 } from 'src/companies/schemas/company.schema';
-import { MailService } from '../mail/mail.service';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import {
   SanitizedUser,
@@ -45,9 +45,8 @@ export class AuthService {
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Company.name) private companyModel: Model<CompanyDocument>,
     private usersService: UsersService,
-    // private jwtService: JwtService,
+    private eventEmitter: EventEmitter2,
     private tokenService: TokenService,
-    private mailService: MailService,
     private configService: ConfigService,
   ) {}
 
@@ -99,11 +98,11 @@ export class AuthService {
               'Lỗi hệ thống khi chuẩn bị gửi lại email.',
             );
           }
-          await this.mailService.sendVerificationEmail(
-            existingUserByEmail.email,
-            existingUserByEmail.name,
-            existingUserByEmail.emailVerificationToken,
-          );
+          this.eventEmitter.emit('user.resend_verification', {
+            email: existingUserByEmail.email,
+            name: existingUserByEmail.name,
+            token: existingUserByEmail.emailVerificationToken,
+          });
           return {
             message:
               'Email đã được đăng ký nhưng chưa xác thực. Một email xác thực mới đã được gửi. Vui lòng kiểm tra hộp thư của bạn.',
@@ -185,11 +184,11 @@ export class AuthService {
           'Lỗi hệ thống: Không tìm thấy token xác thực để gửi email.',
         );
       }
-      await this.mailService.sendVerificationEmail(
-        newUser.email,
-        newUser.name,
-        newUser.emailVerificationToken,
-      );
+      this.eventEmitter.emit('user.registered', {
+        email: newUser.email,
+        name: newUser.name,
+        token: newUser.emailVerificationToken,
+      });
     } catch (emailError) {
       this.logger.error(
         `User ${newUser.email} created, but failed to send verification email:`,
@@ -369,11 +368,11 @@ export class AuthService {
           'Lỗi hệ thống khi chuẩn bị gửi lại email.',
         );
       }
-      await this.mailService.sendVerificationEmail(
-        user.email,
-        user.name,
-        user.emailVerificationToken,
-      );
+      this.eventEmitter.emit('user.resend_verification', {
+        email: user.email,
+        name: user.name,
+        token: user.emailVerificationToken,
+      });
       this.logger.log(`Resent verification email to ${user.email}`);
     } catch (emailError) {
       this.logger.error(
@@ -428,11 +427,11 @@ export class AuthService {
           'Lỗi hệ thống khi tạo token đặt lại mật khẩu.',
         );
       }
-      await this.mailService.sendPasswordResetEmail(
-        user.email,
-        user.name,
-        user.passwordResetToken,
-      );
+      this.eventEmitter.emit('user.forgot_password', {
+        email: user.email,
+        name: user.name,
+        token: user.passwordResetToken,
+      });
       this.logger.log(
         `Password reset process initiated for ${user.email}. Token: ${user.passwordResetToken}`,
       );

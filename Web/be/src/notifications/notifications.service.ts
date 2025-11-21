@@ -4,6 +4,12 @@ import { Model } from 'mongoose';
 import { Booking, BookingDocument } from '../bookings/schemas/booking.schema';
 import { MailService } from '../mail/mail.service';
 
+interface UserEventPayload {
+  email: string;
+  name: string;
+  token: string;
+}
+
 @Injectable()
 export class NotificationsService {
   private readonly logger = new Logger(NotificationsService.name);
@@ -94,7 +100,6 @@ export class NotificationsService {
       }
 
       if (populatedBooking.contactEmail) {
-        // await this.mailService.sendBookingCancellationEmail(populatedBooking);
         this.logger.log(
           `(Pretending to) Sent cancellation email for booking ${bookingIdString}`,
         );
@@ -108,6 +113,41 @@ export class NotificationsService {
       this.logger.error(
         `Failed to send cancellation notification for booking ID: ${bookingIdString}`,
         errorMessage,
+      );
+    }
+  }
+  async handleUserRegistered(payload: UserEventPayload) {
+    try {
+      await this.mailService.sendVerificationEmail(
+        payload.email,
+        payload.name,
+        payload.token,
+      );
+      this.logger.log(
+        `Successfully sent verification email for event to ${payload.email}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send verification email for event to ${payload.email}`,
+        error.stack,
+      );
+    }
+  }
+
+  async handleUserForgotPassword(payload: UserEventPayload) {
+    try {
+      await this.mailService.sendPasswordResetEmail(
+        payload.email,
+        payload.name,
+        payload.token,
+      );
+      this.logger.log(
+        `Successfully sent password reset email for event to ${payload.email}`,
+      );
+    } catch (error) {
+      this.logger.error(
+        `Failed to send password reset email for event to ${payload.email}`,
+        error.stack,
       );
     }
   }
