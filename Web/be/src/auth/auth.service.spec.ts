@@ -23,19 +23,17 @@ import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { TokenService } from './token/token.service';
 
-// --- MOCKING MODULES ---
 jest.mock('bcrypt', () => ({
   compare: jest.fn(),
   hash: jest.fn(),
 }));
 
-// --- MOCKING DEPENDENCIES ---
 const mockUsersService = {
   create: jest.fn(),
   findOneByEmail: jest.fn(),
   findOneByPhone: jest.fn(),
   findOneByCondition: jest.fn(),
-  sanitizeUser: jest.fn((user) => user), // Passthrough mock
+  sanitizeUser: jest.fn((user) => user),
 };
 
 const mockTokenService = {

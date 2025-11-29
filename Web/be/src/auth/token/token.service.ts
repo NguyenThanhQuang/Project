@@ -2,14 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { UserDocument } from 'src/users/schemas/user.schema';
 import { JwtPayload } from '../strategies/jwt.strategy';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class TokenService {
-  constructor(private readonly jwtService: JwtService) {}
-
-  /**
-   * Tạo ra một access token từ thông tin user
-   */
+  constructor(private readonly jwtService: JwtService) {}d
   generateAccessToken(user: UserDocument): string {
     const payload: JwtPayload = {
       email: user.email,
@@ -18,5 +15,9 @@ export class TokenService {
       companyId: user.companyId?.toString(),
     };
     return this.jwtService.sign(payload);
+  }
+
+  generateRandomToken(length: number = 32): string {
+    return randomBytes(length).toString('hex');
   }
 }
