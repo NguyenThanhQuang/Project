@@ -3,6 +3,7 @@ import { MongooseModule } from '@nestjs/mongoose';
 import { BookingsModule } from '../bookings/bookings.module';
 import { TripsModule } from '../trips/trips.module';
 import { ReviewsController } from './reviews.controller';
+import { ReviewsRepository } from './reviews.repository';
 import { ReviewsService } from './reviews.service';
 import { Review, ReviewSchema } from './schemas/review.schema';
 
@@ -13,7 +14,7 @@ import { Review, ReviewSchema } from './schemas/review.schema';
     forwardRef(() => TripsModule),
   ],
   controllers: [ReviewsController],
-  providers: [ReviewsService],
-  exports: [ReviewsService],
+  providers: [ReviewsService, ReviewsRepository],
+  exports: [ReviewsService, ReviewsRepository],
 })
 export class ReviewsModule {}

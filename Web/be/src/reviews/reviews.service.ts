@@ -6,9 +6,8 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/mongoose';
 import dayjs from 'dayjs';
-import { FilterQuery, Model, Types } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { TripStatus } from 'src/trips/schemas/trip.schema';
 import { BookingsService } from '../bookings/bookings.service';
@@ -17,12 +16,13 @@ import { CreateGuestReviewDto } from './dto/create-guest-review.dto';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { QueryReviewDto } from './dto/query-review.dto';
 import { UpdateUserReviewDto } from './dto/update-user-review.dto';
-import { Review, ReviewDocument } from './schemas/review.schema';
+import { ReviewsRepository } from './reviews.repository';
+import { ReviewDocument } from './schemas/review.schema';
 
 @Injectable()
 export class ReviewsService {
   constructor(
-    @InjectModel(Review.name) private reviewModel: Model<ReviewDocument>,
+    private readonly reviewsRepository: ReviewsRepository,
     private readonly bookingsService: BookingsService,
     private readonly tripsService: TripsService,
     private readonly configService: ConfigService,
@@ -43,7 +43,7 @@ export class ReviewsService {
         'Chỉ có thể đánh giá chuyến đi đã hoàn thành.',
       );
     }
-    const existingReview = await this.reviewModel.findOne({ bookingId }).exec();
+    const existingReview = await this.reviewsRepository.findOne({ bookingId });
     if (existingReview) {
       throw new ConflictException('Bạn đã đánh giá cho chuyến đi này rồi.');
     }
@@ -78,25 +78,26 @@ export class ReviewsService {
         'Chỉ có thể đánh giá chuyến đi đã hoàn thành.',
       );
     }
-    const existingReview = await this.reviewModel.findOne({ bookingId }).exec();
+
+    const existingReview = await this.reviewsRepository.findOne({ bookingId });
     if (existingReview) {
       throw new ConflictException('Bạn đã đánh giá cho chuyến đi này rồi.');
     }
 
-    const newReview = new this.reviewModel({
-      userId: user.userId,
-      tripId,
-      bookingId,
-      companyId: trip.companyId,
+    const newReviewData = {
+      userId: new Types.ObjectId(user.userId),
+      tripId: new Types.ObjectId(tripId),
+      bookingId: new Types.ObjectId(bookingId),
+      companyId: trip.companyId._id,
       rating,
       comment,
       isAnonymous: isAnonymous || false,
       displayName: createReviewDto.isAnonymous
         ? user.name.charAt(0).toUpperCase()
         : user.name,
-    });
+    };
 
-    const savedReview = await newReview.save();
+    const savedReview = await this.reviewsRepository.create(newReviewData);
 
     booking.reviewId = savedReview._id;
     await booking.save();
@@ -109,6 +110,7 @@ export class ReviewsService {
   ): Promise<ReviewDocument> {
     const { bookingId, tripId, rating, comment, isAnonymous, contactPhone } =
       createGuestReviewDto;
+
     const { booking, trip } = await this.validateAndPrepareReview(
       bookingId,
       tripId,
@@ -117,25 +119,20 @@ export class ReviewsService {
     if (booking.contactPhone !== contactPhone) {
       throw new ForbiddenException('Số điện thoại không khớp với đơn đặt vé.');
     }
-    // if (booking.userId) {
-    //   throw new BadRequestException(
-    //     'Đơn đặt vé này thuộc về một tài khoản đã đăng ký. Vui lòng đăng nhập để đánh giá.',
-    //   );
-    // }
 
-    const newReview = new this.reviewModel({
-      tripId,
-      bookingId,
-      companyId: trip.companyId,
+    const newReviewData = {
+      tripId: new Types.ObjectId(tripId),
+      bookingId: new Types.ObjectId(bookingId),
+      companyId: trip.companyId._id,
       rating,
       comment,
       isAnonymous: isAnonymous || false,
       displayName: isAnonymous
         ? booking.contactName.charAt(0).toUpperCase()
         : booking.contactName,
-    });
+    };
 
-    const savedReview = await newReview.save();
+    const savedReview = await this.reviewsRepository.create(newReviewData);
 
     booking.reviewId = savedReview._id;
     await booking.save();
@@ -173,7 +170,7 @@ export class ReviewsService {
     review.editCount += 1;
     review.lastEditedAt = new Date();
 
-    return review.save();
+    return this.reviewsRepository.save(review);
   }
 
   async findAll(queryDto: QueryReviewDto): Promise<ReviewDocument[]> {
@@ -189,11 +186,8 @@ export class ReviewsService {
       query.userId = new Types.ObjectId(queryDto.userId);
     }
     if (queryDto.rating) query.rating = queryDto.rating;
-    return this.reviewModel
-      .find(query)
-      .select('-userId')
-      .sort({ createdAt: -1 })
-      .exec();
+
+    return this.reviewsRepository.findAllPublic(query);
   }
 
   async findAllForAdmin(queryDto: QueryReviewDto): Promise<ReviewDocument[]> {
@@ -203,16 +197,11 @@ export class ReviewsService {
       query.companyId = new Types.ObjectId(queryDto.companyId);
     }
 
-    return this.reviewModel
-      .find(query)
-      .populate('userId', 'name email')
-      .populate('companyId', 'name')
-      .sort({ createdAt: -1 })
-      .exec();
+    return this.reviewsRepository.findAllWithDetails(query);
   }
 
   async findOne(id: string): Promise<ReviewDocument> {
-    const review = await this.reviewModel.findById(id).exec();
+    const review = await this.reviewsRepository.findById(id);
     if (!review) {
       throw new NotFoundException(`Không tìm thấy đánh giá với ID: ${id}`);
     }
@@ -223,9 +212,7 @@ export class ReviewsService {
     id: string,
     isVisible: boolean,
   ): Promise<ReviewDocument> {
-    const review = await this.reviewModel
-      .findByIdAndUpdate(id, { $set: { isVisible } }, { new: true })
-      .exec();
+    const review = await this.reviewsRepository.update(id, { isVisible });
 
     if (!review) {
       throw new NotFoundException(`Không tìm thấy đánh giá với ID: ${id}`);
@@ -235,7 +222,7 @@ export class ReviewsService {
 
   async remove(id: string): Promise<ReviewDocument> {
     const review = await this.findOne(id);
-    await review.deleteOne();
+    await this.reviewsRepository.delete(review);
     return review;
   }
 }
