@@ -9,6 +9,7 @@ import { Trip, TripSchema } from './schemas/trip.schema';
 import { TripSchedulerService } from './trip.scheduler.service';
 import { TripsController } from './trips.controller';
 import { TripsService } from './trips.service';
+import { TripsRepository } from './trips.repository';
 
 @Module({
   imports: [
@@ -22,7 +23,7 @@ import { TripsService } from './trips.service';
     LocationsModule,
   ],
   controllers: [TripsController],
-  providers: [TripsService, TripSchedulerService],
+  providers: [TripsService, TripSchedulerService, TripsRepository],
   exports: [TripsService],
 })
 export class TripsModule {}

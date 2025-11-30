@@ -31,12 +31,13 @@ import { UpdateTripDto } from './dto/update-trip.dto';
 import {
   Seat,
   SeatStatus,
-  Trip,
   TripDocument,
   TripStatus,
   TripStopInfo,
   TripStopStatus,
 } from './schemas/trip.schema';
+import { TripsRepository } from './trips.repository';
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -68,51 +69,74 @@ interface PopulatedPublicTrip {
   departureTime: Date;
   price: number;
 }
+
 @Injectable()
 export class TripsService {
   constructor(
-    @InjectModel(Trip.name) private readonly tripModel: Model<TripDocument>,
+    private readonly tripsRepository: TripsRepository,
     @InjectModel(Booking.name)
     private readonly bookingModel: Model<BookingDocument>,
+    @InjectModel(Review.name)
+    private readonly reviewModel: Model<ReviewDocument>,
     @InjectConnection() private readonly connection: Connection,
     private readonly eventEmitter: EventEmitter2,
     private readonly companiesService: CompaniesService,
     private readonly vehiclesService: VehiclesService,
     private readonly locationsService: LocationsService,
     private readonly mapsService: MapsService,
-    @InjectModel(Review.name)
-    private readonly reviewModel: Model<ReviewDocument>,
   ) {}
 
-  // private extractFilterOptions(trips: PopulatedTripForFiltering[]) {
-  //   const companies = new Map<string, { _id: string; name: string }>();
-  //   const vehicleTypes = new Set<string>();
-  //   let maxPrice = 0;
+  private generateSeatsFromVehicle(vehicle: VehicleDocument): Seat[] {
+    const generatedSeats: Seat[] = [];
 
-  //   trips.forEach((trip) => {
-  //     // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  //     const companyIdStr = trip.companyId._id.toString();
-  //     if (trip.companyId && typeof trip.companyId === 'object') {
-  //       const companyIdStr = trip.companyId._id.toString();
-  //       if (!companies.has(companyIdStr)) {
-  //         companies.set(companyIdStr, {
-  //           _id: companyIdStr,
-  //           name: trip.companyId.name,
-  //         });
-  //       }
-  //     }
-  //     vehicleTypes.add(trip.vehicleId.type);
-  //     if (trip.price > maxPrice) {
-  //       maxPrice = trip.price;
-  //     }
-  //   });
+    // Xử lý tầng 1
+    if (vehicle.seatMap && vehicle.seatMap.layout) {
+      vehicle.seatMap.layout.forEach((row) => {
+        if (Array.isArray(row)) {
+          row.forEach((seatElement) => {
+            if (seatElement !== null && seatElement !== undefined) {
+              generatedSeats.push({
+                seatNumber: String(seatElement),
+                status: SeatStatus.AVAILABLE,
+              });
+            }
+          });
+        }
+      });
+    }
 
-  //   return {
-  //     companies: Array.from(companies.values()),
-  //     vehicleTypes: Array.from(vehicleTypes),
-  //     maxPrice,
-  //   };
-  // }
+    // Xử lý tầng 2
+    if (
+      vehicle.floors > 1 &&
+      vehicle.seatMapFloor2 &&
+      vehicle.seatMapFloor2.layout
+    ) {
+      vehicle.seatMapFloor2.layout.forEach((row) => {
+        if (Array.isArray(row)) {
+          row.forEach((seatElement) => {
+            if (seatElement !== null && seatElement !== undefined) {
+              generatedSeats.push({
+                seatNumber: String(seatElement),
+                status: SeatStatus.AVAILABLE,
+              });
+            }
+          });
+        }
+      });
+    }
+
+    // Fallback nếu không có seatMap
+    if (generatedSeats.length === 0 && vehicle.totalSeats > 0) {
+      for (let i = 1; i <= vehicle.totalSeats; i++) {
+        generatedSeats.push({
+          seatNumber: `G${i}`,
+          status: SeatStatus.AVAILABLE,
+        });
+      }
+    }
+
+    return generatedSeats;
+  }
 
   async create(createTripDto: CreateTripDto): Promise<TripDocument> {
     const { companyId, vehicleId, route } = createTripDto;
@@ -180,15 +204,13 @@ export class TripsService {
       status: TripStopStatus.PENDING,
     }));
 
-    const existingTrip = await this.tripModel
-      .findOne({
-        companyId,
-        vehicleId,
-        'route.fromLocationId': fromLocationId,
-        'route.toLocationId': toLocationId,
-        departureTime,
-      })
-      .exec();
+    const existingTrip = await this.tripsRepository.findOne({
+      companyId,
+      vehicleId,
+      'route.fromLocationId': fromLocationId,
+      'route.toLocationId': toLocationId,
+      departureTime,
+    });
     // if (existingTrip) {
     //   throw new ConflictException(
     //     'Chuyến đi tương tự đã tồn tại (cùng nhà xe, xe, tuyến đường, giờ khởi hành).',
@@ -213,74 +235,9 @@ export class TripsService {
       seats,
     };
 
-    const createdTrip = new this.tripModel(newTripData);
-    return createdTrip.save();
+    return this.tripsRepository.create(newTripData);
   }
 
-  /**
-   * @description Hàm nội bộ để tạo danh sách ghế dựa trên thông tin của xe.
-   * Xử lý cả trường hợp xe có sơ đồ ghế chi tiết và trường hợp chỉ có tổng số ghế.
-   * @param {VehicleDocument} vehicle - Document của loại xe.
-   * @returns {Seat[]} - Mảng các ghế đã được khởi tạo.
-   */
-  private generateSeatsFromVehicle(vehicle: VehicleDocument): Seat[] {
-    const generatedSeats: Seat[] = [];
-
-    // Xử lý tầng 1
-    if (vehicle.seatMap && vehicle.seatMap.layout) {
-      vehicle.seatMap.layout.forEach((row) => {
-        if (Array.isArray(row)) {
-          row.forEach((seatElement) => {
-            if (seatElement !== null && seatElement !== undefined) {
-              generatedSeats.push({
-                seatNumber: String(seatElement),
-                status: SeatStatus.AVAILABLE,
-              });
-            }
-          });
-        }
-      });
-    }
-
-    // Xử lý tầng 2
-    if (
-      vehicle.floors > 1 &&
-      vehicle.seatMapFloor2 &&
-      vehicle.seatMapFloor2.layout
-    ) {
-      vehicle.seatMapFloor2.layout.forEach((row) => {
-        if (Array.isArray(row)) {
-          row.forEach((seatElement) => {
-            if (seatElement !== null && seatElement !== undefined) {
-              generatedSeats.push({
-                seatNumber: String(seatElement),
-                status: SeatStatus.AVAILABLE,
-              });
-            }
-          });
-        }
-      });
-    }
-
-    if (generatedSeats.length === 0 && vehicle.totalSeats > 0) {
-      for (let i = 1; i <= vehicle.totalSeats; i++) {
-        generatedSeats.push({
-          seatNumber: `G${i}`, // Generic seat number
-          status: SeatStatus.AVAILABLE,
-        });
-      }
-    }
-
-    return generatedSeats;
-  }
-
-  /**
-   * @description Tìm kiếm các chuyến đi cho người dùng public.
-   * Chuyển đổi tên tỉnh/thành phố thành location ID và truy vấn.
-   * Populate đầy đủ thông tin cần thiết cho giao diện người dùng.
-   * @param {QueryTripsDto} queryTripsDto - Dữ liệu tìm kiếm.
-   * @returns {Promise<any[]>} - Danh sách các chuyến đi phù hợp, đã được xử lý để hiển thị.
-   */
   async findPublicTrips(queryTripsDto: QueryTripsDto): Promise<any[]> {
     const { from, to, date } = queryTripsDto;
 
@@ -288,40 +245,21 @@ export class TripsService {
     const startOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).startOf('day').toDate();
     const endOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).endOf('day').toDate();
 
-    const tripsInDay = await this.tripModel
-      .find({
-        departureTime: { $gte: startOfDay, $lte: endOfDay },
-        status: TripStatus.SCHEDULED,
-      })
-      .populate<{ companyId: PopulatedPublicTrip['companyId'] }>({
-        path: 'companyId',
-        select: 'name logoUrl status',
-      })
-      .populate<{ vehicleId: PopulatedPublicTrip['vehicleId'] }>({
-        path: 'vehicleId',
-        select: 'type',
-      })
-      .populate<{ route: PopulatedPublicTrip['route'] }>({
-        path: 'route.fromLocationId',
-        select: 'name province',
-      })
-      .populate<{ route: PopulatedPublicTrip['route'] }>({
-        path: 'route.toLocationId',
-        select: 'name province',
-      })
-      .lean()
-      .exec();
-
-    const filteredTrips = (tripsInDay as PopulatedPublicTrip[]).filter(
-      (trip) => {
-        return (
-          trip.companyId?.status === CompanyStatus.ACTIVE &&
-          trip.route?.fromLocationId?.province?.toLowerCase() ===
-            from.toLowerCase() &&
-          trip.route?.toLocationId?.province?.toLowerCase() === to.toLowerCase()
-        );
-      },
+    const tripsInDay = await this.tripsRepository.findPublicTrips(
+      startOfDay,
+      endOfDay,
     );
+
+    const filteredTrips = (
+      tripsInDay as unknown as PopulatedPublicTrip[]
+    ).filter((trip) => {
+      return (
+        trip.companyId?.status === CompanyStatus.ACTIVE &&
+        trip.route?.fromLocationId?.province?.toLowerCase() ===
+          from.toLowerCase() &&
+        trip.route?.toLocationId?.province?.toLowerCase() === to.toLowerCase()
+      );
+    });
 
     if (filteredTrips.length === 0) {
       return [];
@@ -367,12 +305,7 @@ export class TripsService {
 
     return finalTrips;
   }
-  /**
-   * @description Tìm kiếm chuyến đi cho mục đích quản lý.
-   * Có thể lọc theo công ty.
-   * @param {string | Types.ObjectId} [companyId] - ID của công ty (tùy chọn).
-   * @returns {Promise<TripDocument[]>} - Danh sách chuyến đi.
-   */
+
   async findForManagement(
     companyId?: string | Types.ObjectId,
   ): Promise<TripDocument[]> {
@@ -383,48 +316,20 @@ export class TripsService {
       }
       query.companyId = new Types.ObjectId(companyId);
     }
-    return this.tripModel
-      .find(query)
-      .populate('companyId', 'name')
-      .populate('vehicleId', 'type vehicleNumber')
-      .populate('route.fromLocationId', 'name province')
-      .populate('route.toLocationId', 'name province')
-      .sort({ departureTime: -1 })
-      .exec();
+    return this.tripsRepository.findManagementTrips(query);
   }
 
-  /**
-   * @description Tìm một chuyến đi bằng ID và populate đầy đủ thông tin.
-   * @param {string | Types.ObjectId} id - ID của chuyến đi.
-   * @returns {Promise<TripDocument>} - Document chi tiết của chuyến đi.
-   */
   async findOne(id: string): Promise<TripDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new BadRequestException('ID chuyến đi không hợp lệ.');
     }
-    const trip = await this.tripModel
-      .findById(id)
-      .populate('companyId')
-      .populate(
-        'vehicleId',
-        'type seatMap seatMapFloor2 floors aisleAfterColumn totalSeats description',
-      )
-      .populate('route.fromLocationId')
-      .populate('route.toLocationId')
-      .populate({ path: 'route.stops.locationId', model: 'Location' })
-      .exec();
+    const trip = await this.tripsRepository.findByIdWithDetails(id);
     if (!trip) {
       throw new NotFoundException(`Không tìm thấy chuyến đi với ID: ${id}`);
     }
     return trip;
   }
 
-  /**
-   * @description Cập nhật một chuyến đi.
-   * @param {string} id - ID chuyến đi.
-   * @param {UpdateTripDto} updateTripDto - Dữ liệu cần cập nhật.
-   * @returns {Promise<TripDocument>} - Chuyến đi sau khi cập nhật.
-   */
   async update(
     id: string,
     updateTripDto: UpdateTripDto,
@@ -499,7 +404,7 @@ export class TripsService {
       }
     }
 
-    const updatedTrip = await existingTrip.save();
+    const updatedTrip = await this.tripsRepository.save(existingTrip);
 
     if (!updatedTrip) {
       throw new NotFoundException(
@@ -509,13 +414,6 @@ export class TripsService {
     return updatedTrip;
   }
 
-  /**
-   * @description Cập nhật trạng thái của một điểm dừng cụ thể trong chuyến đi.
-   * @param {string} tripId - ID chuyến đi.
-   * @param {string} stopLocationId - ID của địa điểm dừng.
-   * @param {TripStopStatus} newStatus - Trạng thái mới.
-   * @returns {Promise<TripDocument>} - Chuyến đi sau khi cập nhật.
-   */
   async updateTripStopStatus(
     tripId: string,
     stopLocationId: string,
@@ -530,39 +428,23 @@ export class TripsService {
         `Không tìm thấy điểm dừng với ID ${stopLocationId} trong chuyến đi này.`,
       );
     }
-    // Thêm logic validate, ví dụ: không thể nhảy từ 'pending' sang 'departed'.
     stopToUpdate.status = newStatus;
-    return trip.save();
+    return this.tripsRepository.save(trip);
   }
 
-  /**
-   * @description Xóa một chuyến đi.
-   * @param {string} id - ID chuyến đi cần xóa.
-   * @returns {Promise<TripDocument>} - Document của chuyến đi đã bị xóa.
-   */
   async remove(id: string): Promise<TripDocument> {
     const trip = await this.findOne(id);
-    // TODO: Khi có Bookings, cần kiểm tra xem có booking nào đang hoạt động không.
     await trip.deleteOne();
     return trip;
   }
 
-  /**
-   * @description Cập nhật trạng thái của nhiều ghế cùng lúc.
-   * Được sử dụng bởi module Bookings.
-   * @param {Types.ObjectId} tripId - ID chuyến đi.
-   * @param {string[]} seatNumbers - Mảng các số ghế.
-   * @param {SeatStatus} newStatus - Trạng thái mới.
-   * @param {Types.ObjectId} [bookingId] - ID của booking (nếu có).
-   * @returns {Promise<TripDocument>} - Chuyến đi sau khi cập nhật ghế.
-   */
   async updateSeatStatuses(
     tripId: Types.ObjectId,
     seatNumbers: string[],
     newStatus: SeatStatus,
     bookingId?: Types.ObjectId,
   ): Promise<TripDocument> {
-    const trip = await this.tripModel.findById(tripId).exec();
+    const trip = await this.tripsRepository.findById(tripId);
     if (!trip) {
       throw new NotFoundException(
         `Không tìm thấy chuyến đi với ID: ${tripId.toString()} để cập nhật ghế.`,
@@ -587,14 +469,14 @@ export class TripsService {
       seat.bookingId =
         newStatus === SeatStatus.AVAILABLE ? undefined : bookingId;
     }
-    return trip.save();
+    return this.tripsRepository.save(trip);
   }
 
   async cancel(tripId: string): Promise<TripDocument> {
     const session = await this.connection.startSession();
     session.startTransaction();
     try {
-      const trip = await this.tripModel.findById(tripId).session(session);
+      const trip = await this.tripsRepository.findById(tripId, session);
       if (!trip) {
         throw new NotFoundException(
           `Không tìm thấy chuyến đi với ID: ${tripId}`,
@@ -626,7 +508,7 @@ export class TripsService {
         this.eventEmitter.emit('booking.cancelled', booking.toObject());
       }
 
-      await trip.save({ session });
+      await this.tripsRepository.save(trip, session);
       await session.commitTransaction();
 
       return trip;
@@ -643,18 +525,13 @@ export class TripsService {
     ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
     return this.bookingModel.aggregate([
-      // 1. Lọc booking
       {
         $match: {
           status: BookingStatus.CONFIRMED,
           createdAt: { $gte: ninetyDaysAgo },
         },
       },
-
-      // 2. Chuyển đổi tripId
       { $addFields: { tripObjectId: { $toObjectId: '$tripId' } } },
-
-      // 3. Join với trips
       {
         $lookup: {
           from: 'trips',
@@ -663,11 +540,7 @@ export class TripsService {
           as: 'tripInfo',
         },
       },
-
-      // 4. Deconstruct tripInfo (nếu tripInfo rỗng, document sẽ bị loại bỏ ở đây)
       { $unwind: '$tripInfo' },
-
-      // 5. Chuyển đổi fromLocationId và toLocationId từ String sang ObjectId
       {
         $addFields: {
           'tripInfo.route.fromLocationObjectId': {
@@ -678,8 +551,6 @@ export class TripsService {
           },
         },
       },
-
-      // 6. Nhóm theo các ObjectId mới để đếm
       {
         $group: {
           _id: {
@@ -689,12 +560,8 @@ export class TripsService {
           bookingCount: { $sum: 1 },
         },
       },
-
-      // 7. Sắp xếp và giới hạn
       { $sort: { bookingCount: -1 } },
       { $limit: limit },
-
-      // 8. Join với 'locations'
       {
         $lookup: {
           from: 'locations',
@@ -711,12 +578,8 @@ export class TripsService {
           as: 'toLocation',
         },
       },
-
-      // 9. Deconstruct
       { $unwind: '$fromLocation' },
       { $unwind: '$toLocation' },
-
-      // 10. Định hình output
       {
         $project: {
           _id: 0,
@@ -727,13 +590,7 @@ export class TripsService {
       },
     ]);
   }
-  /**
-   * @description Kích hoạt hoặc vô hiệu hóa một mẫu chuyến đi lặp lại.
-   * Chỉ áp dụng cho các chuyến đi có isRecurrenceTemplate = true.
-   * @param {string | Types.ObjectId} tripId - ID của chuyến đi mẫu.
-   * @param {boolean} isActive - Trạng thái kích hoạt mới.
-   * @returns {Promise<TripDocument>} - Chuyến đi mẫu sau khi cập nhật.
-   */
+
   async toggleRecurrence(
     tripId: string | Types.ObjectId,
     isActive: boolean,
@@ -747,6 +604,6 @@ export class TripsService {
     }
 
     tripTemplate.isRecurrenceActive = isActive;
-    return tripTemplate.save();
+    return this.tripsRepository.save(tripTemplate);
   }
 }
