@@ -9,13 +9,13 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
-import { InjectModel } from '@nestjs/mongoose';
-import { FilterQuery, Model, Types } from 'mongoose';
+import { FilterQuery, Types } from 'mongoose';
 import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
 import { UsersService } from 'src/users/users.service';
 import { SeatStatus, TripStatus } from '../trips/schemas/trip.schema';
 import { TripsService } from '../trips/trips.service';
 import { UserDocument } from '../users/schemas/user.schema';
+import { BookingsRepository } from './bookings.repository'; // Import Repository
 import { CreateBookingHoldDto } from './dto/create-booking-hold.dto';
 import { LookupBookingDto } from './dto/lookup-booking.dto';
 import {
@@ -33,8 +33,9 @@ export interface BookingWithReviewStatus extends BookingDocument {
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
+
   constructor(
-    @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
+    private readonly bookingsRepository: BookingsRepository, // Sử dụng Repository
     private readonly tripsService: TripsService,
     private readonly configService: ConfigService,
     private readonly eventEmitter: EventEmitter2,
@@ -42,8 +43,7 @@ export class BookingsService {
   ) {}
 
   /**
-   * Bước 1: Giữ chỗ
-   * Tạo một booking tạm thời và cập nhật trạng thái ghế trên chuyến đi.
+   * Bước 1: Giữ chỗ (Hold)
    */
   async createHold(
     createDto: CreateBookingHoldDto,
@@ -51,6 +51,7 @@ export class BookingsService {
   ): Promise<BookingDocument> {
     const trip = await this.tripsService.findOne(createDto.tripId);
     if (!trip) throw new NotFoundException('Không tìm thấy chuyến đi.');
+
     if (trip.status !== TripStatus.SCHEDULED) {
       throw new BadRequestException(
         'Chuyến đi không ở trạng thái có thể đặt vé.',
@@ -64,7 +65,7 @@ export class BookingsService {
       );
     }
 
-    // Kiểm tra tính khả dụng của ghế và xử lý Lazy Check
+    // Validate ghế
     for (const seatNumber of seatNumbersToHold) {
       const seat = trip.seats.find((s) => s.seatNumber === seatNumber);
       if (!seat) {
@@ -79,16 +80,15 @@ export class BookingsService {
 
       if (seat.status === SeatStatus.HELD) {
         if (seat.bookingId) {
-          const holdingBooking = await this.bookingModel
-            .findById(seat.bookingId)
-            .exec();
+          // Kiểm tra xem booking giữ chỗ còn tồn tại không
+          const holdingBooking = await this.bookingsRepository.findById(
+            seat.bookingId,
+          );
           if (holdingBooking) {
             throw new ConflictException(
               `Ghế ${seatNumber} đang được giữ bởi một người khác.`,
             );
           }
-          // Nếu không tìm thấy holdingBooking (đã bị TTL xóa), ghế này hợp lệ để đặt.
-          // Ta sẽ cho phép đi tiếp, ghế sẽ được ghi đè bởi booking mới.
         }
       }
     }
@@ -121,11 +121,10 @@ export class BookingsService {
     );
     const heldUntil = new Date(Date.now() + holdDurationMinutes * 60 * 1000);
 
-    const newBooking = new this.bookingModel({
+    const bookingData: Partial<Booking> = {
       userId: bookingUserId,
       tripId: new Types.ObjectId(createDto.tripId),
       companyId: trip.companyId._id,
-      //companyId: trip.companyId,
       status: BookingStatus.HELD,
       paymentStatus: PaymentStatus.PENDING,
       heldUntil,
@@ -134,24 +133,51 @@ export class BookingsService {
       contactName: createDto.contactName,
       contactPhone: createDto.contactPhone,
       contactEmail: createDto.contactEmail,
-    });
+    };
 
+    let savedBooking: BookingDocument;
+
+    // 1. Tạo Booking trong DB trước
+    try {
+      savedBooking = await this.bookingsRepository.create(bookingData);
+    } catch (error) {
+      this.logger.error('Failed to create booking document', error);
+      throw new InternalServerErrorException('Lỗi khi khởi tạo đơn hàng.');
+    }
+
+    // 2. Cố gắng cập nhật trạng thái ghế sang HELD
     try {
       await this.tripsService.updateSeatStatuses(
         trip._id,
         seatNumbersToHold,
         SeatStatus.HELD,
-        newBooking._id,
+        savedBooking._id,
       );
-      return await newBooking.save();
+      return savedBooking;
     } catch (error) {
-      console.error('Error creating hold, attempting to release seats:', error);
-      await this.tripsService.updateSeatStatuses(
-        trip._id,
-        seatNumbersToHold,
-        SeatStatus.AVAILABLE,
-        newBooking._id,
-      );
+      this.logger.error('Error holding seats, rolling back booking:', error);
+
+      // ROLLBACK: Nếu giữ ghế thất bại, phải xóa Booking vừa tạo để tránh rác
+      // Dùng ép kiểu any để truy cập model hoặc bạn có thể thêm hàm delete vào BookingsRepository
+      const model = (this.bookingsRepository as any).bookingModel;
+      if (model && model.findByIdAndDelete) {
+        await model.findByIdAndDelete(savedBooking._id);
+      }
+
+      // Cố gắng nhả ghế (phòng trường hợp updateSeatStatuses chạy được một nửa)
+      try {
+        await this.tripsService.updateSeatStatuses(
+          trip._id,
+          seatNumbersToHold,
+          SeatStatus.AVAILABLE,
+        );
+      } catch (releaseError) {
+        this.logger.warn(
+          'Failed to explicit release seats during rollback',
+          releaseError,
+        );
+      }
+
       throw new InternalServerErrorException(
         'Lỗi khi giữ chỗ. Vui lòng thử lại.',
       );
@@ -159,7 +185,7 @@ export class BookingsService {
   }
 
   /**
-   * Bước 2: Xác nhận thanh toán và hoàn tất booking
+   * Bước 2: Xác nhận thanh toán (Confirm)
    */
   async confirmBooking(
     bookingId: string,
@@ -167,25 +193,22 @@ export class BookingsService {
     paymentMethod: string,
     transactionDateTime: string,
   ): Promise<BookingDocument> {
-    const booking = await this.findOne(bookingId);
+    const booking = await this.bookingsRepository.findById(bookingId);
     if (!booking) {
       throw new NotFoundException('Không tìm thấy đơn đặt vé.');
     }
 
-    // Kiểm tra xem booking đã được xử lý chưa để tránh webhook xử lý 2 lần
     if (booking.status === BookingStatus.CONFIRMED) {
       this.logger.warn(`Booking ${bookingId} is already confirmed. Skipping.`);
       return booking;
     }
 
-    // Chỉ xác nhận các booking đang ở trạng thái giữ chỗ
     if (booking.status !== BookingStatus.HELD) {
       throw new BadRequestException(
         'Chỉ có thể xác nhận đơn đặt vé đang ở trạng thái giữ chỗ.',
       );
     }
 
-    // Kiểm tra số tiền thanh toán có khớp không
     if (paidAmount < booking.totalAmount) {
       throw new BadRequestException(
         `Số tiền thanh toán (${paidAmount}) không khớp với tổng tiền đơn hàng (${booking.totalAmount}).`,
@@ -196,7 +219,8 @@ export class BookingsService {
 
     try {
       const tripIdAsObjectId = new Types.ObjectId(booking.tripId);
-      // Cập nhật trạng thái ghế trong chuyến đi thành 'booked'
+
+      // Cập nhật trạng thái ghế sang BOOKED
       await this.tripsService.updateSeatStatuses(
         tripIdAsObjectId,
         seatNumbers,
@@ -204,7 +228,7 @@ export class BookingsService {
         booking._id,
       );
 
-      // Cập nhật thông tin booking
+      // Cập nhật thông tin Booking
       booking.status = BookingStatus.CONFIRMED;
       booking.paymentStatus = PaymentStatus.PAID;
       booking.paymentMethod = paymentMethod;
@@ -212,7 +236,7 @@ export class BookingsService {
       booking.ticketCode = await this.generateTicketCode();
       booking.paymentGatewayTransactionId = transactionDateTime;
 
-      const savedBooking = await booking.save();
+      const savedBooking = await this.bookingsRepository.save(booking);
 
       this.eventEmitter.emit('booking.confirmed', savedBooking);
 
@@ -224,14 +248,13 @@ export class BookingsService {
   }
 
   /**
-   * Hủy một booking (do người dùng hoặc admin)
+   * Hủy vé (User hoặc Admin)
    */
   async cancelBooking(
     bookingId: string,
     user?: UserDocument,
   ): Promise<BookingDocument> {
     const booking = await this.findOne(bookingId, user);
-    if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt vé.');
 
     if (
       user &&
@@ -251,6 +274,8 @@ export class BookingsService {
     }
 
     const seatNumbers = booking.passengers.map((p) => p.seatNumber);
+
+    // Nhả ghế
     await this.tripsService.updateSeatStatuses(
       booking.tripId,
       seatNumbers,
@@ -259,15 +284,14 @@ export class BookingsService {
 
     booking.status = BookingStatus.CANCELLED;
 
-    const savedBooking = await booking.save();
+    const savedBooking = await this.bookingsRepository.save(booking);
     this.eventEmitter.emit('booking.cancelled', savedBooking);
 
-    // Cân nhắc logic hoàn tiền "ở đây"
     return savedBooking;
   }
 
   /**
-   * Tra cứu thông tin booking
+   * Tra cứu vé (Lookup)
    */
   async lookupBooking(
     lookupDto: LookupBookingDto,
@@ -284,26 +308,14 @@ export class BookingsService {
       query.ticketCode = identifier;
     }
 
-    const booking = await this.bookingModel
-      .findOne(query)
-      .populate({
-        path: 'tripId',
-        populate: [
-          { path: 'companyId', select: 'name logoUrl' },
-          { path: 'route.fromLocationId', select: 'name fullAddress' },
-          { path: 'route.toLocationId', select: 'name fullAddress' },
-        ],
-      })
-      .select('-paymentGatewayTransactionId')
-      .exec();
+    // Sử dụng hàm chuyên biệt của Repository để populate sâu
+    const booking = await this.bookingsRepository.findForLookup(query);
 
     if (!booking)
       throw new NotFoundException('Không tìm thấy thông tin đặt vé phù hợp.');
 
     const bookingObject = booking.toObject();
-
     const result = bookingObject as BookingWithReviewStatus;
-
     result.isReviewed = !!result.reviewId;
 
     return result;
@@ -317,24 +329,21 @@ export class BookingsService {
       for (let i = 0; i < length; i++) {
         result += chars.charAt(Math.floor(Math.random() * chars.length));
       }
-      const existing = await this.bookingModel
-        .findOne({ ticketCode: result })
-        .exec();
+      const existing = await this.bookingsRepository.findOne({
+        ticketCode: result,
+      });
       if (!existing) {
         break;
       }
     }
     return result;
   }
-  /**
-   * Hàm này dành cho việc tra cứu nội bộ giữa các service, bỏ qua kiểm tra quyền.
-   * Chỉ nên được gọi từ các service đáng tin cậy khác như ReviewsService.
-   */
+
   async findOne(
     id: string | Types.ObjectId,
     user?: AuthenticatedUser | UserDocument,
   ): Promise<BookingDocument> {
-    const booking = await this.bookingModel.findById(id).exec();
+    const booking = await this.bookingsRepository.findById(id);
 
     if (!booking) {
       throw new NotFoundException(
@@ -351,9 +360,10 @@ export class BookingsService {
     }
     return booking;
   }
+
   async findOneByCondition(
     condition: FilterQuery<Booking>,
   ): Promise<BookingDocument | null> {
-    return this.bookingModel.findOne(condition).exec();
+    return this.bookingsRepository.findByCondition(condition);
   }
 }
