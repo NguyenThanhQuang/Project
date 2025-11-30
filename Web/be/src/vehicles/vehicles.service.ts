@@ -13,15 +13,15 @@ import { UpdateVehicleDto } from './dto/update-vehicle.dto';
 import {
   SeatMap,
   SeatMapLayout,
-  Vehicle,
   VehicleDocument,
   VehicleStatus,
 } from './schemas/vehicle.schema';
+import { VehiclesRepository } from './vehicles.repository';
 
 @Injectable()
 export class VehiclesService {
   constructor(
-    @InjectModel(Vehicle.name) private vehicleModel: Model<VehicleDocument>,
+    private readonly vehiclesRepository: VehiclesRepository,
     @InjectModel(Trip.name) private tripModel: Model<TripDocument>,
     private readonly companiesService: CompaniesService,
   ) {}
@@ -75,7 +75,7 @@ export class VehiclesService {
   async create(createVehicleDto: CreateVehicleDto): Promise<VehicleDocument> {
     await this.companiesService.findOne(createVehicleDto.companyId);
 
-    const existingVehicleByNumber = await this.vehicleModel.findOne({
+    const existingVehicleByNumber = await this.vehiclesRepository.findOne({
       companyId: createVehicleDto.companyId,
       vehicleNumber: createVehicleDto.vehicleNumber.toUpperCase(),
     });
@@ -123,8 +123,7 @@ export class VehiclesService {
       seatMapFloor2,
     };
 
-    const newVehicle = new this.vehicleModel(newVehicleData);
-    return newVehicle.save();
+    return this.vehiclesRepository.create(newVehicleData);
   }
 
   async findAll(
@@ -139,20 +138,14 @@ export class VehiclesService {
       query.companyId = new Types.ObjectId(companyId);
     }
 
-    return this.vehicleModel
-      .find(query)
-      .populate('companyId', 'name code')
-      .exec();
+    return this.vehiclesRepository.findAll(query);
   }
 
   async findOne(id: string | Types.ObjectId): Promise<VehicleDocument> {
     if (!Types.ObjectId.isValid(id)) {
       throw new NotFoundException('ID loại xe không hợp lệ');
     }
-    const vehicle = await this.vehicleModel
-      .findById(id)
-      .populate('companyId', 'name code')
-      .exec();
+    const vehicle = await this.vehiclesRepository.findById(id);
     if (!vehicle) {
       throw new NotFoundException(
         `Không tìm thấy loại xe với ID "${id.toString()}"`,
@@ -172,13 +165,11 @@ export class VehiclesService {
       updateVehicleDto.vehicleNumber.toUpperCase() !==
         existingVehicle.vehicleNumber
     ) {
-      const conflictingVehicle = await this.vehicleModel
-        .findOne({
-          companyId: existingVehicle.companyId,
-          vehicleNumber: updateVehicleDto.vehicleNumber.toUpperCase(),
-          _id: { $ne: id },
-        })
-        .exec();
+      const conflictingVehicle = await this.vehiclesRepository.findOne({
+        companyId: existingVehicle.companyId,
+        vehicleNumber: updateVehicleDto.vehicleNumber.toUpperCase(),
+        _id: { $ne: id },
+      });
       if (conflictingVehicle) {
         throw new ConflictException(
           `Biển số xe "${updateVehicleDto.vehicleNumber}" đã được sử dụng bởi một xe khác trong nhà xe này.`,
@@ -262,7 +253,7 @@ export class VehiclesService {
         updateVehicleDto.vehicleNumber.toUpperCase();
     }
 
-    return existingVehicle.save();
+    return this.vehiclesRepository.save(existingVehicle);
   }
 
   async remove(id: string): Promise<VehicleDocument> {
@@ -282,8 +273,6 @@ export class VehiclesService {
     }
 
     vehicle.status = VehicleStatus.INACTIVE;
-    await vehicle.save();
-
-    return vehicle;
+    return this.vehiclesRepository.save(vehicle);
   }
 }

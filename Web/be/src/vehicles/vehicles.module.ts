@@ -5,6 +5,7 @@ import { CompaniesModule } from '../companies/companies.module';
 import { Vehicle, VehicleSchema } from './schemas/vehicle.schema';
 import { VehiclesController } from './vehicles.controller';
 import { VehiclesService } from './vehicles.service';
+import { VehiclesRepository } from './vehicles.repository';
 
 @Module({
   imports: [
@@ -15,7 +16,7 @@ import { VehiclesService } from './vehicles.service';
     CompaniesModule,
   ],
   controllers: [VehiclesController],
-  providers: [VehiclesService],
+  providers: [VehiclesService, VehiclesRepository],
   exports: [VehiclesService],
 })
 export class VehiclesModule {}
