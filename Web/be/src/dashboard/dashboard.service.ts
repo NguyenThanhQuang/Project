@@ -1,23 +1,14 @@
 import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { InjectModel } from '@nestjs/mongoose';
 import dayjs from 'dayjs';
-import { Model, Types } from 'mongoose';
-import {
-  Booking,
-  BookingDocument,
-  BookingStatus,
-} from '../bookings/schemas/booking.schema';
-import {
-  Company,
-  CompanyDocument,
-  CompanyStatus,
-} from '../companies/schemas/company.schema';
-import { Trip, TripDocument, TripStatus } from '../trips/schemas/trip.schema';
-import { User, UserDocument, UserRole } from '../users/schemas/user.schema';
+import { Types } from 'mongoose';
+import { BookingStatus } from '../bookings/schemas/booking.schema';
+import { CompanyStatus } from '../companies/schemas/company.schema';
+import { TripStatus } from '../trips/schemas/trip.schema';
+import { UserRole } from '../users/schemas/user.schema';
+import { DashboardRepository } from './dashboard.repository'; // Import Repository
 import { FinanceReportQueryDto } from './dto/finance-report-query.dto';
 import {
-  FacetResult,
   FinancialReportResponse,
   RecentBookingLean,
   Transaction,
@@ -26,12 +17,7 @@ import {
 @Injectable()
 export class DashboardService {
   constructor(
-    @InjectModel(Company.name)
-    private readonly companyModel: Model<CompanyDocument>,
-    @InjectModel(User.name) private readonly userModel: Model<UserDocument>,
-    @InjectModel(Booking.name)
-    private readonly bookingModel: Model<BookingDocument>,
-    @InjectModel(Trip.name) private readonly tripModel: Model<TripDocument>,
+    private readonly dashboardRepository: DashboardRepository, // Inject Repository
     private readonly configService: ConfigService,
   ) {}
 
@@ -42,33 +28,28 @@ export class DashboardService {
     const tomorrow = new Date(today);
     tomorrow.setDate(tomorrow.getDate() + 1);
 
-    type RevenueAggregateResult = { totalRevenue: number };
-
     const [
       totalCompanies,
       totalUsers,
       totalBookings,
-      revenueResult,
+      totalRevenue, // Lấy trực tiếp từ repo
       todayBookings,
       activeTrips,
       newCompaniesToday,
     ] = await Promise.all([
-      this.companyModel.countDocuments(),
-      this.userModel.countDocuments({ roles: UserRole.USER }),
-      this.bookingModel.countDocuments({ status: BookingStatus.CONFIRMED }),
-      this.bookingModel.aggregate<RevenueAggregateResult>([
-        { $match: { status: BookingStatus.CONFIRMED } },
-        { $group: { _id: null, totalRevenue: { $sum: '$totalAmount' } } },
-      ]),
-      this.bookingModel.countDocuments({
+      this.dashboardRepository.countCompanies(),
+      this.dashboardRepository.countUsers({ roles: UserRole.USER }),
+      this.dashboardRepository.countBookings({
+        status: BookingStatus.CONFIRMED,
+      }),
+      this.dashboardRepository.getTotalRevenue(),
+      this.dashboardRepository.countBookings({
         status: BookingStatus.CONFIRMED,
         createdAt: { $gte: today, $lt: tomorrow },
       }),
-      this.tripModel.countDocuments({ status: TripStatus.DEPARTED }),
-      this.companyModel.countDocuments({ status: CompanyStatus.ACTIVE }),
+      this.dashboardRepository.countTrips({ status: TripStatus.DEPARTED }),
+      this.dashboardRepository.countCompanies({ status: CompanyStatus.ACTIVE }),
     ]);
-
-    const totalRevenue = revenueResult[0]?.totalRevenue ?? 0;
 
     return {
       totalCompanies,
@@ -100,14 +81,11 @@ export class DashboardService {
     const commissionRate =
       this.configService.get<number>('COMMISSION_RATE') ?? 0.15;
 
-    const totalRevenueResult = await this.bookingModel.aggregate<{
-      total: number;
-    }>([
-      { $match: { status: BookingStatus.CONFIRMED } },
-      { $group: { _id: null, total: { $sum: '$totalAmount' } } },
-    ]);
-    const totalRevenueAllTime = totalRevenueResult[0]?.total ?? 0;
+    // 1. Get Total Revenue All Time
+    const totalRevenueAllTime =
+      await this.dashboardRepository.getTotalRevenue();
 
+    // 2. Prepare Match Query
     const baseMatch: any = {
       createdAt: { $gte: matchStartDate, $lte: matchEndDate },
       status: { $in: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED] },
@@ -117,81 +95,8 @@ export class DashboardService {
       baseMatch.companyId = new Types.ObjectId(companyId);
     }
 
-    const aggregationResult = await this.bookingModel.aggregate<FacetResult>([
-      {
-        $match: baseMatch,
-      },
-      {
-        $facet: {
-          mainStats: [
-            {
-              $group: {
-                _id: '$status',
-                totalAmount: { $sum: '$totalAmount' },
-                count: { $sum: 1 },
-              },
-            },
-          ],
-          topCompanies: [
-            { $match: { status: BookingStatus.CONFIRMED } },
-            {
-              $group: {
-                _id: '$companyId',
-                totalRevenue: { $sum: '$totalAmount' },
-                totalBookings: { $sum: 1 },
-              },
-            },
-            { $sort: { totalRevenue: -1 } },
-            { $limit: 5 },
-            {
-              $lookup: {
-                from: 'companies',
-                localField: '_id',
-                foreignField: '_id',
-                as: 'companyInfo',
-              },
-            },
-            { $unwind: '$companyInfo' },
-            {
-              $project: {
-                _id: 0,
-                companyId: '$_id',
-                name: '$companyInfo.name',
-                revenue: '$totalRevenue',
-                bookings: '$totalBookings',
-              },
-            },
-          ],
-          revenueChartData: [
-            { $match: { status: BookingStatus.CONFIRMED } },
-            {
-              $group: {
-                _id: {
-                  $dateToString: { format: '%Y-%m-%d', date: '$createdAt' },
-                },
-                revenue: { $sum: '$totalAmount' },
-                bookings: { $sum: 1 },
-              },
-            },
-            { $sort: { _id: 1 } },
-            {
-              $project: {
-                _id: 0,
-                date: '$_id',
-                revenue: '$revenue',
-                bookings: '$bookings',
-              },
-            },
-          ],
-        },
-      },
-    ]);
-
-    const stats = aggregationResult[0] ?? {
-      mainStats: [],
-      topCompanies: [],
-      revenueChartData: [],
-    };
+    // 3. Get Facet Data
+    const stats = await this.dashboardRepository.getFinancialFacet(baseMatch);
 
     const confirmedStats = stats.mainStats.find(
       (s) => s._id === BookingStatus.CONFIRMED,
@@ -204,6 +109,7 @@ export class DashboardService {
     const periodBookings = confirmedStats.count;
     const periodRefunds = cancelledStats.totalAmount;
 
+    // 4. Get Recent Bookings
     const recentBookingsQuery: any = {
       createdAt: { $gte: matchStartDate, $lte: matchEndDate },
     };
@@ -211,22 +117,8 @@ export class DashboardService {
       recentBookingsQuery.companyId = new Types.ObjectId(companyId);
     }
 
-    const recentBookings: RecentBookingLean[] = await this.bookingModel
-      .find(
-        recentBookingsQuery,
-        {
-          createdAt: 1,
-          status: 1,
-          totalAmount: 1,
-          ticketCode: 1,
-          companyId: 1,
-        },
-      )
-      .sort({ createdAt: -1 })
-      .limit(20)
-      .populate('companyId', 'name')
-      .lean<RecentBookingLean[]>()
-      .exec();
+    const recentBookings =
+      await this.dashboardRepository.findRecentBookings(recentBookingsQuery);
 
     const recentTransactions: Transaction[] = recentBookings.flatMap(
       (booking: RecentBookingLean): Transaction[] => {

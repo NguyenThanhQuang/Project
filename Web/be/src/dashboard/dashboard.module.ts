@@ -5,6 +5,7 @@ import { Booking, BookingSchema } from '../bookings/schemas/booking.schema';
 import { Company, CompanySchema } from '../companies/schemas/company.schema';
 import { User, UserSchema } from '../users/schemas/user.schema';
 import { DashboardController } from './dashboard.controller';
+import { DashboardRepository } from './dashboard.repository';
 import { DashboardService } from './dashboard.service';
 
 @Module({
@@ -17,6 +18,6 @@ import { DashboardService } from './dashboard.service';
     ]),
   ],
   controllers: [DashboardController],
-  providers: [DashboardService],
+  providers: [DashboardService, DashboardRepository],
 })
 export class DashboardModule {}
