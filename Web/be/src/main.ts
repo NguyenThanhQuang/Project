@@ -2,6 +2,8 @@ import { Logger, ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { AllExceptionsFilter } from './common/filters/http-exception.filter';
+import { TransformInterceptor } from './common/interceptors/transform.interceptor';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -11,6 +13,10 @@ async function bootstrap() {
   const port = configService.get<number>('PORT') ?? 3000;
 
   app.setGlobalPrefix('api');
+
+  app.useGlobalFilters(new AllExceptionsFilter());
+
+  app.useGlobalInterceptors(new TransformInterceptor());
 
   const clientUrl = configService.get<string>('CLIENT_URL');
   app.enableCors({
@@ -29,8 +35,7 @@ async function bootstrap() {
     }),
   );
 
-  // await app.listen(port, '0.0.0.0');
   await app.listen(port);
-  // logger.log(`Ứng dụng đang chạy tại: http://localhost:${port}/api`);
+  logger.log(`Ứng dụng đang chạy tại: http://localhost:${port}/api`);
 }
 void bootstrap();
