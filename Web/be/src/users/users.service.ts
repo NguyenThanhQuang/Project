@@ -1,9 +1,7 @@
 import {
   BadRequestException,
-  Inject,
   Injectable,
   NotFoundException,
-  forwardRef,
 } from '@nestjs/common';
 import { InjectConnection } from '@nestjs/mongoose';
 import { Connection, FilterQuery, Types } from 'mongoose';
@@ -29,7 +27,6 @@ export class UsersService {
     private readonly usersRepository: UsersRepository,
     private readonly tokenService: TokenService,
     @InjectConnection() private readonly connection: Connection,
-    @Inject(forwardRef(() => BookingsRepository))
     private readonly bookingsRepository: BookingsRepository,
   ) {}
 

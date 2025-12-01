@@ -1,5 +1,6 @@
 import { faker } from '@faker-js/faker/locale/vi';
 import { Injectable, Logger } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { InjectModel } from '@nestjs/mongoose';
 import dayjs from 'dayjs';
 import * as fs from 'fs/promises';
@@ -56,9 +57,17 @@ export class SeedService {
     private readonly reviewModel: Model<ReviewDocument>,
     private readonly vehiclesService: VehiclesService,
     private readonly tripsService: TripsService,
+    private readonly configService: ConfigService,
   ) {}
 
   public async seedAll() {
+    const nodeEnv = this.configService.get<string>('NODE_ENV');
+    if (nodeEnv === 'production') {
+      this.logger.error(
+        '❌ DANGER: Không được phép chạy Seed/Clear dữ liệu trên môi trường Production!',
+      );
+      return;
+    }
     this.logger.log('Bắt đầu quá trình seeding dữ liệu một cách cẩn thận...');
 
     await this.clearDatabase();

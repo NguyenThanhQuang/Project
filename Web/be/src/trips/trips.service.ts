@@ -240,35 +240,22 @@ export class TripsService {
 
   async findPublicTrips(queryTripsDto: QueryTripsDto): Promise<any[]> {
     const { from, to, date } = queryTripsDto;
-
     const VIETNAM_TIMEZONE = 'Asia/Ho_Chi_Minh';
     const startOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).startOf('day').toDate();
     const endOfDay = dayjs.tz(date, VIETNAM_TIMEZONE).endOf('day').toDate();
 
-    const tripsInDay = await this.tripsRepository.findPublicTrips(
+    const tripsRaw = await this.tripsRepository.findPublicTripsByCondition(
       startOfDay,
       endOfDay,
+      from,
+      to,
     );
 
-    const filteredTrips = (
-      tripsInDay as unknown as PopulatedPublicTrip[]
-    ).filter((trip) => {
-      return (
-        trip.companyId?.status === CompanyStatus.ACTIVE &&
-        trip.route?.fromLocationId?.province?.toLowerCase() ===
-          from.toLowerCase() &&
-        trip.route?.toLocationId?.province?.toLowerCase() === to.toLowerCase()
-      );
-    });
-
-    if (filteredTrips.length === 0) {
+    if (tripsRaw.length === 0) {
       return [];
     }
 
-    const companyIds = [
-      ...new Set(filteredTrips.map((trip) => trip.companyId?._id)),
-    ];
-
+    const companyIds = [...new Set(tripsRaw.map((t) => t.company._id))];
     const reviewStats = await this.reviewModel.aggregate([
       { $match: { companyId: { $in: companyIds } } },
       {
@@ -291,19 +278,21 @@ export class TripsService {
       });
     });
 
-    const finalTrips = filteredTrips.map((trip) => {
-      const companyStats = reviewStatsMap.get(trip.companyId!._id.toString());
+    return tripsRaw.map((trip) => {
+      const companyStats = reviewStatsMap.get(trip.company._id.toString());
+
+      const availableSeatsCount = trip.seats.filter(
+        (s: any) => s.status === 'available',
+      ).length;
+
       return {
         ...trip,
-        companyAvgRating: companyStats?.avgRating ?? null,
+        companyAvgRating: companyStats?.avgRating ?? 0,
         companyReviewCount: companyStats?.reviewCount ?? 0,
-        availableSeatsCount: trip.seats.filter(
-          (s) => s.status === SeatStatus.AVAILABLE,
-        ).length,
+        availableSeatsCount: availableSeatsCount,
+        seats: undefined,
       };
     });
-
-    return finalTrips;
   }
 
   async findForManagement(

@@ -101,4 +101,91 @@ export class TripsRepository {
   ): Promise<TripDocument> {
     return trip.save({ session });
   }
+
+  /**
+   * Tìm chuyến đi public, lọc theo địa điểm và ngày ngay tại Database
+   * Tránh load thừa dữ liệu vào RAM (Fix OOM issues)
+   */
+  async findPublicTripsByCondition(
+    startOfDay: Date,
+    endOfDay: Date,
+    fromProvinceKeyword: string,
+    toProvinceKeyword: string,
+  ): Promise<any[]> {
+    const fromRegex = new RegExp(fromProvinceKeyword, 'i');
+    const toRegex = new RegExp(toProvinceKeyword, 'i');
+
+    return this.tripModel
+      .aggregate([
+        {
+          $match: {
+            departureTime: { $gte: startOfDay, $lte: endOfDay },
+            status: TripStatus.SCHEDULED,
+          },
+        },
+        {
+          $lookup: {
+            from: 'locations',
+            localField: 'route.fromLocationId',
+            foreignField: '_id',
+            as: 'fromLocation',
+          },
+        },
+        { $unwind: '$fromLocation' },
+        {
+          $lookup: {
+            from: 'locations',
+            localField: 'route.toLocationId',
+            foreignField: '_id',
+            as: 'toLocation',
+          },
+        },
+        { $unwind: '$toLocation' },
+        {
+          $match: {
+            'fromLocation.province': { $regex: fromRegex },
+            'toLocation.province': { $regex: toRegex },
+          },
+        },
+        {
+          $lookup: {
+            from: 'companies',
+            localField: 'companyId',
+            foreignField: '_id',
+            as: 'company',
+          },
+        },
+        { $unwind: '$company' },
+        {
+          $match: {
+            'company.status': 'active',
+          },
+        },
+        {
+          $lookup: {
+            from: 'vehicles',
+            localField: 'vehicleId',
+            foreignField: '_id',
+            as: 'vehicle',
+          },
+        },
+        { $unwind: '$vehicle' },
+        {
+          $project: {
+            _id: 1,
+            departureTime: 1,
+            expectedArrivalTime: 1,
+            price: 1,
+            'company._id': 1,
+            'company.name': 1,
+            'company.logoUrl': 1,
+            'vehicle.type': 1,
+            'route.fromLocationId': '$fromLocation',
+            'route.toLocationId': '$toLocation',
+            seats: 1,
+          },
+        },
+      ])
+      .exec();
+  }
 }
