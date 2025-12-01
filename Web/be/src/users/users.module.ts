@@ -1,7 +1,8 @@
 import { Module, forwardRef } from '@nestjs/common';
 import { MongooseModule } from '@nestjs/mongoose';
-import { Booking, BookingSchema } from 'src/bookings/schemas/booking.schema';
+import { TokenModule } from 'src/auth/token/token.module';
 import { AuthModule } from '../auth/auth.module';
+import { BookingsModule } from '../bookings/bookings.module';
 import { User, UserSchema } from './schemas/user.schema';
 import { UsersController } from './users.controller';
 import { UsersRepository } from './users.repository';
@@ -9,11 +10,10 @@ import { UsersService } from './users.service';
 
 @Module({
   imports: [
-    MongooseModule.forFeature([
-      { name: User.name, schema: UserSchema },
-      { name: Booking.name, schema: BookingSchema },
-    ]),
+    MongooseModule.forFeature([{ name: User.name, schema: UserSchema }]),
     forwardRef(() => AuthModule),
+    forwardRef(() => BookingsModule),
+    TokenModule,
   ],
   controllers: [UsersController],
   providers: [UsersService, UsersRepository],

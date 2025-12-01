@@ -31,6 +31,12 @@ export class UsersRepository {
     return this.userModel.findById(id).exec();
   }
 
+  async findByIdWithPassword(
+    id: string | Types.ObjectId,
+  ): Promise<UserDocument | null> {
+    return this.userModel.findById(id).select('+passwordHash').exec();
+  }
+
   async update(
     id: string | Types.ObjectId,
     updateData: UpdateQuery<UserDocument>,

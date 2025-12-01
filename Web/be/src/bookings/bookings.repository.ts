@@ -63,4 +63,28 @@ export class BookingsRepository {
   ): Promise<BookingDocument> {
     return booking.save({ session });
   }
+
+  /**
+   * Lấy danh sách booking theo UserId kèm theo thông tin chi tiết (Populate)
+   */
+  async findByUserId(
+    userId: string | Types.ObjectId,
+  ): Promise<BookingDocument[]> {
+    const userObjectId =
+      typeof userId === 'string' ? new Types.ObjectId(userId) : userId;
+
+    return this.bookingModel
+      .find({ userId: userObjectId })
+      .populate({
+        path: 'tripId',
+        select: 'departureTime route companyId status',
+        populate: [
+          { path: 'route.fromLocationId', select: 'name fullAddress' },
+          { path: 'route.toLocationId', select: 'name fullAddress' },
+          { path: 'companyId', select: 'name logoUrl' },
+        ],
+      })
+      .sort({ createdAt: -1 })
+      .exec();
+  }
 }
