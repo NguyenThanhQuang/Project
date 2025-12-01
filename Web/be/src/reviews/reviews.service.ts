@@ -9,6 +9,7 @@ import { ConfigService } from '@nestjs/config';
 import dayjs from 'dayjs';
 import { FilterQuery, Types } from 'mongoose';
 import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
+import { BUSINESS_CONSTANTS } from 'src/common/constants/business.constants';
 import { TripStatus } from 'src/trips/schemas/trip.schema';
 import { BookingsService } from '../bookings/bookings.service';
 import { TripsService } from '../trips/trips.service';
@@ -158,8 +159,9 @@ export class ReviewsService {
 
     const editWindowDays = this.configService.get<number>(
       'REVIEW_EDIT_WINDOW_DAYS',
-      7,
+      BUSINESS_CONSTANTS.REVIEW.EDIT_WINDOW_DAYS,
     );
+
     if (dayjs().diff(dayjs(review.createdAt), 'day') > editWindowDays) {
       throw new ForbiddenException(
         `Bạn chỉ có thể sửa đánh giá trong vòng ${editWindowDays} ngày sau khi đăng.`,

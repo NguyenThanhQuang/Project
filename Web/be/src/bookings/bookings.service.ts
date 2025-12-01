@@ -25,6 +25,7 @@ import {
   PassengerInfo,
   PaymentStatus,
 } from './schemas/booking.schema';
+import { BUSINESS_CONSTANTS } from 'src/common/constants/business.constants';
 
 export interface BookingWithReviewStatus extends BookingDocument {
   isReviewed: boolean;
@@ -117,8 +118,9 @@ export class BookingsService {
 
     const holdDurationMinutes = this.configService.get<number>(
       'SEAT_HOLD_DURATION_MINUTES',
-      15,
+      BUSINESS_CONSTANTS.BOOKING.SEAT_HOLD_DURATION_MINUTES,
     );
+    
     const heldUntil = new Date(Date.now() + holdDurationMinutes * 60 * 1000);
 
     const bookingData: Partial<Booking> = {

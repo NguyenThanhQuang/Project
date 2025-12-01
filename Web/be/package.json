@@ -32,6 +32,7 @@
     "@nestjs/passport": "^11.0.5",
     "@nestjs/platform-express": "^11.0.1",
     "@nestjs/schedule": "^6.0.1",
+    "@nestjs/terminus": "^11.0.0",
     "@payos/node": "^1.0.10",
     "axios": "^1.10.0",
     "bcrypt": "^6.0.0",

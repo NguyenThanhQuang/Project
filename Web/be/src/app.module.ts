@@ -22,6 +22,7 @@ import { ReviewsModule } from './reviews/reviews.module';
 import { TripsModule } from './trips/trips.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
+import { HealthModule } from './health/health.module';
 
 @Module({
   imports: [
@@ -106,6 +107,7 @@ import { VehiclesModule } from './vehicles/vehicles.module';
     PaymentsModule,
     ReviewsModule,
     UrlBuilderModule,
+    HealthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
