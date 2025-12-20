@@ -1,18 +1,6 @@
-import { useState } from "react";
-import {
-  User,
-  Lock,
-  Phone,
-  Mail,
-  MapPin,
-  FileText,
-  ArrowLeft,
-  Upload,
-  Car,
-  Camera,
-  X,
-} from "lucide-react";
-import { useLanguage } from "../LanguageContext";
+import { useState } from 'react';
+import { User, Lock, Phone, Mail, MapPin, FileText, ArrowLeft, Upload, Car, Camera, X } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 interface DriverRegisterProps {
   onRegisterSuccess: () => void;
@@ -20,22 +8,18 @@ interface DriverRegisterProps {
   onBackToHome: () => void;
 }
 
-export function DriverRegister({
-  onRegisterSuccess,
-  onBackToLogin,
-  onBackToHome,
-}: DriverRegisterProps) {
+export function DriverRegister({ onRegisterSuccess, onBackToLogin, onBackToHome }: DriverRegisterProps) {
   const { t } = useLanguage();
   const [formData, setFormData] = useState({
-    fullName: "",
-    phone: "",
-    email: "",
-    address: "",
-    licenseNumber: "",
-    experience: "",
-    username: "",
-    password: "",
-    confirmPassword: "",
+    fullName: '',
+    phone: '',
+    email: '',
+    address: '',
+    licenseNumber: '',
+    experience: '',
+    username: '',
+    password: '',
+    confirmPassword: ''
   });
   const [avatarPreview, setAvatarPreview] = useState<string | null>(null);
   const [licensePreview, setLicensePreview] = useState<string | null>(null);
@@ -43,15 +27,15 @@ export function DriverRegister({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    
     // Validation
     if (formData.password !== formData.confirmPassword) {
-      alert(t("passwordMismatch"));
+      alert(t('passwordMismatch'));
       return;
     }
 
     if (formData.password.length < 6) {
-      alert(t("passwordTooShort"));
+      alert(t('passwordTooShort'));
       return;
     }
 
@@ -59,18 +43,16 @@ export function DriverRegister({
 
     // Simulate registration
     setTimeout(() => {
-      alert(t("registrationSuccessMessage"));
+      alert(t('registrationSuccessMessage'));
       onRegisterSuccess();
       setIsLoading(false);
     }, 1500);
   };
 
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
-  ) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({
       ...formData,
-      [e.target.name]: e.target.value,
+      [e.target.name]: e.target.value
     });
   };
 
@@ -120,13 +102,13 @@ export function DriverRegister({
             className="flex items-center space-x-2 text-white hover:text-blue-100 transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>{t("backToLoginPage")}</span>
+            <span>{t('backToLoginPage')}</span>
           </button>
           <button
             onClick={onBackToHome}
             className="text-white hover:text-blue-100 transition-all text-sm"
           >
-            {t("backToHomePage")} →
+            {t('backToHomePage')} →
           </button>
         </div>
 
@@ -138,10 +120,10 @@ export function DriverRegister({
               <Car className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl text-gray-900 dark:text-white mb-2">
-              {t("driverRegistrationTitle")}
+              {t('driverRegistrationTitle')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              {t("driverRegistrationSubtitle")}
+              {t('driverRegistrationSubtitle')}
             </p>
           </div>
 
@@ -151,9 +133,9 @@ export function DriverRegister({
             <div>
               <h3 className="text-lg text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
                 <Camera className="w-5 h-5" />
-                <span>{t("avatarSection")}</span>
+                <span>{t('avatarSection')}</span>
               </h3>
-
+              
               <div className="flex items-center space-x-6">
                 <div className="relative">
                   {avatarPreview ? (
@@ -177,12 +159,12 @@ export function DriverRegister({
                     </div>
                   )}
                 </div>
-
+                
                 <div className="flex-1">
                   <label className="cursor-pointer">
                     <div className="px-6 py-3 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-xl hover:shadow-lg transition-all inline-flex items-center space-x-2">
                       <Camera className="w-5 h-5" />
-                      <span>{t("chooseAvatar")}</span>
+                      <span>{t('chooseAvatar')}</span>
                     </div>
                     <input
                       type="file"
@@ -192,7 +174,7 @@ export function DriverRegister({
                     />
                   </label>
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                    {t("imageFormat")}
+                    {t('imageFormat')}
                   </p>
                 </div>
               </div>
@@ -202,21 +184,20 @@ export function DriverRegister({
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-lg text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
                 <User className="w-5 h-5" />
-                <span>{t("personalInfoSection")}</span>
+                <span>{t('personalInfoSection')}</span>
               </h3>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("fullNameLabel")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('fullNameLabel')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <input
                     type="text"
                     name="fullName"
                     value={formData.fullName}
                     onChange={handleChange}
-                    placeholder={t("fullNamePlaceholder")}
+                    placeholder={t('fullNamePlaceholder')}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                     required
                   />
@@ -224,8 +205,7 @@ export function DriverRegister({
 
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("phoneLabel")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('phoneLabel')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <div className="relative">
                     <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -234,7 +214,7 @@ export function DriverRegister({
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      placeholder={t("phonePlaceholder")}
+                      placeholder={t('phonePlaceholder')}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                       required
                     />
@@ -243,8 +223,7 @@ export function DriverRegister({
 
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("emailField")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('emailField')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <div className="relative">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -253,7 +232,7 @@ export function DriverRegister({
                       name="email"
                       value={formData.email}
                       onChange={handleChange}
-                      placeholder={t("emailPlaceholder")}
+                      placeholder={t('emailPlaceholder')}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                       required
                     />
@@ -262,8 +241,7 @@ export function DriverRegister({
 
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("addressLabel")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('addressLabel')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <div className="relative">
                     <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -272,7 +250,7 @@ export function DriverRegister({
                       name="address"
                       value={formData.address}
                       onChange={handleChange}
-                      placeholder={t("addressPlaceholder")}
+                      placeholder={t('addressPlaceholder')}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                       required
                     />
@@ -285,21 +263,20 @@ export function DriverRegister({
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-lg text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
                 <FileText className="w-5 h-5" />
-                <span>{t("professionalInfoSection")}</span>
+                <span>{t('professionalInfoSection')}</span>
               </h3>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("licenseNumberField")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('licenseNumberField')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <input
                     type="text"
                     name="licenseNumber"
                     value={formData.licenseNumber}
                     onChange={handleChange}
-                    placeholder={t("licenseNumberPlaceholder")}
+                    placeholder={t('licenseNumberPlaceholder')}
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                     required
                   />
@@ -307,15 +284,14 @@ export function DriverRegister({
 
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("experienceLabel")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('experienceLabel')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <input
                     type="number"
                     name="experience"
                     value={formData.experience}
                     onChange={handleChange}
-                    placeholder={t("experiencePlaceholder")}
+                    placeholder={t('experiencePlaceholder')}
                     min="0"
                     className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                     required
@@ -324,10 +300,9 @@ export function DriverRegister({
 
                 <div className="md:col-span-2">
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("licenseImageLabel")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('licenseImageLabel')} <span className="text-red-500">{t('required')}</span>
                   </label>
-
+                  
                   {licensePreview ? (
                     <div className="relative group">
                       <img
@@ -348,10 +323,10 @@ export function DriverRegister({
                       <div className="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-xl p-8 text-center hover:border-blue-500 dark:hover:border-blue-400 transition-all bg-gray-50 dark:bg-gray-700/50">
                         <Upload className="w-10 h-10 text-gray-400 mx-auto mb-3" />
                         <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">
-                          {t("uploadLicenseImage")}
+                          {t('uploadLicenseImage')}
                         </p>
                         <p className="text-xs text-gray-500 dark:text-gray-500">
-                          {t("imageFormat")}
+                          {t('imageFormat')}
                         </p>
                       </div>
                       <input
@@ -371,14 +346,13 @@ export function DriverRegister({
             <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
               <h3 className="text-lg text-gray-900 dark:text-white mb-4 flex items-center space-x-2">
                 <Lock className="w-5 h-5" />
-                <span>{t("accountInfoSection")}</span>
+                <span>{t('accountInfoSection')}</span>
               </h3>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("usernameField")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('usernameField')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <div className="relative">
                     <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -387,7 +361,7 @@ export function DriverRegister({
                       name="username"
                       value={formData.username}
                       onChange={handleChange}
-                      placeholder={t("usernamePlaceholder")}
+                      placeholder={t('usernamePlaceholder')}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                       required
                     />
@@ -396,8 +370,7 @@ export function DriverRegister({
 
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("passwordField")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('passwordField')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -406,7 +379,7 @@ export function DriverRegister({
                       name="password"
                       value={formData.password}
                       onChange={handleChange}
-                      placeholder={t("passwordPlaceholder")}
+                      placeholder={t('passwordPlaceholder')}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                       required
                     />
@@ -415,8 +388,7 @@ export function DriverRegister({
 
                 <div>
                   <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                    {t("confirmPasswordField")}{" "}
-                    <span className="text-red-500">{t("required")}</span>
+                    {t('confirmPasswordField')} <span className="text-red-500">{t('required')}</span>
                   </label>
                   <div className="relative">
                     <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -425,7 +397,7 @@ export function DriverRegister({
                       name="confirmPassword"
                       value={formData.confirmPassword}
                       onChange={handleChange}
-                      placeholder={t("confirmPasswordPlaceholder")}
+                      placeholder={t('confirmPasswordPlaceholder')}
                       className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                       required
                     />
@@ -443,15 +415,7 @@ export function DriverRegister({
                   className="w-5 h-5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 mt-1"
                 />
                 <span className="text-sm text-gray-600 dark:text-gray-400">
-                  {t("agreeToTerms")}{" "}
-                  <a href="#" className="text-blue-600 hover:underline">
-                    {t("termsAndConditions")}
-                  </a>{" "}
-                  {t("and")}{" "}
-                  <a href="#" className="text-blue-600 hover:underline">
-                    {t("privacyPolicyLink")}
-                  </a>{" "}
-                  {t("ofVeXe")}
+                  {t('agreeToTerms')} <a href="#" className="text-blue-600 hover:underline">{t('termsAndConditions')}</a> {t('and')} <a href="#" className="text-blue-600 hover:underline">{t('privacyPolicyLink')}</a> {t('ofVeXe')}
                 </span>
               </label>
             </div>
@@ -465,10 +429,10 @@ export function DriverRegister({
               {isLoading ? (
                 <span className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>{t("processing")}</span>
+                  <span>{t('processing')}</span>
                 </span>
               ) : (
-                t("registerButton")
+                t('registerButton')
               )}
             </button>
           </form>
@@ -476,8 +440,7 @@ export function DriverRegister({
           {/* Info Note */}
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-              <strong>{t("registrationNote")}</strong>{" "}
-              {t("registrationNoteText")}
+              <strong>{t('registrationNote')}</strong> {t('registrationNoteText')}
             </p>
           </div>
         </div>

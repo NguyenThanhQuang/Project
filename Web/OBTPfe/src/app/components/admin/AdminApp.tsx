@@ -51,24 +51,24 @@ interface AdminAppProps {
   onLogout?: () => void;
 }
 
-export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
+export function AdminApp({
+  adminType = "company",
+  onLogout,
+}: AdminAppProps) {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [adminData, setAdminData] = useState({
-    name: "",
-    id: "",
-    email: "",
+    name: '',
+    id: '',
+    email: ''
   });
-  const [currentPage, setCurrentPage] = useState<Page>("dashboard");
+  const [currentPage, setCurrentPage] =
+    useState<Page>("dashboard");
   const [sidebarOpen, setSidebarOpen] = useState(true);
-
+  
   const { theme, toggleTheme } = useTheme();
   const { language, toggleLanguage, t } = useLanguage();
 
-  const handleLoginSuccess = (data: {
-    name: string;
-    id: string;
-    email: string;
-  }) => {
+  const handleLoginSuccess = (data: { name: string; id: string; email: string }) => {
     setAdminData(data);
     setIsLoggedIn(true);
   };
@@ -80,7 +80,7 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    setCurrentPage("dashboard");
+    setCurrentPage('dashboard');
   };
 
   // Show login screen if not logged in
@@ -147,7 +147,9 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
   ];
 
   const menuItems =
-    adminType === "company" ? companyMenuItems : systemMenuItems;
+    adminType === "company"
+      ? companyMenuItems
+      : systemMenuItems;
 
   const renderContent = () => {
     if (currentPage === "dashboard") {
@@ -161,7 +163,7 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
     if (currentPage === "vehicles") {
       return <VehicleManagement />;
     }
-
+    
     if (currentPage === "drivers") {
       return <DriverManagement />;
     }
@@ -185,11 +187,11 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
     if (currentPage === "users" && adminType === "system") {
       return <UserManagement />;
     }
-
+    
     if (currentPage === "reviews" && adminType === "system") {
       return <ReviewManagement />;
     }
-
+    
     if (currentPage === "settings") {
       return <SettingsPage />;
     }
@@ -200,11 +202,10 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
         <div className="text-center">
           <div className="text-6xl mb-4">🚧</div>
           <h2 className="text-gray-900 dark:text-white mb-2">
-            {t("underDevelopment")}
+            {t('underDevelopment')}
           </h2>
           <p className="text-gray-600 dark:text-gray-400">
-            {t(menuItems.find((m) => m.page === currentPage)?.label || "")}{" "}
-            {t("pageUnderConstruction")}
+            {t(menuItems.find((m) => m.page === currentPage)?.label || '')} {t('pageUnderConstruction')}
           </p>
         </div>
       </div>
@@ -215,9 +216,7 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
     <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
       {/* Sidebar */}
       <aside
-        className={`${
-          sidebarOpen ? "w-64" : "w-20"
-        } bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col`}
+        className={`${sidebarOpen ? "w-64" : "w-20"} bg-white dark:bg-gray-800 border-r border-gray-200 dark:border-gray-700 transition-all duration-300 flex flex-col`}
       >
         {/* Logo */}
         <div className="h-20 flex items-center justify-between px-4 border-b border-gray-200 dark:border-gray-700">
@@ -271,15 +270,15 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
           <button
             onClick={toggleTheme}
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-            title={t(theme === "dark" ? "switchToLight" : "switchToDark")}
+            title={t(theme === 'dark' ? 'switchToLight' : 'switchToDark')}
           >
-            {theme === "dark" ? (
+            {theme === 'dark' ? (
               <Sun className="w-5 h-5 text-yellow-500" />
             ) : (
               <Moon className="w-5 h-5 text-blue-600" />
             )}
             {sidebarOpen && (
-              <span>{t(theme === "dark" ? "lightTheme" : "darkTheme")}</span>
+              <span>{t(theme === 'dark' ? 'lightTheme' : 'darkTheme')}</span>
             )}
           </button>
 
@@ -287,15 +286,11 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
           <button
             onClick={toggleLanguage}
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
-            title={t(
-              language === "vi" ? "switchToEnglish" : "switchToVietnamese"
-            )}
+            title={t(language === 'vi' ? 'switchToEnglish' : 'switchToVietnamese')}
           >
             <Globe className="w-5 h-5 text-green-600 dark:text-green-400" />
             {sidebarOpen && (
-              <span className="uppercase">
-                {language === "vi" ? "EN" : "VI"}
-              </span>
+              <span className="uppercase">{language === 'vi' ? 'EN' : 'VI'}</span>
             )}
           </button>
         </div>
@@ -307,13 +302,15 @@ export function AdminApp({ adminType = "company", onLogout }: AdminAppProps) {
             className="w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
           >
             <LogOut className="w-5 h-5" />
-            {sidebarOpen && <span>{t("logout")}</span>}
+            {sidebarOpen && <span>{t('logout')}</span>}
           </button>
         </div>
       </aside>
 
       {/* Main Content */}
-      <main className="flex-1 overflow-y-auto">{renderContent()}</main>
+      <main className="flex-1 overflow-y-auto">
+        {renderContent()}
+      </main>
     </div>
   );
 }

@@ -1,14 +1,7 @@
-import {
-  MapPin,
-  TrendingUp,
-  ChevronLeft,
-  ChevronRight,
-  Clock,
-  DollarSign,
-} from "lucide-react";
-import { useLanguage } from "./LanguageContext";
-import { ImageWithFallback } from "./figma/ImageWithFallback";
-import { useState, useEffect } from "react";
+import { MapPin, TrendingUp, ChevronLeft, ChevronRight, Clock, DollarSign } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
+import { ImageWithFallback } from './figma/ImageWithFallback';
+import { useState, useEffect } from 'react';
 
 interface PopularRoutesProps {
   onRouteClick?: (from: string, to: string) => void;
@@ -20,65 +13,59 @@ export function PopularRoutes({ onRouteClick }: PopularRoutesProps) {
 
   const routes = [
     {
-      from: "TP. Hồ Chí Minh",
-      to: "Đà Lạt",
-      trips: "45",
-      price: "220.000đ",
-      duration: "6h 30m",
-      image:
-        "https://images.unsplash.com/photo-1678099006439-dba9e4d3f9f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxEYSUyMExhdCUyMG1vdW50YWlufGVufDF8fHx8MTc2NTI0NTA0Nnww&ixlib=rb-4.1.0&q=80&w=1080",
-      gradient: "from-blue-500 to-cyan-500",
+      from: 'TP. Hồ Chí Minh',
+      to: 'Đà Lạt',
+      trips: '45',
+      price: '220.000đ',
+      duration: '6h 30m',
+      image: 'https://images.unsplash.com/photo-1678099006439-dba9e4d3f9f5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxEYSUyMExhdCUyMG1vdW50YWlufGVufDF8fHx8MTc2NTI0NTA0Nnww&ixlib=rb-4.1.0&q=80&w=1080',
+      gradient: 'from-blue-500 to-cyan-500'
     },
     {
-      from: "TP. Hồ Chí Minh",
-      to: "Nha Trang",
-      trips: "38",
-      price: "280.000đ",
-      duration: "8h",
-      image:
-        "https://images.unsplash.com/photo-1687025846473-9bd391575faa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxOaGElMjBUcmFuZyUyMGNvYXN0bGluZXxlbnwxfHx8fDE3NjUyNDUwNDZ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      gradient: "from-teal-500 to-emerald-500",
+      from: 'TP. Hồ Chí Minh',
+      to: 'Nha Trang',
+      trips: '38',
+      price: '280.000đ',
+      duration: '8h',
+      image: 'https://images.unsplash.com/photo-1687025846473-9bd391575faa?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxOaGElMjBUcmFuZyUyMGNvYXN0bGluZXxlbnwxfHx8fDE3NjUyNDUwNDZ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      gradient: 'from-teal-500 to-emerald-500'
     },
     {
-      from: "TP. Hồ Chí Minh",
-      to: "Vũng Tàu",
-      trips: "52",
-      price: "120.000đ",
-      duration: "2h 30m",
-      image:
-        "https://images.unsplash.com/photo-1663076224163-14f585360f50?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxWdW5nJTIwVGF1JTIwc3Vuc2V0fGVufDF8fHx8MTc2NTI0NTA0N3ww&ixlib=rb-4.1.0&q=80&w=1080",
-      gradient: "from-purple-500 to-pink-500",
+      from: 'TP. Hồ Chí Minh',
+      to: 'Vũng Tàu',
+      trips: '52',
+      price: '120.000đ',
+      duration: '2h 30m',
+      image: 'https://images.unsplash.com/photo-1663076224163-14f585360f50?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxWdW5nJTIwVGF1JTIwc3Vuc2V0fGVufDF8fHx8MTc2NTI0NTA0N3ww&ixlib=rb-4.1.0&q=80&w=1080',
+      gradient: 'from-purple-500 to-pink-500'
     },
     {
-      from: "Hà Nội",
-      to: "Hải Phòng",
-      trips: "40",
-      price: "150.000đ",
-      duration: "2h",
-      image:
-        "https://images.unsplash.com/photo-1712990349963-ab5dbd54a450?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxIYWklMjBQaG9uZyUyMHBvcnR8ZW58MXx8fHwxNzY1MjQ1MDQ3fDA&ixlib=rb-4.1.0&q=80&w=1080",
-      gradient: "from-orange-500 to-red-500",
+      from: 'Hà Nội',
+      to: 'Hải Phòng',
+      trips: '40',
+      price: '150.000đ',
+      duration: '2h',
+      image: 'https://images.unsplash.com/photo-1712990349963-ab5dbd54a450?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxIYWklMjBQaG9uZyUyMHBvcnR8ZW58MXx8fHwxNzY1MjQ1MDQ3fDA&ixlib=rb-4.1.0&q=80&w=1080',
+      gradient: 'from-orange-500 to-red-500'
     },
     {
-      from: "Đà Nẵng",
-      to: "Hội An",
-      trips: "60",
-      price: "50.000đ",
-      duration: "45m",
-      image:
-        "https://images.unsplash.com/photo-1696215103476-985902d02b1b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxEYSUyME5hbmclMjBiZWFjaCUyMGJyaWRnZXxlbnwxfHx8fDE3NjUyMzAxMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
-      gradient: "from-green-500 to-teal-500",
+      from: 'Đà Nẵng',
+      to: 'Hội An',
+      trips: '60',
+      price: '50.000đ',
+      duration: '45m',
+      image: 'https://images.unsplash.com/photo-1696215103476-985902d02b1b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxEYSUyME5hbmclMjBiZWFjaCUyMGJyaWRnZXxlbnwxfHx8fDE3NjUyMzAxMjJ8MA&ixlib=rb-4.1.0&q=80&w=1080',
+      gradient: 'from-green-500 to-teal-500'
     },
     {
-      from: "Hà Nội",
-      to: "Sa Pa",
-      trips: "25",
-      price: "300.000đ",
-      duration: "5h",
-      image:
-        "https://images.unsplash.com/photo-1613903491514-b3655f390093?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxEYSUyMExhdCUyMGZsb3dlciUyMGNpdHl8ZW58MXx8fHwxNzY1MjMwMTIyfDA&ixlib=rb-4.1.0&q=80&w=1080",
-      gradient: "from-indigo-500 to-purple-500",
-    },
+      from: 'Hà Nội',
+      to: 'Sa Pa',
+      trips: '25',
+      price: '300.000đ',
+      duration: '5h',
+      image: 'https://images.unsplash.com/photo-1613903491514-b3655f390093?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxEYSUyMExhdCUyMGZsb3dlciUyMGNpdHl8ZW58MXx8fHwxNzY1MjMwMTIyfDA&ixlib=rb-4.1.0&q=80&w=1080',
+      gradient: 'from-indigo-500 to-purple-500'
+    }
   ];
 
   // Auto-scroll animation
@@ -86,7 +73,7 @@ export function PopularRoutes({ onRouteClick }: PopularRoutesProps) {
     const interval = setInterval(() => {
       setCurrentIndex((prev) => (prev + 1) % routes.length);
     }, 4000); // Change every 4 seconds
-
+    
     return () => clearInterval(interval);
   }, [routes.length]);
 
@@ -111,11 +98,11 @@ export function PopularRoutes({ onRouteClick }: PopularRoutesProps) {
           <div className="inline-flex items-center space-x-2 px-4 py-2 bg-gradient-to-r from-blue-100 to-teal-100 dark:from-blue-900/30 dark:to-teal-900/30 rounded-full border border-blue-200 dark:border-blue-700 mb-4">
             <TrendingUp className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span className="text-blue-900 dark:text-blue-200">
-              {t("popularRoutes")}
+              {t('popularRoutes')}
             </span>
           </div>
         </div>
-
+        
         <div className="relative">
           {/* Navigation Buttons */}
           <button
@@ -139,20 +126,14 @@ export function PopularRoutes({ onRouteClick }: PopularRoutesProps) {
                 return (
                   <div
                     key={route.from + route.to + index}
-                    onClick={() =>
-                      isCenter && onRouteClick?.(route.from, route.to)
-                    }
+                    onClick={() => isCenter && onRouteClick?.(route.from, route.to)}
                     className={`flex-shrink-0 transition-all duration-500 ${
-                      isCenter
-                        ? "w-[calc(50%-8px)] opacity-100"
-                        : "w-[calc(25%-8px)] opacity-60"
+                      isCenter ? 'w-[calc(50%-8px)] opacity-100' : 'w-[calc(25%-8px)] opacity-60'
                     }`}
                   >
-                    <div
-                      className={`relative group cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all ${
-                        isCenter ? "scale-100 hover:scale-[1.02]" : "scale-90"
-                      }`}
-                    >
+                    <div className={`relative group cursor-pointer rounded-3xl overflow-hidden shadow-lg hover:shadow-2xl transition-all ${
+                      isCenter ? 'scale-100 hover:scale-[1.02]' : 'scale-90'
+                    }`}>
                       <div className="relative h-56 overflow-hidden">
                         <ImageWithFallback
                           src={route.image}
@@ -160,14 +141,11 @@ export function PopularRoutes({ onRouteClick }: PopularRoutesProps) {
                           className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent"></div>
-
+                        
                         {/* Route Badge */}
                         <div className="absolute top-4 left-4 right-4">
-                          <div
-                            className={`inline-flex px-3 py-1 bg-gradient-to-r ${route.gradient} rounded-full text-white text-xs`}
-                          >
-                            {route.trips}{" "}
-                            {language === "vi" ? "chuyến/ngày" : "trips/day"}
+                          <div className={`inline-flex px-3 py-1 bg-gradient-to-r ${route.gradient} rounded-full text-white text-xs`}>
+                            {route.trips} {language === 'vi' ? 'chuyến/ngày' : 'trips/day'}
                           </div>
                         </div>
 
@@ -186,15 +164,12 @@ export function PopularRoutes({ onRouteClick }: PopularRoutesProps) {
                             </div>
                             <div className="flex items-center space-x-1 text-green-400">
                               <DollarSign className="w-3 h-3" />
-                              <span>
-                                {language === "vi" ? "Từ" : "From"}{" "}
-                                {route.price}
-                              </span>
+                              <span>{language === 'vi' ? 'Từ' : 'From'} {route.price}</span>
                             </div>
                           </div>
                           {isCenter && (
                             <button className="w-full mt-3 py-2 bg-white/20 backdrop-blur-md border border-white/30 rounded-xl text-white hover:bg-white/30 transition-all text-sm">
-                              {t("search")}
+                              {t('search')}
                             </button>
                           )}
                         </div>
@@ -214,8 +189,8 @@ export function PopularRoutes({ onRouteClick }: PopularRoutesProps) {
                 onClick={() => setCurrentIndex(index)}
                 className={`h-2 rounded-full transition-all ${
                   index === currentIndex
-                    ? "w-8 bg-gradient-to-r from-blue-500 to-teal-500"
-                    : "w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500"
+                    ? 'w-8 bg-gradient-to-r from-blue-500 to-teal-500'
+                    : 'w-2 bg-gray-300 dark:bg-gray-600 hover:bg-gray-400 dark:hover:bg-gray-500'
                 }`}
               />
             ))}

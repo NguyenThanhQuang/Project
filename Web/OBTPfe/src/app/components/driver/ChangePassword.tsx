@@ -1,13 +1,6 @@
-import {
-  ArrowLeft,
-  Lock,
-  Eye,
-  EyeOff,
-  CheckCircle,
-  AlertCircle,
-} from "lucide-react";
-import { useState } from "react";
-import { useLanguage } from "../LanguageContext";
+import { ArrowLeft, Lock, Eye, EyeOff, CheckCircle, AlertCircle } from 'lucide-react';
+import { useState } from 'react';
+import { useLanguage } from '../LanguageContext';
 
 interface ChangePasswordProps {
   onBack: () => void;
@@ -18,59 +11,59 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [error, setError] = useState("");
+  const [currentPassword, setCurrentPassword] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [error, setError] = useState('');
   const [success, setSuccess] = useState(false);
 
   const passwordRequirements = [
-    { label: t("minLength"), met: newPassword.length >= 8 },
-    { label: t("hasUppercase"), met: /[A-Z]/.test(newPassword) },
-    { label: t("hasLowercase"), met: /[a-z]/.test(newPassword) },
-    { label: t("hasNumber"), met: /[0-9]/.test(newPassword) },
-    { label: t("hasSpecialChar"), met: /[!@#$%^&*]/.test(newPassword) },
+    { label: t('minLength'), met: newPassword.length >= 8 },
+    { label: t('hasUppercase'), met: /[A-Z]/.test(newPassword) },
+    { label: t('hasLowercase'), met: /[a-z]/.test(newPassword) },
+    { label: t('hasNumber'), met: /[0-9]/.test(newPassword) },
+    { label: t('hasSpecialChar'), met: /[!@#$%^&*]/.test(newPassword) }
   ];
 
-  const allRequirementsMet = passwordRequirements.every((req) => req.met);
+  const allRequirementsMet = passwordRequirements.every(req => req.met);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    setError("");
+    setError('');
     setSuccess(false);
 
     if (!currentPassword) {
-      setError("Vui lòng nhập mật khẩu hiện tại");
+      setError('Vui lòng nhập mật khẩu hiện tại');
       return;
     }
 
     if (!newPassword) {
-      setError("Vui lòng nhập mật khẩu mới");
+      setError('Vui lòng nhập mật khẩu mới');
       return;
     }
 
     if (!allRequirementsMet) {
-      setError("Mật khẩu mới không đáp ứng yêu cầu");
+      setError('Mật khẩu mới không đáp ứng yêu cầu');
       return;
     }
 
     if (newPassword !== confirmPassword) {
-      setError("Mật khẩu xác nhận không khớp");
+      setError('Mật khẩu xác nhận không khớp');
       return;
     }
 
     if (currentPassword === newPassword) {
-      setError("Mật khẩu mới phải khác mật khẩu hiện tại");
+      setError('Mật khẩu mới phải khác mật khẩu hiện tại');
       return;
     }
 
     // Simulate API call
     setTimeout(() => {
       setSuccess(true);
-      setCurrentPassword("");
-      setNewPassword("");
-      setConfirmPassword("");
-
+      setCurrentPassword('');
+      setNewPassword('');
+      setConfirmPassword('');
+      
       setTimeout(() => {
         onBack();
       }, 2000);
@@ -87,7 +80,7 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
             className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>{t("backToProfile")}</span>
+            <span>{t('backToProfile')}</span>
           </button>
         </div>
       </div>
@@ -98,11 +91,9 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
           <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-teal-500 rounded-3xl mb-4 shadow-lg">
             <Lock className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-4xl text-gray-900 dark:text-white mb-2">
-            {t("changePasswordTitle")}
-          </h1>
+          <h1 className="text-4xl text-gray-900 dark:text-white mb-2">{t('changePasswordTitle')}</h1>
           <p className="text-gray-600 dark:text-gray-400">
-            {t("changePasswordSubtitle")}
+            {t('changePasswordSubtitle')}
           </p>
         </div>
 
@@ -112,10 +103,10 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
             <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" />
             <div>
               <p className="text-green-700 dark:text-green-300">
-                {t("passwordChangeSuccess")}
+                {t('passwordChangeSuccess')}
               </p>
               <p className="text-sm text-green-600 dark:text-green-400">
-                {t("redirecting")}
+                {t('redirecting')}
               </p>
             </div>
           </div>
@@ -134,15 +125,15 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
           {/* Current Password */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-200 dark:border-gray-700">
             <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-              {t("currentPasswordLabel")}
+              {t('currentPasswordLabel')}
             </label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type={showCurrentPassword ? "text" : "password"}
+                type={showCurrentPassword ? 'text' : 'password'}
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                placeholder={t("enterCurrentPassword")}
+                placeholder={t('enterCurrentPassword')}
                 className="w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
               />
               <button
@@ -150,11 +141,7 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
                 onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
-                {showCurrentPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                {showCurrentPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
           </div>
@@ -162,15 +149,15 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
           {/* New Password */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-200 dark:border-gray-700">
             <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-              {t("newPasswordLabel")}
+              {t('newPasswordLabel')}
             </label>
             <div className="relative mb-4">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type={showNewPassword ? "text" : "password"}
+                type={showNewPassword ? 'text' : 'password'}
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
-                placeholder={t("enterNewPassword")}
+                placeholder={t('enterNewPassword')}
                 className="w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
               />
               <button
@@ -178,20 +165,14 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
                 onClick={() => setShowNewPassword(!showNewPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
-                {showNewPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                {showNewPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
 
             {/* Password Requirements */}
             {newPassword && (
               <div className="space-y-2">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {t("passwordRequirements")}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('passwordRequirements')}</p>
                 {passwordRequirements.map((req, index) => (
                   <div key={index} className="flex items-center space-x-2">
                     {req.met ? (
@@ -199,13 +180,7 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
                     ) : (
                       <div className="w-4 h-4 rounded-full border-2 border-gray-300 dark:border-gray-600" />
                     )}
-                    <span
-                      className={`text-sm ${
-                        req.met
-                          ? "text-green-600 dark:text-green-400"
-                          : "text-gray-500 dark:text-gray-400"
-                      }`}
-                    >
+                    <span className={`text-sm ${req.met ? 'text-green-600 dark:text-green-400' : 'text-gray-500 dark:text-gray-400'}`}>
                       {req.label}
                     </span>
                   </div>
@@ -217,15 +192,15 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
           {/* Confirm Password */}
           <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-200 dark:border-gray-700">
             <label className="block text-sm text-gray-600 dark:text-gray-400 mb-2">
-              {t("confirmNewPasswordLabel")}
+              {t('confirmNewPasswordLabel')}
             </label>
             <div className="relative">
               <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
-                type={showConfirmPassword ? "text" : "password"}
+                type={showConfirmPassword ? 'text' : 'password'}
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                placeholder={t("reEnterNewPassword")}
+                placeholder={t('reEnterNewPassword')}
                 className="w-full pl-12 pr-12 py-4 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
               />
               <button
@@ -233,17 +208,11 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
               >
-                {showConfirmPassword ? (
-                  <EyeOff className="w-5 h-5" />
-                ) : (
-                  <Eye className="w-5 h-5" />
-                )}
+                {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
               </button>
             </div>
             {confirmPassword && confirmPassword !== newPassword && (
-              <p className="text-sm text-red-500 mt-2">
-                {t("passwordMismatchError")}
-              </p>
+              <p className="text-sm text-red-500 mt-2">{t('passwordMismatchError')}</p>
             )}
           </div>
 
@@ -253,31 +222,29 @@ export function ChangePassword({ onBack }: ChangePasswordProps) {
             disabled={success}
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-xl hover:shadow-2xl hover:shadow-blue-500/40 transition-all disabled:opacity-50 disabled:cursor-not-allowed text-lg"
           >
-            {success ? t("redirecting") : t("changePasswordButton")}
+            {success ? t('redirecting') : t('changePasswordButton')}
           </button>
         </form>
 
         {/* Security Tips */}
         <div className="mt-8 bg-blue-50 dark:bg-blue-900/30 rounded-2xl p-6 border border-blue-200 dark:border-blue-700">
-          <h3 className="text-lg text-gray-900 dark:text-white mb-3">
-            {t("securityTipsTitle")}
-          </h3>
+          <h3 className="text-lg text-gray-900 dark:text-white mb-3">{t('securityTipsTitle')}</h3>
           <ul className="space-y-2 text-sm text-gray-600 dark:text-gray-400">
             <li className="flex items-start space-x-2">
               <span className="text-blue-500">•</span>
-              <span>{t("securityTip1")}</span>
+              <span>{t('securityTip1')}</span>
             </li>
             <li className="flex items-start space-x-2">
               <span className="text-blue-500">•</span>
-              <span>{t("securityTip2")}</span>
+              <span>{t('securityTip2')}</span>
             </li>
             <li className="flex items-start space-x-2">
               <span className="text-blue-500">•</span>
-              <span>{t("securityTip3")}</span>
+              <span>{t('securityTip3')}</span>
             </li>
             <li className="flex items-start space-x-2">
               <span className="text-blue-500">•</span>
-              <span>{t("securityTip4")}</span>
+              <span>{t('securityTip4')}</span>
             </li>
           </ul>
         </div>
