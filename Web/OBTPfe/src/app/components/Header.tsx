@@ -13,6 +13,7 @@ interface HeaderProps {
   onContactClick?: () => void;
   onTicketLookupClick?: () => void;
   onHotlineClick?: () => void;
+  onHomeClick?: () => void;
 }
 
 export function Header({ 
@@ -24,7 +25,8 @@ export function Header({
   onRoutesClick,
   onContactClick,
   onTicketLookupClick,
-  onHotlineClick
+  onHotlineClick,
+  onHomeClick
 }: HeaderProps) {
   const { theme, toggleTheme } = useTheme();
   const { language, setLanguage, t } = useLanguage();
@@ -51,7 +53,7 @@ export function Header({
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             <button
-              onClick={() => window.location.reload()}
+              onClick={onHomeClick}
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all relative group"
             >
               {t('home')}

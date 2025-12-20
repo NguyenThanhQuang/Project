@@ -1,17 +1,6 @@
-import {
-  ArrowLeft,
-  Award,
-  Star,
-  TrendingUp,
-  Trophy,
-  Target,
-  Zap,
-  Heart,
-  Shield,
-  Crown,
-} from "lucide-react";
-import { useState } from "react";
-import { useLanguage } from "../LanguageContext";
+import { ArrowLeft, Award, Star, TrendingUp, Trophy, Target, Zap, Heart, Shield, Crown } from 'lucide-react';
+import { useState } from 'react';
+import { useLanguage } from '../LanguageContext';
 
 interface AchievementsProps {
   onBack: () => void;
@@ -19,147 +8,140 @@ interface AchievementsProps {
 
 export function Achievements({ onBack }: AchievementsProps) {
   const { t } = useLanguage();
-  const [selectedTab, setSelectedTab] = useState<"achievements" | "reviews">(
-    "achievements"
-  );
+  const [selectedTab, setSelectedTab] = useState<'achievements' | 'reviews'>('achievements');
 
   const achievements = [
     {
-      id: "1",
+      id: '1',
       icon: Trophy,
-      title: "Tài xế xuất sắc",
-      description: "Hoàn thành 100 chuyến đi",
+      title: 'Tài xế xuất sắc',
+      description: 'Hoàn thành 100 chuyến đi',
       progress: 100,
       total: 100,
       unlocked: true,
-      reward: "5,000,000đ",
-      color: "from-yellow-500 to-orange-500",
+      reward: '5,000,000đ',
+      color: 'from-yellow-500 to-orange-500'
     },
     {
-      id: "2",
+      id: '2',
       icon: Star,
-      title: "Đánh giá 5 sao",
-      description: "Nhận 50 đánh giá 5 sao",
+      title: 'Đánh giá 5 sao',
+      description: 'Nhận 50 đánh giá 5 sao',
       progress: 48,
       total: 50,
       unlocked: false,
-      reward: "3,000,000đ",
-      color: "from-blue-500 to-cyan-500",
+      reward: '3,000,000đ',
+      color: 'from-blue-500 to-cyan-500'
     },
     {
-      id: "3",
+      id: '3',
       icon: Zap,
-      title: "Tốc độ ánh sáng",
-      description: "Hoàn thành 20 chuyến đúng giờ liên tiếp",
+      title: 'Tốc độ ánh sáng',
+      description: 'Hoàn thành 20 chuyến đúng giờ liên tiếp',
       progress: 20,
       total: 20,
       unlocked: true,
-      reward: "2,000,000đ",
-      color: "from-purple-500 to-pink-500",
+      reward: '2,000,000đ',
+      color: 'from-purple-500 to-pink-500'
     },
     {
-      id: "4",
+      id: '4',
       icon: Heart,
-      title: "Yêu thích khách hàng",
-      description: "Nhận 100 lời khen từ khách",
+      title: 'Yêu thích khách hàng',
+      description: 'Nhận 100 lời khen từ khách',
       progress: 87,
       total: 100,
       unlocked: false,
-      reward: "4,000,000đ",
-      color: "from-red-500 to-pink-500",
+      reward: '4,000,000đ',
+      color: 'from-red-500 to-pink-500'
     },
     {
-      id: "5",
+      id: '5',
       icon: Shield,
-      title: "An toàn tuyệt đối",
-      description: "365 ngày không vi phạm",
+      title: 'An toàn tuyệt đối',
+      description: '365 ngày không vi phạm',
       progress: 280,
       total: 365,
       unlocked: false,
-      reward: "10,000,000đ",
-      color: "from-green-500 to-emerald-500",
+      reward: '10,000,000đ',
+      color: 'from-green-500 to-emerald-500'
     },
     {
-      id: "6",
+      id: '6',
       icon: Crown,
-      title: "Huyền thoại",
-      description: "Hoàn thành 500 chuyến đi",
+      title: 'Huyền thoại',
+      description: 'Hoàn thành 500 chuyến đi',
       progress: 312,
       total: 500,
       unlocked: false,
-      reward: "20,000,000đ",
-      color: "from-indigo-500 to-purple-500",
-    },
+      reward: '20,000,000đ',
+      color: 'from-indigo-500 to-purple-500'
+    }
   ];
 
   const reviews = [
     {
-      id: "1",
-      passenger: "Nguyễn Thị B",
+      id: '1',
+      passenger: 'Nguyễn Thị B',
       rating: 5,
-      comment:
-        "Tài xế lái xe rất an toàn và nhiệt tình. Xe sạch sẽ, đúng giờ. Rất hài lòng!",
-      route: "TP.HCM → Đà Lạt",
-      date: "05/12/2024",
-      avatar: "NT",
+      comment: 'Tài xế lái xe rất an toàn và nhiệt tình. Xe sạch sẽ, đúng giờ. Rất hài lòng!',
+      route: 'TP.HCM → Đà Lạt',
+      date: '05/12/2024',
+      avatar: 'NT'
     },
     {
-      id: "2",
-      passenger: "Trần Văn C",
+      id: '2',
+      passenger: 'Trần Văn C',
       rating: 5,
-      comment:
-        "Anh tài xế rất vui vẻ, chuyên nghiệp. Lái xe êm ái, cho mình ngủ ngon cả đường.",
-      route: "Đà Lạt → TP.HCM",
-      date: "04/12/2024",
-      avatar: "TV",
+      comment: 'Anh tài xế rất vui vẻ, chuyên nghiệp. Lái xe êm ái, cho mình ngủ ngon cả đường.',
+      route: 'Đà Lạt → TP.HCM',
+      date: '04/12/2024',
+      avatar: 'TV'
     },
     {
-      id: "3",
-      passenger: "Lê Thị D",
+      id: '3',
+      passenger: 'Lê Thị D',
       rating: 5,
-      comment:
-        "Tuyệt vời! Đúng giờ, xe mới, tài xế thân thiện. Sẽ ủng hộ tiếp.",
-      route: "TP.HCM → Vũng Tàu",
-      date: "03/12/2024",
-      avatar: "LT",
+      comment: 'Tuyệt vời! Đúng giờ, xe mới, tài xế thân thiện. Sẽ ủng hộ tiếp.',
+      route: 'TP.HCM → Vũng Tàu',
+      date: '03/12/2024',
+      avatar: 'LT'
     },
     {
-      id: "4",
-      passenger: "Phạm Văn E",
+      id: '4',
+      passenger: 'Phạm Văn E',
       rating: 5,
-      comment:
-        "Lái xe cẩn thận, an toàn. Giúp đỡ nhiệt tình khi cần. Cảm ơn anh!",
-      route: "Vũng Tàu → TP.HCM",
-      date: "03/12/2024",
-      avatar: "PV",
+      comment: 'Lái xe cẩn thận, an toàn. Giúp đỡ nhiệt tình khi cần. Cảm ơn anh!',
+      route: 'Vũng Tàu → TP.HCM',
+      date: '03/12/2024',
+      avatar: 'PV'
     },
     {
-      id: "5",
-      passenger: "Hoàng Thị F",
+      id: '5',
+      passenger: 'Hoàng Thị F',
       rating: 5,
-      comment:
-        "Chuyến đi thoải mái, tài xế niềm nở. Xe sạch sẽ, có wifi. Perfect!",
-      route: "TP.HCM → Nha Trang",
-      date: "02/12/2024",
-      avatar: "HT",
+      comment: 'Chuyến đi thoải mái, tài xế niềm nở. Xe sạch sẽ, có wifi. Perfect!',
+      route: 'TP.HCM → Nha Trang',
+      date: '02/12/2024',
+      avatar: 'HT'
     },
     {
-      id: "6",
-      passenger: "Võ Văn G",
+      id: '6',
+      passenger: 'Võ Văn G',
       rating: 4,
-      comment: "Tốt, chỉ có điều đường hơi gập ghềnh nhưng tài xế lái rất ổn.",
-      route: "Nha Trang → TP.HCM",
-      date: "01/12/2024",
-      avatar: "VV",
-    },
+      comment: 'Tốt, chỉ có điều đường hơi gập ghềnh nhưng tài xế lái rất ổn.',
+      route: 'Nha Trang → TP.HCM',
+      date: '01/12/2024',
+      avatar: 'VV'
+    }
   ];
 
   const stats = {
     totalAchievements: achievements.length,
-    unlocked: achievements.filter((a) => a.unlocked).length,
+    unlocked: achievements.filter(a => a.unlocked).length,
     avgRating: 4.9,
     totalReviews: reviews.length,
-    fiveStars: reviews.filter((r) => r.rating === 5).length,
+    fiveStars: reviews.filter(r => r.rating === 5).length
   };
 
   return (
@@ -172,90 +154,64 @@ export function Achievements({ onBack }: AchievementsProps) {
             className="flex items-center space-x-2 text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all mb-4"
           >
             <ArrowLeft className="w-5 h-5" />
-            <span>{t("backToProfile")}</span>
+            <span>{t('backToProfile')}</span>
           </button>
 
           <div className="flex items-center space-x-3 mb-4">
             <Award className="w-8 h-8 text-yellow-500" />
-            <h1 className="text-2xl text-gray-900 dark:text-white">
-              {t("achievementsPageTitle")}
-            </h1>
+            <h1 className="text-2xl text-gray-900 dark:text-white">{t('achievementsPageTitle')}</h1>
           </div>
 
           {/* Tabs */}
           <div className="flex space-x-2">
             <button
-              onClick={() => setSelectedTab("achievements")}
+              onClick={() => setSelectedTab('achievements')}
               className={`px-6 py-3 rounded-xl transition-all ${
-                selectedTab === "achievements"
-                  ? "bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-lg"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                selectedTab === 'achievements'
+                  ? 'bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-lg'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
               }`}
             >
-              {t("achievementsTab")} ({stats.unlocked}/{stats.totalAchievements}
-              )
+              {t('achievementsTab')} ({stats.unlocked}/{stats.totalAchievements})
             </button>
             <button
-              onClick={() => setSelectedTab("reviews")}
+              onClick={() => setSelectedTab('reviews')}
               className={`px-6 py-3 rounded-xl transition-all ${
-                selectedTab === "reviews"
-                  ? "bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-lg"
-                  : "bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700"
+                selectedTab === 'reviews'
+                  ? 'bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-lg'
+                  : 'bg-white dark:bg-gray-800 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-700'
               }`}
             >
-              {t("reviewsTab")} ({stats.avgRating}⭐)
+              {t('reviewsTab')} ({stats.avgRating}⭐)
             </button>
           </div>
         </div>
       </div>
 
       <div className="max-w-7xl mx-auto px-4 py-8">
-        {selectedTab === "achievements" ? (
+        {selectedTab === 'achievements' ? (
           <>
             {/* Stats Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
               <div className="bg-gradient-to-br from-yellow-500 to-orange-500 rounded-3xl p-6 text-white shadow-xl">
                 <Trophy className="w-10 h-10 mb-3 opacity-80" />
-                <p className="text-white/80 text-sm mb-1">
-                  {t("achievementsUnlocked")}
-                </p>
-                <p className="text-4xl">
-                  {stats.unlocked}/{stats.totalAchievements}
-                </p>
+                <p className="text-white/80 text-sm mb-1">{t('achievementsUnlocked')}</p>
+                <p className="text-4xl">{stats.unlocked}/{stats.totalAchievements}</p>
               </div>
 
               <div className="bg-gradient-to-br from-blue-500 to-cyan-500 rounded-3xl p-6 text-white shadow-xl">
                 <Star className="w-10 h-10 mb-3 opacity-80" />
-                <p className="text-white/80 text-sm mb-1">
-                  {t("totalRewards")}
-                </p>
+                <p className="text-white/80 text-sm mb-1">{t('totalRewards')}</p>
                 <p className="text-4xl">
-                  {(
-                    achievements
-                      .filter((a) => a.unlocked)
-                      .reduce(
-                        (sum, a) =>
-                          sum + parseInt(a.reward.replace(/[,đ]/g, "")),
-                        0
-                      ) / 1000000
-                  ).toFixed(0)}
-                  M
+                  {(achievements.filter(a => a.unlocked).reduce((sum, a) => sum + parseInt(a.reward.replace(/[,đ]/g, '')), 0) / 1000000).toFixed(0)}M
                 </p>
               </div>
 
               <div className="bg-gradient-to-br from-purple-500 to-pink-500 rounded-3xl p-6 text-white shadow-xl">
                 <TrendingUp className="w-10 h-10 mb-3 opacity-80" />
-                <p className="text-white/80 text-sm mb-1">
-                  {t("averageProgress")}
-                </p>
+                <p className="text-white/80 text-sm mb-1">{t('averageProgress')}</p>
                 <p className="text-4xl">
-                  {Math.round(
-                    achievements.reduce(
-                      (sum, a) => sum + (a.progress / a.total) * 100,
-                      0
-                    ) / achievements.length
-                  )}
-                  %
+                  {Math.round(achievements.reduce((sum, a) => sum + (a.progress / a.total * 100), 0) / achievements.length)}%
                 </p>
               </div>
             </div>
@@ -264,25 +220,22 @@ export function Achievements({ onBack }: AchievementsProps) {
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {achievements.map((achievement) => {
                 const Icon = achievement.icon;
-                const progress =
-                  (achievement.progress / achievement.total) * 100;
-
+                const progress = (achievement.progress / achievement.total) * 100;
+                
                 return (
                   <div
                     key={achievement.id}
                     className={`bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-xl border border-gray-200 dark:border-gray-700 ${
-                      achievement.unlocked ? "ring-2 ring-yellow-500" : ""
+                      achievement.unlocked ? 'ring-2 ring-yellow-500' : ''
                     }`}
                   >
                     <div className="flex items-start justify-between mb-4">
-                      <div
-                        className={`p-4 bg-gradient-to-r ${achievement.color} rounded-2xl`}
-                      >
+                      <div className={`p-4 bg-gradient-to-r ${achievement.color} rounded-2xl`}>
                         <Icon className="w-8 h-8 text-white" />
                       </div>
                       {achievement.unlocked && (
                         <span className="px-3 py-1 bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-400 rounded-full text-sm">
-                          ✓ {t("unlocked")}
+                          ✓ {t('unlocked')}
                         </span>
                       )}
                     </div>
@@ -314,16 +267,8 @@ export function Achievements({ onBack }: AchievementsProps) {
 
                     {/* Reward */}
                     <div className="flex items-center justify-between pt-4 border-t border-gray-200 dark:border-gray-700">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">
-                        {t("rewardLabel")}
-                      </span>
-                      <span
-                        className={`text-lg ${
-                          achievement.unlocked
-                            ? "text-green-600 dark:text-green-400"
-                            : "text-gray-900 dark:text-white"
-                        }`}
-                      >
+                      <span className="text-sm text-gray-600 dark:text-gray-400">{t('rewardLabel')}</span>
+                      <span className={`text-lg ${achievement.unlocked ? 'text-green-600 dark:text-green-400' : 'text-gray-900 dark:text-white'}`}>
                         {achievement.reward}
                       </span>
                     </div>
@@ -337,41 +282,25 @@ export function Achievements({ onBack }: AchievementsProps) {
             {/* Review Stats */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {t("averageRatingStats")}
-                </p>
-                <p className="text-4xl text-blue-600 dark:text-blue-400 mb-1">
-                  {stats.avgRating}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('averageRatingStats')}</p>
+                <p className="text-4xl text-blue-600 dark:text-blue-400 mb-1">{stats.avgRating}</p>
                 <div className="flex text-yellow-500">
-                  {[1, 2, 3, 4, 5].map((i) => (
-                    <Star key={i} className="w-4 h-4 fill-current" />
-                  ))}
+                  {[1,2,3,4,5].map(i => <Star key={i} className="w-4 h-4 fill-current" />)}
                 </div>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {t("totalReviewsStats")}
-                </p>
-                <p className="text-4xl text-gray-900 dark:text-white">
-                  {stats.totalReviews}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('totalReviewsStats')}</p>
+                <p className="text-4xl text-gray-900 dark:text-white">{stats.totalReviews}</p>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {t("fiveStarsCount")}
-                </p>
-                <p className="text-4xl text-green-600 dark:text-green-400">
-                  {stats.fiveStars}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('fiveStarsCount')}</p>
+                <p className="text-4xl text-green-600 dark:text-green-400">{stats.fiveStars}</p>
               </div>
 
               <div className="bg-white dark:bg-gray-800 rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">
-                  {t("satisfactionRate")}
-                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{t('satisfactionRate')}</p>
                 <p className="text-4xl text-purple-600 dark:text-purple-400">
                   {Math.round((stats.fiveStars / stats.totalReviews) * 100)}%
                 </p>
@@ -393,20 +322,16 @@ export function Achievements({ onBack }: AchievementsProps) {
                     <div className="flex-1">
                       <div className="flex items-start justify-between mb-2">
                         <div>
-                          <h3 className="text-lg text-gray-900 dark:text-white">
-                            {review.passenger}
-                          </h3>
+                          <h3 className="text-lg text-gray-900 dark:text-white">{review.passenger}</h3>
                           <p className="text-sm text-gray-500 dark:text-gray-400">
                             {review.route} • {review.date}
                           </p>
                         </div>
                         <div className="flex text-yellow-500">
-                          {[1, 2, 3, 4, 5].map((i) => (
+                          {[1,2,3,4,5].map(i => (
                             <Star
                               key={i}
-                              className={`w-5 h-5 ${
-                                i <= review.rating ? "fill-current" : ""
-                              }`}
+                              className={`w-5 h-5 ${i <= review.rating ? 'fill-current' : ''}`}
                             />
                           ))}
                         </div>

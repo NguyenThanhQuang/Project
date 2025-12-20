@@ -1,27 +1,10 @@
-import { useState } from "react";
-import {
-  Save,
-  Bell,
-  Lock,
-  Globe,
-  Database,
-  Mail,
-  Building2,
-  DollarSign,
-  Shield,
-  Clock,
-  MapPin,
-  Users,
-  Truck,
-  CreditCard,
-} from "lucide-react";
-import { useLanguage } from "../LanguageContext";
+import { useState } from 'react';
+import { Save, Bell, Lock, Globe, Database, Mail, Building2, DollarSign, Shield, Clock, MapPin, Users, Truck, CreditCard } from 'lucide-react';
+import { useLanguage } from '../LanguageContext';
 
 export function SettingsPage() {
   const { language, setLanguage, t } = useLanguage();
-  const [selectedTab, setSelectedTab] = useState<
-    "general" | "company" | "notifications" | "security" | "payment" | "backup"
-  >("general");
+  const [selectedTab, setSelectedTab] = useState<'general' | 'company' | 'notifications' | 'security' | 'payment' | 'backup'>('general');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
@@ -30,13 +13,13 @@ export function SettingsPage() {
 
   // Company Settings
   const [companySettings, setCompanySettings] = useState({
-    name: "Nhà Xe Phương Trang",
-    email: "contact@phuongtrang.vn",
-    phone: "1900 6067",
-    address: "272 Đề Thám, Phường Phạm Ngũ Lão, Quận 1, TP. Hồ Chí Minh",
-    taxCode: "0123456789",
-    website: "https://phuongtrang.vn",
-    logo: "",
+    name: 'Nhà Xe Phương Trang',
+    email: 'contact@phuongtrang.vn',
+    phone: '1900 6067',
+    address: '272 Đề Thám, Phường Phạm Ngũ Lão, Quận 1, TP. Hồ Chí Minh',
+    taxCode: '0123456789',
+    website: 'https://phuongtrang.vn',
+    logo: ''
   });
 
   // Pricing Settings
@@ -46,7 +29,7 @@ export function SettingsPage() {
     cancellationFee: 20,
     lateCancellationHours: 24,
     childDiscountPercent: 50,
-    studentDiscountPercent: 10,
+    studentDiscountPercent: 10
   });
 
   // Payment Settings
@@ -55,37 +38,28 @@ export function SettingsPage() {
     momoEnabled: true,
     zalopayEnabled: true,
     bankTransferEnabled: true,
-    cashEnabled: true,
+    cashEnabled: true
   });
 
   const tabs = [
-    { id: "general", icon: Globe, label: t("general") },
-    { id: "company", icon: Building2, label: t("companyInfo") },
-    { id: "notifications", icon: Bell, label: t("notifications") },
-    { id: "security", icon: Shield, label: t("security") },
-    { id: "payment", icon: CreditCard, label: t("payment") },
-    { id: "backup", icon: Database, label: t("backup") },
+    { id: 'general', icon: Globe, label: t('general') },
+    { id: 'company', icon: Building2, label: t('companyInfo') },
+    { id: 'notifications', icon: Bell, label: t('notifications') },
+    { id: 'security', icon: Shield, label: t('security') },
+    { id: 'payment', icon: CreditCard, label: t('payment') },
+    { id: 'backup', icon: Database, label: t('backup') }
   ];
 
   const handleSave = () => {
-    // Save settings logic
-    alert(
-      language === "vi"
-        ? "Đã lưu cài đặt thành công!"
-        : "Settings saved successfully!"
-    );
+    alert(t('success') + '!');
   };
 
   return (
     <div className="p-6">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-3xl text-gray-900 dark:text-white mb-2">
-          {t("settings")}
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400">
-          {t("settingsSubtitle")}
-        </p>
+        <h2 className="text-3xl text-gray-900 dark:text-white mb-2">{t('settings')}</h2>
+        <p className="text-gray-600 dark:text-gray-400">{t('settingsSubtitle')}</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -100,8 +74,8 @@ export function SettingsPage() {
                   onClick={() => setSelectedTab(tab.id as any)}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl transition-all mb-2 ${
                     selectedTab === tab.id
-                      ? "bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-lg"
-                      : "text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+                      ? 'bg-gradient-to-r from-blue-600 to-teal-500 text-white shadow-lg'
+                      : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700'
                   }`}
                 >
                   <Icon className="w-5 h-5" />
@@ -115,7 +89,7 @@ export function SettingsPage() {
         {/* Settings Content */}
         <div className="lg:col-span-3 space-y-6">
           {/* General Settings */}
-          {selectedTab === "general" && (
+          {selectedTab === 'general' && (
             <>
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-6">
@@ -123,20 +97,14 @@ export function SettingsPage() {
                     <Globe className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl text-gray-900 dark:text-white">
-                      Cài Đặt Tổng Quan
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Cấu hình chung cho hệ thống
-                    </p>
+                    <h3 className="text-xl text-gray-900 dark:text-white">{t('generalSettings')}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('generalSettingsDesc')}</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                      Múi giờ
-                    </label>
+                    <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('timezone')}</label>
                     <select className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
                       <option>(GMT+7) Bangkok, Hanoi, Jakarta</option>
                       <option>(GMT+8) Hong Kong, Singapore</option>
@@ -145,29 +113,22 @@ export function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                      Ngôn ngữ mặc định
-                    </label>
-                    <select
+                    <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('defaultLanguage')}</label>
+                    <select 
                       value={language}
-                      onChange={(e) =>
-                        setLanguage(e.target.value as "vi" | "en")
-                      }
+                      onChange={(e) => setLanguage(e.target.value as 'vi' | 'en')}
                       className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                     >
                       <option value="vi">Tiếng Việt</option>
                       <option value="en">English</option>
                     </select>
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                      Ngôn ngữ hiện tại:{" "}
-                      {language === "vi" ? "🇻🇳 Tiếng Việt" : "🇬🇧 English"}
+                      {t('currentLanguage')}: {language === 'vi' ? '🇻🇳 Tiếng Việt' : '🇬🇧 English'}
                     </p>
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                      Định dạng ngày
-                    </label>
+                    <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('dateFormat')}</label>
                     <select className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
                       <option>DD/MM/YYYY</option>
                       <option>MM/DD/YYYY</option>
@@ -176,9 +137,7 @@ export function SettingsPage() {
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                      Đơn vị tiền tệ
-                    </label>
+                    <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('currency')}</label>
                     <select className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
                       <option>VNĐ - Việt Nam Đồng</option>
                       <option>USD - US Dollar</option>
@@ -194,20 +153,14 @@ export function SettingsPage() {
                     <Clock className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl text-gray-900 dark:text-white">
-                      Giờ Hoạt Động
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Cấu hình giờ làm việc
-                    </p>
+                    <h3 className="text-xl text-gray-900 dark:text-white">{t('businessHours')}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('businessHoursDesc')}</p>
                   </div>
                 </div>
 
                 <div className="space-y-3">
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-gray-700 dark:text-gray-300 py-3">
-                      Thứ 2 - Thứ 6
-                    </div>
+                    <div className="text-gray-700 dark:text-gray-300 py-3">{t('weekdays')}</div>
                     <input
                       type="time"
                       defaultValue="06:00"
@@ -221,9 +174,7 @@ export function SettingsPage() {
                   </div>
 
                   <div className="grid grid-cols-3 gap-4">
-                    <div className="text-gray-700 dark:text-gray-300 py-3">
-                      Thứ 7 - Chủ nhật
-                    </div>
+                    <div className="text-gray-700 dark:text-gray-300 py-3">{t('weekend')}</div>
                     <input
                       type="time"
                       defaultValue="05:00"
@@ -241,7 +192,7 @@ export function SettingsPage() {
           )}
 
           {/* Company Settings */}
-          {selectedTab === "company" && (
+          {selectedTab === 'company' && (
             <>
               <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
                 <div className="flex items-center space-x-3 mb-6">
@@ -249,81 +200,49 @@ export function SettingsPage() {
                     <Building2 className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl text-gray-900 dark:text-white">
-                      Thông Tin Công Ty
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Cập nhật thông tin nhà xe
-                    </p>
+                    <h3 className="text-xl text-gray-900 dark:text-white">{t('companySettings')}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('companySettingsDesc')}</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                      Tên công ty
-                    </label>
+                    <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('companyName')}</label>
                     <input
                       type="text"
                       value={companySettings.name}
-                      onChange={(e) =>
-                        setCompanySettings({
-                          ...companySettings,
-                          name: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setCompanySettings({...companySettings, name: e.target.value})}
                       className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                     />
                   </div>
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Email
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">Email</label>
                       <input
                         type="email"
                         value={companySettings.email}
-                        onChange={(e) =>
-                          setCompanySettings({
-                            ...companySettings,
-                            email: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setCompanySettings({...companySettings, email: e.target.value})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Số điện thoại
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('phone')}</label>
                       <input
                         type="tel"
                         value={companySettings.phone}
-                        onChange={(e) =>
-                          setCompanySettings({
-                            ...companySettings,
-                            phone: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setCompanySettings({...companySettings, phone: e.target.value})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                      Địa chỉ
-                    </label>
+                    <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('address')}</label>
                     <textarea
                       value={companySettings.address}
-                      onChange={(e) =>
-                        setCompanySettings({
-                          ...companySettings,
-                          address: e.target.value,
-                        })
-                      }
+                      onChange={(e) => setCompanySettings({...companySettings, address: e.target.value})}
                       rows={3}
                       className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                     />
@@ -331,50 +250,34 @@ export function SettingsPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Mã số thuế
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('taxCode')}</label>
                       <input
                         type="text"
                         value={companySettings.taxCode}
-                        onChange={(e) =>
-                          setCompanySettings({
-                            ...companySettings,
-                            taxCode: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setCompanySettings({...companySettings, taxCode: e.target.value})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Website
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">Website</label>
                       <input
                         type="url"
                         value={companySettings.website}
-                        onChange={(e) =>
-                          setCompanySettings({
-                            ...companySettings,
-                            website: e.target.value,
-                          })
-                        }
+                        onChange={(e) => setCompanySettings({...companySettings, website: e.target.value})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                      Logo công ty
-                    </label>
+                    <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('companyLogo')}</label>
                     <div className="flex items-center space-x-4">
                       <div className="w-24 h-24 bg-gray-100 dark:bg-gray-700 rounded-xl flex items-center justify-center border-2 border-dashed border-gray-300 dark:border-gray-600">
                         <Building2 className="w-8 h-8 text-gray-400" />
                       </div>
                       <button className="px-6 py-3 bg-blue-600 text-white rounded-xl hover:bg-blue-700 transition-all">
-                        Tải lên logo
+                        {t('uploadLogo')}
                       </button>
                     </div>
                   </div>
@@ -388,47 +291,29 @@ export function SettingsPage() {
                     <DollarSign className="w-6 h-6 text-green-600 dark:text-green-400" />
                   </div>
                   <div>
-                    <h3 className="text-xl text-gray-900 dark:text-white">
-                      Cài Đặt Giá Cước
-                    </h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Quản lý chính sách giá vé
-                    </p>
+                    <h3 className="text-xl text-gray-900 dark:text-white">{t('pricingSettings')}</h3>
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{t('pricingSettingsDesc')}</p>
                   </div>
                 </div>
 
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Giá cơ bản (VNĐ)
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('baseRate')}</label>
                       <input
                         type="number"
                         value={pricingSettings.baseRate}
-                        onChange={(e) =>
-                          setPricingSettings({
-                            ...pricingSettings,
-                            baseRate: parseInt(e.target.value),
-                          })
-                        }
+                        onChange={(e) => setPricingSettings({...pricingSettings, baseRate: parseInt(e.target.value)})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Giá/km (VNĐ)
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('perKmRate')}</label>
                       <input
                         type="number"
                         value={pricingSettings.perKmRate}
-                        onChange={(e) =>
-                          setPricingSettings({
-                            ...pricingSettings,
-                            perKmRate: parseInt(e.target.value),
-                          })
-                        }
+                        onChange={(e) => setPricingSettings({...pricingSettings, perKmRate: parseInt(e.target.value)})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
@@ -436,35 +321,21 @@ export function SettingsPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Phí hủy vé (%)
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('cancellationFee')}</label>
                       <input
                         type="number"
                         value={pricingSettings.cancellationFee}
-                        onChange={(e) =>
-                          setPricingSettings({
-                            ...pricingSettings,
-                            cancellationFee: parseInt(e.target.value),
-                          })
-                        }
+                        onChange={(e) => setPricingSettings({...pricingSettings, cancellationFee: parseInt(e.target.value)})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Thời gian hủy muộn (giờ)
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('lateCancellationHours')}</label>
                       <input
                         type="number"
                         value={pricingSettings.lateCancellationHours}
-                        onChange={(e) =>
-                          setPricingSettings({
-                            ...pricingSettings,
-                            lateCancellationHours: parseInt(e.target.value),
-                          })
-                        }
+                        onChange={(e) => setPricingSettings({...pricingSettings, lateCancellationHours: parseInt(e.target.value)})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
@@ -472,35 +343,21 @@ export function SettingsPage() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Giảm giá trẻ em (%)
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('childDiscount')}</label>
                       <input
                         type="number"
                         value={pricingSettings.childDiscountPercent}
-                        onChange={(e) =>
-                          setPricingSettings({
-                            ...pricingSettings,
-                            childDiscountPercent: parseInt(e.target.value),
-                          })
-                        }
+                        onChange={(e) => setPricingSettings({...pricingSettings, childDiscountPercent: parseInt(e.target.value)})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Giảm giá sinh viên (%)
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('studentDiscount')}</label>
                       <input
                         type="number"
                         value={pricingSettings.studentDiscountPercent}
-                        onChange={(e) =>
-                          setPricingSettings({
-                            ...pricingSettings,
-                            studentDiscountPercent: parseInt(e.target.value),
-                          })
-                        }
+                        onChange={(e) => setPricingSettings({...pricingSettings, studentDiscountPercent: parseInt(e.target.value)})}
                         className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
                       />
                     </div>
@@ -511,31 +368,23 @@ export function SettingsPage() {
           )}
 
           {/* Notifications */}
-          {selectedTab === "notifications" && (
+          {selectedTab === 'notifications' && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-12 h-12 bg-blue-100 dark:bg-blue-900/20 rounded-xl flex items-center justify-center">
                   <Bell className="w-6 h-6 text-blue-600 dark:text-blue-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl text-gray-900 dark:text-white">
-                    Cài Đặt Thông Báo
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Quản lý thông báo của hệ thống
-                  </p>
+                  <h3 className="text-xl text-gray-900 dark:text-white">{t('notificationSettings')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('notificationSettingsDesc')}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                   <div>
-                    <div className="text-gray-900 dark:text-white mb-1">
-                      Thông báo Email
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Nhận thông báo qua email về đặt vé, hủy vé
-                    </div>
+                    <div className="text-gray-900 dark:text-white mb-1">{t('emailNotifications')}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('emailNotificationsDesc')}</div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -550,12 +399,8 @@ export function SettingsPage() {
 
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                   <div>
-                    <div className="text-gray-900 dark:text-white mb-1">
-                      Thông báo đẩy
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Nhận thông báo đẩy trên thiết bị di động
-                    </div>
+                    <div className="text-gray-900 dark:text-white mb-1">{t('pushNotifications')}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('pushNotificationsDesc')}</div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -570,14 +415,10 @@ export function SettingsPage() {
 
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                   <div>
-                    <div className="text-gray-900 dark:text-white mb-1">
-                      Thông báo SMS
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Gửi SMS xác nhận đặt vé cho khách hàng
-                    </div>
+                    <div className="text-gray-900 dark:text-white mb-1">{t('smsNotifications')}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('smsNotificationsDesc')}</div>
                   </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
+                  <label className="relative inline-flex items-cursor-pointer">
                     <input
                       type="checkbox"
                       checked={smsNotifications}
@@ -588,35 +429,21 @@ export function SettingsPage() {
                   </label>
                 </div>
 
-                {/* Email Template */}
+                {/* Email Templates */}
                 <div className="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h4 className="text-gray-900 dark:text-white mb-4">
-                    Email Templates
-                  </h4>
+                  <h4 className="text-gray-900 dark:text-white mb-4">{t('emailTemplates')}</h4>
                   <div className="space-y-3">
                     <button className="w-full p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
-                      <div className="text-gray-900 dark:text-white">
-                        Email xác nhận đặt vé
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Cấu hình nội dung email xác nhận
-                      </div>
+                      <div className="text-gray-900 dark:text-white">{t('bookingConfirmEmail')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('bookingConfirmEmailDesc')}</div>
                     </button>
                     <button className="w-full p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
-                      <div className="text-gray-900 dark:text-white">
-                        Email hủy vé
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Thông báo hủy vé cho khách hàng
-                      </div>
+                      <div className="text-gray-900 dark:text-white">{t('cancellationEmail')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('cancellationEmailDesc')}</div>
                     </button>
                     <button className="w-full p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
-                      <div className="text-gray-900 dark:text-white">
-                        Email nhắc nhở chuyến đi
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Nhắc khách 24h trước giờ khởi hành
-                      </div>
+                      <div className="text-gray-900 dark:text-white">{t('reminderEmail')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('reminderEmailDesc')}</div>
                     </button>
                   </div>
                 </div>
@@ -625,19 +452,15 @@ export function SettingsPage() {
           )}
 
           {/* Security */}
-          {selectedTab === "security" && (
+          {selectedTab === 'security' && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-12 h-12 bg-purple-100 dark:bg-purple-900/20 rounded-xl flex items-center justify-center">
                   <Shield className="w-6 h-6 text-purple-600 dark:text-purple-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl text-gray-900 dark:text-white">
-                    Bảo Mật
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Cài đặt bảo mật tài khoản và hệ thống
-                  </p>
+                  <h3 className="text-xl text-gray-900 dark:text-white">{t('securitySettings')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('securitySettingsDesc')}</p>
                 </div>
               </div>
 
@@ -645,12 +468,8 @@ export function SettingsPage() {
                 <button className="w-full p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        Đổi mật khẩu
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Cập nhật mật khẩu đăng nhập
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('changePassword')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('changePasswordDesc')}</div>
                     </div>
                     <Lock className="w-5 h-5 text-gray-400" />
                   </div>
@@ -658,12 +477,8 @@ export function SettingsPage() {
 
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                   <div>
-                    <div className="text-gray-900 dark:text-white mb-1">
-                      Xác thực hai yếu tố (2FA)
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Tăng cường bảo mật với 2FA
-                    </div>
+                    <div className="text-gray-900 dark:text-white mb-1">{t('twoFactorAuth')}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('twoFactorAuthDesc')}</div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -679,12 +494,8 @@ export function SettingsPage() {
                 <button className="w-full p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        Lịch sử đăng nhập
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Xem các lần đăng nhập gần đây
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('loginHistory')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('loginHistoryDesc')}</div>
                     </div>
                     <Users className="w-5 h-5 text-gray-400" />
                   </div>
@@ -693,12 +504,8 @@ export function SettingsPage() {
                 <button className="w-full p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl text-left hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
                   <div className="flex items-center justify-between">
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        Quản lý phiên đăng nhập
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Đăng xuất khỏi các thiết bị khác
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('manageSession')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('manageSessionDesc')}</div>
                     </div>
                     <Shield className="w-5 h-5 text-gray-400" />
                   </div>
@@ -706,14 +513,10 @@ export function SettingsPage() {
 
                 {/* Security Policies */}
                 <div className="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h4 className="text-gray-900 dark:text-white mb-4">
-                    Chính Sách Bảo Mật
-                  </h4>
+                  <h4 className="text-gray-900 dark:text-white mb-4">{t('securityPolicies')}</h4>
                   <div className="space-y-3">
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Thời gian hết phiên (phút)
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('sessionTimeout')}</label>
                       <input
                         type="number"
                         defaultValue="30"
@@ -721,9 +524,7 @@ export function SettingsPage() {
                       />
                     </div>
                     <div>
-                      <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                        Số lần đăng nhập sai tối đa
-                      </label>
+                      <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('maxLoginAttempts')}</label>
                       <input
                         type="number"
                         defaultValue="5"
@@ -737,19 +538,15 @@ export function SettingsPage() {
           )}
 
           {/* Payment Settings */}
-          {selectedTab === "payment" && (
+          {selectedTab === 'payment' && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-12 h-12 bg-green-100 dark:bg-green-900/20 rounded-xl flex items-center justify-center">
                   <CreditCard className="w-6 h-6 text-green-600 dark:text-green-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl text-gray-900 dark:text-white">
-                    Cổng Thanh Toán
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Quản lý phương thức thanh toán
-                  </p>
+                  <h3 className="text-xl text-gray-900 dark:text-white">{t('paymentGateway')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('paymentGatewayDesc')}</p>
                 </div>
               </div>
 
@@ -760,24 +557,15 @@ export function SettingsPage() {
                       <span className="text-white">💳</span>
                     </div>
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        VNPay
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Cổng thanh toán VNPay
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('vnpay')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('vnpayDesc')}</div>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={paymentSettings.vnpayEnabled}
-                      onChange={(e) =>
-                        setPaymentSettings({
-                          ...paymentSettings,
-                          vnpayEnabled: e.target.checked,
-                        })
-                      }
+                      onChange={(e) => setPaymentSettings({...paymentSettings, vnpayEnabled: e.target.checked})}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -790,24 +578,15 @@ export function SettingsPage() {
                       <span className="text-white">M</span>
                     </div>
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        MoMo
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Ví điện tử MoMo
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('momo')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('momoDesc')}</div>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={paymentSettings.momoEnabled}
-                      onChange={(e) =>
-                        setPaymentSettings({
-                          ...paymentSettings,
-                          momoEnabled: e.target.checked,
-                        })
-                      }
+                      onChange={(e) => setPaymentSettings({...paymentSettings, momoEnabled: e.target.checked})}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -820,24 +599,15 @@ export function SettingsPage() {
                       <span className="text-white">Z</span>
                     </div>
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        ZaloPay
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Ví điện tử ZaloPay
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('zalopay')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('zalopayDesc')}</div>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={paymentSettings.zalopayEnabled}
-                      onChange={(e) =>
-                        setPaymentSettings({
-                          ...paymentSettings,
-                          zalopayEnabled: e.target.checked,
-                        })
-                      }
+                      onChange={(e) => setPaymentSettings({...paymentSettings, zalopayEnabled: e.target.checked})}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -850,24 +620,15 @@ export function SettingsPage() {
                       <span className="text-white">🏦</span>
                     </div>
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        Chuyển khoản ngân hàng
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Thanh toán qua chuyển khoản
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('bankTransfer')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('bankTransferDesc')}</div>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={paymentSettings.bankTransferEnabled}
-                      onChange={(e) =>
-                        setPaymentSettings({
-                          ...paymentSettings,
-                          bankTransferEnabled: e.target.checked,
-                        })
-                      }
+                      onChange={(e) => setPaymentSettings({...paymentSettings, bankTransferEnabled: e.target.checked})}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -880,24 +641,15 @@ export function SettingsPage() {
                       <span className="text-white">💵</span>
                     </div>
                     <div>
-                      <div className="text-gray-900 dark:text-white mb-1">
-                        Tiền mặt
-                      </div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">
-                        Thanh toán trực tiếp
-                      </div>
+                      <div className="text-gray-900 dark:text-white mb-1">{t('cash')}</div>
+                      <div className="text-sm text-gray-600 dark:text-gray-400">{t('cashDesc')}</div>
                     </div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
                       type="checkbox"
                       checked={paymentSettings.cashEnabled}
-                      onChange={(e) =>
-                        setPaymentSettings({
-                          ...paymentSettings,
-                          cashEnabled: e.target.checked,
-                        })
-                      }
+                      onChange={(e) => setPaymentSettings({...paymentSettings, cashEnabled: e.target.checked})}
                       className="sr-only peer"
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
@@ -908,31 +660,23 @@ export function SettingsPage() {
           )}
 
           {/* Backup */}
-          {selectedTab === "backup" && (
+          {selectedTab === 'backup' && (
             <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <div className="flex items-center space-x-3 mb-6">
                 <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
                   <Database className="w-6 h-6 text-orange-600 dark:text-orange-400" />
                 </div>
                 <div>
-                  <h3 className="text-xl text-gray-900 dark:text-white">
-                    Sao Lưu Dữ Liệu
-                  </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">
-                    Quản lý sao lưu tự động và phục hồi
-                  </p>
+                  <h3 className="text-xl text-gray-900 dark:text-white">{t('backupSettings')}</h3>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('backupSettingsDesc')}</p>
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                   <div>
-                    <div className="text-gray-900 dark:text-white mb-1">
-                      Sao lưu tự động
-                    </div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">
-                      Sao lưu dữ liệu hàng ngày lúc 02:00
-                    </div>
+                    <div className="text-gray-900 dark:text-white mb-1">{t('autoBackup')}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('autoBackupDesc')}</div>
                   </div>
                   <label className="relative inline-flex items-center cursor-pointer">
                     <input
@@ -946,20 +690,16 @@ export function SettingsPage() {
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                    Tần suất sao lưu
-                  </label>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('backupFrequency')}</label>
                   <select className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
-                    <option>Hàng ngày</option>
-                    <option>Hàng tuần</option>
-                    <option>Hàng tháng</option>
+                    <option>{t('daily')}</option>
+                    <option>{t('weekly')}</option>
+                    <option>{t('monthly')}</option>
                   </select>
                 </div>
 
                 <div>
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">
-                    Thời gian lưu trữ (ngày)
-                  </label>
+                  <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('retentionDays')}</label>
                   <input
                     type="number"
                     defaultValue="30"
@@ -969,51 +709,30 @@ export function SettingsPage() {
 
                 <button className="w-full p-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-xl hover:shadow-lg transition-all flex items-center justify-center space-x-2">
                   <Database className="w-5 h-5" />
-                  <span>Sao lưu ngay</span>
+                  <span>{t('backupNow')}</span>
                 </button>
 
                 {/* Recent Backups */}
                 <div className="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h4 className="text-gray-900 dark:text-white mb-4">
-                    Sao Lưu Gần Đây
-                  </h4>
+                  <h4 className="text-gray-900 dark:text-white mb-4">{t('recentBackups')}</h4>
                   <div className="space-y-3">
                     {[
-                      {
-                        date: "05/12/2024 02:00",
-                        size: "245 MB",
-                        status: "success",
-                      },
-                      {
-                        date: "04/12/2024 02:00",
-                        size: "242 MB",
-                        status: "success",
-                      },
-                      {
-                        date: "03/12/2024 02:00",
-                        size: "238 MB",
-                        status: "success",
-                      },
+                      { date: '05/12/2024 02:00', size: '245 MB', status: 'success' },
+                      { date: '04/12/2024 02:00', size: '242 MB', status: 'success' },
+                      { date: '03/12/2024 02:00', size: '238 MB', status: 'success' }
                     ].map((backup, index) => (
-                      <div
-                        key={index}
-                        className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl"
-                      >
+                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
                         <div className="flex items-center space-x-3">
                           <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
                             <Database className="w-5 h-5 text-green-600 dark:text-green-400" />
                           </div>
                           <div>
-                            <div className="text-gray-900 dark:text-white text-sm">
-                              {backup.date}
-                            </div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">
-                              {backup.size}
-                            </div>
+                            <div className="text-gray-900 dark:text-white text-sm">{backup.date}</div>
+                            <div className="text-xs text-gray-600 dark:text-gray-400">{backup.size}</div>
                           </div>
                         </div>
                         <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-all">
-                          Phục hồi
+                          {t('restore')}
                         </button>
                       </div>
                     ))}
@@ -1029,7 +748,7 @@ export function SettingsPage() {
             className="w-full py-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-2xl hover:shadow-xl hover:shadow-blue-500/30 transition-all flex items-center justify-center space-x-2"
           >
             <Save className="w-5 h-5" />
-            <span>Lưu tất cả thay đổi</span>
+            <span>{t('saveAllChanges')}</span>
           </button>
         </div>
       </div>

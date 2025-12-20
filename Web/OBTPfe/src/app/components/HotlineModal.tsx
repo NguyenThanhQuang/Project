@@ -1,5 +1,5 @@
-import { X, Phone, Headphones, Wrench, MessageSquare } from "lucide-react";
-import { useLanguage } from "./LanguageContext";
+import { X, Phone, Headphones, Wrench, MessageSquare } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 interface HotlineModalProps {
   onClose: () => void;
@@ -11,28 +11,28 @@ export function HotlineModal({ onClose }: HotlineModalProps) {
   const hotlines = [
     {
       icon: Phone,
-      title: t("customerService"),
-      number: "1900 6067",
-      color: "from-blue-500 to-blue-600",
+      title: t('customerService'),
+      number: '1900 6067',
+      color: 'from-blue-500 to-blue-600'
     },
     {
       icon: Headphones,
-      title: t("bookingSupport"),
-      number: "1900 1234",
-      color: "from-green-500 to-green-600",
+      title: t('bookingSupport'),
+      number: '1900 1234',
+      color: 'from-green-500 to-green-600'
     },
     {
       icon: Wrench,
-      title: t("technicalSupport"),
-      number: "1900 5678",
-      color: "from-purple-500 to-purple-600",
+      title: t('technicalSupport'),
+      number: '1900 5678',
+      color: 'from-purple-500 to-purple-600'
     },
     {
       icon: MessageSquare,
-      title: t("complaint"),
-      number: "1900 9999",
-      color: "from-orange-500 to-orange-600",
-    },
+      title: t('complaint'),
+      number: '1900 9999',
+      color: 'from-orange-500 to-orange-600'
+    }
   ];
 
   return (
@@ -42,8 +42,8 @@ export function HotlineModal({ onClose }: HotlineModalProps) {
         <div className="sticky top-0 bg-gradient-to-r from-blue-600 to-teal-500 text-white p-6 rounded-t-3xl">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-2xl mb-1">{t("hotlineTitle")}</h2>
-              <p className="text-blue-100 text-sm">{t("hotlineSubtitle")}</p>
+              <h2 className="text-2xl mb-1">{t('hotlineTitle')}</h2>
+              <p className="text-blue-100 text-sm">{t('hotlineSubtitle')}</p>
             </div>
             <button
               onClick={onClose}
@@ -64,9 +64,7 @@ export function HotlineModal({ onClose }: HotlineModalProps) {
                 className="group bg-gradient-to-br from-gray-50 to-white dark:from-gray-700 dark:to-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-600 hover:shadow-xl hover:scale-[1.02] transition-all duration-300"
               >
                 <div className="flex items-center space-x-4">
-                  <div
-                    className={`p-4 bg-gradient-to-br ${hotline.color} text-white rounded-2xl group-hover:scale-110 transition-transform`}
-                  >
+                  <div className={`p-4 bg-gradient-to-br ${hotline.color} text-white rounded-2xl group-hover:scale-110 transition-transform`}>
                     <Icon className="w-6 h-6" />
                   </div>
                   <div className="flex-1">
@@ -74,19 +72,14 @@ export function HotlineModal({ onClose }: HotlineModalProps) {
                       {hotline.title}
                     </h3>
                     <a
-                      href={`tel:${hotline.number.replace(/\s/g, "")}`}
+                      href={`tel:${hotline.number.replace(/\s/g, '')}`}
                       className="text-2xl bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent group-hover:scale-105 inline-block transition-transform"
                     >
                       {hotline.number}
                     </a>
                   </div>
                   <button
-                    onClick={() =>
-                      (window.location.href = `tel:${hotline.number.replace(
-                        /\s/g,
-                        ""
-                      )}`)
-                    }
+                    onClick={() => window.location.href = `tel:${hotline.number.replace(/\s/g, '')}`}
                     className="px-6 py-3 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-xl hover:shadow-lg hover:shadow-blue-500/30 transition-all"
                   >
                     <Phone className="w-5 h-5" />

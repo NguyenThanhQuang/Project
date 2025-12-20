@@ -1,26 +1,18 @@
-import { useState } from "react";
-import { User, Lock, Truck, ArrowLeft } from "lucide-react";
-import { ForgotPasswordModal } from "../ForgotPasswordModal";
-import { useLanguage } from "../LanguageContext";
+import { useState } from 'react';
+import { User, Lock, Truck, ArrowLeft } from 'lucide-react';
+import { ForgotPasswordModal } from '../ForgotPasswordModal';
+import { useLanguage } from '../LanguageContext';
 
 interface DriverLoginProps {
-  onLoginSuccess: (driverData: {
-    name: string;
-    id: string;
-    phone: string;
-  }) => void;
+  onLoginSuccess: (driverData: { name: string; id: string; phone: string }) => void;
   onBack: () => void;
   onRegisterClick: () => void;
 }
 
-export function DriverLogin({
-  onLoginSuccess,
-  onBack,
-  onRegisterClick,
-}: DriverLoginProps) {
+export function DriverLogin({ onLoginSuccess, onBack, onRegisterClick }: DriverLoginProps) {
   const { t } = useLanguage();
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState('');
+  const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showForgotPassword, setShowForgotPassword] = useState(false);
 
@@ -32,12 +24,12 @@ export function DriverLogin({
     setTimeout(() => {
       if (username && password) {
         onLoginSuccess({
-          name: "Nguyễn Văn Tài",
-          id: "TX001",
-          phone: "0123456789",
+          name: 'Nguyễn Văn Tài',
+          id: 'TX001',
+          phone: '0123456789'
         });
       } else {
-        alert(t("pleaseEnterAllInfo"));
+        alert(t('pleaseEnterAllInfo'));
       }
       setIsLoading(false);
     }, 1000);
@@ -58,7 +50,7 @@ export function DriverLogin({
           className="mb-4 flex items-center space-x-2 text-white hover:text-blue-100 transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
-          <span>{t("backToHome")}</span>
+          <span>{t('backToHome')}</span>
         </button>
 
         {/* Login Card */}
@@ -69,10 +61,10 @@ export function DriverLogin({
               <Truck className="w-10 h-10 text-white" />
             </div>
             <h1 className="text-3xl text-gray-900 dark:text-white mb-2">
-              {t("driverPortalTitle")}
+              {t('driverPortalTitle')}
             </h1>
             <p className="text-gray-600 dark:text-gray-400">
-              {t("driverLoginSubtitle")}
+              {t('driverLoginSubtitle')}
             </p>
           </div>
 
@@ -80,7 +72,7 @@ export function DriverLogin({
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                {t("usernameLabel")}
+                {t('usernameLabel')}
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -88,7 +80,7 @@ export function DriverLogin({
                   type="text"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  placeholder={t("enterUsername")}
+                  placeholder={t('enterUsername')}
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                   required
                 />
@@ -97,7 +89,7 @@ export function DriverLogin({
 
             <div>
               <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                {t("password")}
+                {t('password')}
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
@@ -105,7 +97,7 @@ export function DriverLogin({
                   type="password"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  placeholder={t("enterPassword")}
+                  placeholder={t('enterPassword')}
                   className="w-full pl-10 pr-4 py-3 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                   required
                 />
@@ -118,16 +110,14 @@ export function DriverLogin({
                   type="checkbox"
                   className="w-4 h-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                 />
-                <span className="text-gray-600 dark:text-gray-400">
-                  {t("rememberLogin")}
-                </span>
+                <span className="text-gray-600 dark:text-gray-400">{t('rememberLogin')}</span>
               </label>
               <button
                 type="button"
                 className="text-blue-600 dark:text-blue-400 hover:underline"
                 onClick={() => setShowForgotPassword(true)}
               >
-                {t("forgotPassword")}?
+                {t('forgotPassword')}?
               </button>
             </div>
 
@@ -139,10 +129,10 @@ export function DriverLogin({
               {isLoading ? (
                 <span className="flex items-center justify-center space-x-2">
                   <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                  <span>{t("loggingIn")}</span>
+                  <span>{t('loggingIn')}</span>
                 </span>
               ) : (
-                t("login")
+                t('login')
               )}
             </button>
           </form>
@@ -150,12 +140,12 @@ export function DriverLogin({
           {/* Register Link */}
           <div className="mt-6 text-center">
             <p className="text-sm text-gray-600 dark:text-gray-400">
-              {t("noAccountYet")}{" "}
+              {t('noAccountYet')}{' '}
               <button
                 onClick={onRegisterClick}
                 className="text-blue-600 dark:text-blue-400 hover:underline"
               >
-                {t("registerNow")}
+                {t('registerNow')}
               </button>
             </p>
           </div>
@@ -163,10 +153,10 @@ export function DriverLogin({
           {/* Demo credentials */}
           <div className="mt-6 p-4 bg-blue-50 dark:bg-blue-900/30 rounded-xl border border-blue-200 dark:border-blue-700">
             <p className="text-sm text-gray-600 dark:text-gray-400 text-center mb-2">
-              <strong>{t("demoNote")}</strong> {t("demoInstructions")}
+              <strong>{t('demoNote')}</strong> {t('demoInstructions')}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-500 text-center">
-              {t("demoExample")} driver123 / password
+              {t('demoExample')} driver123 / password
             </p>
           </div>
         </div>

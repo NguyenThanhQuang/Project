@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { User, X, Search } from "lucide-react";
-import { useLanguage } from "./LanguageContext";
+import { useState } from 'react';
+import { User, X, Search } from 'lucide-react';
+import { useLanguage } from './LanguageContext';
 
 interface Driver {
   id: string;
@@ -9,7 +9,7 @@ interface Driver {
   licenseNumber: string;
   rating: number;
   totalTrips: number;
-  status: "available" | "busy";
+  status: 'available' | 'busy';
 }
 
 interface DriverAssignmentProps {
@@ -18,49 +18,44 @@ interface DriverAssignmentProps {
   tripId: string;
 }
 
-export function DriverAssignment({
-  onClose,
-  onAssign,
-  tripId,
-}: DriverAssignmentProps) {
+export function DriverAssignment({ onClose, onAssign, tripId }: DriverAssignmentProps) {
   const { t } = useLanguage();
   const [drivers] = useState<Driver[]>([
     {
-      id: "1",
-      name: "Nguyễn Văn Tài",
-      phone: "0909111222",
-      licenseNumber: "B2-12345678",
+      id: '1',
+      name: 'Nguyễn Văn Tài',
+      phone: '0909111222',
+      licenseNumber: 'B2-12345678',
       rating: 4.8,
       totalTrips: 156,
-      status: "available",
+      status: 'available'
     },
     {
-      id: "2",
-      name: "Trần Minh Đức",
-      phone: "0909222333",
-      licenseNumber: "B2-23456789",
+      id: '2',
+      name: 'Trần Minh Đức',
+      phone: '0909222333',
+      licenseNumber: 'B2-23456789',
       rating: 4.9,
       totalTrips: 203,
-      status: "available",
+      status: 'available'
     },
     {
-      id: "3",
-      name: "Lê Hoàng Nam",
-      phone: "0909333444",
-      licenseNumber: "B2-34567890",
+      id: '3',
+      name: 'Lê Hoàng Nam',
+      phone: '0909333444',
+      licenseNumber: 'B2-34567890',
       rating: 4.7,
       totalTrips: 142,
-      status: "busy",
-    },
+      status: 'busy'
+    }
   ]);
 
-  const [searchQuery, setSearchQuery] = useState("");
+  const [searchQuery, setSearchQuery] = useState('');
 
-  const filteredDrivers = drivers.filter(
-    (d) =>
-      d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      d.phone.includes(searchQuery) ||
-      d.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredDrivers = drivers.filter(d =>
+    d.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    d.phone.includes(searchQuery) ||
+    d.licenseNumber.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (
@@ -68,9 +63,7 @@ export function DriverAssignment({
       <div className="bg-white dark:bg-gray-900 rounded-3xl shadow-2xl max-w-2xl w-full max-h-[80vh] overflow-y-auto">
         <div className="sticky top-0 bg-white dark:bg-gray-900 p-6 border-b border-gray-100 dark:border-gray-800">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-gray-900 dark:text-white">
-              {t("assignDriver")}
-            </h3>
+            <h3 className="text-gray-900 dark:text-white">{t('assignDriver')}</h3>
             <button
               onClick={onClose}
               className="p-2 hover:bg-gray-100 dark:hover:bg-gray-800 rounded-xl transition-colors"
@@ -85,7 +78,7 @@ export function DriverAssignment({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={t("searchDriver")}
+              placeholder={t('searchDriver')}
               className="w-full pl-10 pr-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
             />
           </div>
@@ -96,12 +89,12 @@ export function DriverAssignment({
             <div
               key={driver.id}
               className={`p-4 rounded-2xl border-2 transition-all ${
-                driver.status === "available"
-                  ? "border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 cursor-pointer"
-                  : "border-gray-100 dark:border-gray-800 opacity-50 cursor-not-allowed"
+                driver.status === 'available'
+                  ? 'border-gray-200 dark:border-gray-700 hover:border-blue-500 dark:hover:border-blue-500 cursor-pointer'
+                  : 'border-gray-100 dark:border-gray-800 opacity-50 cursor-not-allowed'
               }`}
               onClick={() => {
-                if (driver.status === "available") {
+                if (driver.status === 'available') {
                   onAssign(driver.id);
                   onClose();
                 }
@@ -113,9 +106,7 @@ export function DriverAssignment({
                     <User className="w-6 h-6" />
                   </div>
                   <div>
-                    <div className="text-gray-900 dark:text-white mb-1">
-                      {driver.name}
-                    </div>
+                    <div className="text-gray-900 dark:text-white mb-1">{driver.name}</div>
                     <div className="flex items-center space-x-4 text-sm text-gray-600 dark:text-gray-400">
                       <span>{driver.phone}</span>
                       <span>•</span>
@@ -126,21 +117,17 @@ export function DriverAssignment({
                 <div className="text-right">
                   <div className="flex items-center space-x-1 mb-1">
                     <span className="text-yellow-400">★</span>
-                    <span className="text-gray-900 dark:text-white">
-                      {driver.rating}
-                    </span>
+                    <span className="text-gray-900 dark:text-white">{driver.rating}</span>
                   </div>
                   <div className="text-sm text-gray-600 dark:text-gray-400">
-                    {driver.totalTrips} {t("tripsCount")}
+                    {driver.totalTrips} {t('tripsCount')}
                   </div>
-                  <div
-                    className={`mt-2 px-3 py-1 rounded-full text-xs ${
-                      driver.status === "available"
-                        ? "bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400"
-                        : "bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400"
-                    }`}
-                  >
-                    {driver.status === "available" ? t("available") : t("busy")}
+                  <div className={`mt-2 px-3 py-1 rounded-full text-xs ${
+                    driver.status === 'available'
+                      ? 'bg-green-100 dark:bg-green-900/20 text-green-700 dark:text-green-400'
+                      : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+                  }`}>
+                    {driver.status === 'available' ? t('available') : t('busy')}
                   </div>
                 </div>
               </div>

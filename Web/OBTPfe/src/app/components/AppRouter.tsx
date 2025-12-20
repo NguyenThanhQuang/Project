@@ -1,97 +1,84 @@
-import { useState } from "react";
-import { Header } from "./Header";
-import { HeroSearch } from "./HeroSearch";
-import { PopularRoutes } from "./PopularRoutes";
-import { Features } from "./Features";
-import { PromoSlider } from "./PromoSlider";
-import { Footer } from "./Footer";
-import { SearchResults } from "./SearchResults";
-import { TripDetail } from "./TripDetail";
-import { Auth } from "./Auth";
-import { TicketLookup } from "./TicketLookup";
-import { MyTrips } from "./MyTrips";
-import { UserProfile } from "./UserProfile";
-import { RoutesPage } from "./RoutesPage";
-import { ContactPage } from "./ContactPage";
-import { HotlineModal } from "./HotlineModal";
-import { PaymentPage } from "./PaymentPage";
-import { BookingConfirmation } from "./BookingConfirmation";
-import { QRTicketPage } from "./QRTicketPage";
-import { AboutPage } from "./AboutPage";
-import { FAQPage } from "./FAQPage";
+import { useState } from 'react';
+import { Header } from './Header';
+import { HeroSearch } from './HeroSearch';
+import { PopularRoutes } from './PopularRoutes';
+import { Features } from './Features';
+import { PromoSlider } from './PromoSlider';
+import { Footer } from './Footer';
+import { SearchResults } from './SearchResults';
+import { TripDetail } from './TripDetail';
+import { Auth } from './Auth';
+import { TicketLookup } from './TicketLookup';
+import { MyTrips } from './MyTrips';
+import { UserProfile } from './UserProfile';
+import { RoutesPage } from './RoutesPage';
+import { ContactPage } from './ContactPage';
+import { HotlineModal } from './HotlineModal';
+import { PaymentPage } from './PaymentPage';
+import { BookingConfirmation } from './BookingConfirmation';
+import { QRTicketPage } from './QRTicketPage';
+import { AboutPage } from './AboutPage';
+import { FAQPage } from './FAQPage';
 
-type Page =
-  | "home"
-  | "search-results"
-  | "trip-detail"
-  | "payment"
-  | "booking-confirmation"
-  | "qr-ticket"
-  | "ticket-lookup"
-  | "my-trips"
-  | "user-profile"
-  | "routes"
-  | "contact"
-  | "about"
-  | "faq";
+type Page = 'home' | 'search-results' | 'trip-detail' | 'payment' | 'booking-confirmation' | 'qr-ticket' | 'ticket-lookup' | 'my-trips' | 'user-profile' | 'routes' | 'contact' | 'about' | 'faq';
 
 interface AppRouterProps {
   onPageChange?: (isHome: boolean) => void;
 }
 
 export function AppRouter({ onPageChange }: AppRouterProps = {}) {
-  const [currentPage, setCurrentPage] = useState<Page>("home");
+  const [currentPage, setCurrentPage] = useState<Page>('home');
   const [showAuth, setShowAuth] = useState(false);
   const [showHotline, setShowHotline] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [selectedTripId, setSelectedTripId] = useState<string | null>(null);
-  const [searchFrom, setSearchFrom] = useState("");
-  const [searchTo, setSearchTo] = useState("");
-  const [currentBookingId, setCurrentBookingId] = useState("");
+  const [searchFrom, setSearchFrom] = useState('');
+  const [searchTo, setSearchTo] = useState('');
+  const [currentBookingId, setCurrentBookingId] = useState('');
   const [selectedSeats, setSelectedSeats] = useState<string[]>([]);
 
   // Notify parent when page changes
   const changePage = (page: Page) => {
     setCurrentPage(page);
     if (onPageChange) {
-      onPageChange(page === "home");
+      onPageChange(page === 'home');
     }
   };
 
   // Mock data
   const mockTripData = {
-    from: searchFrom || "TP. Hồ Chí Minh",
-    to: searchTo || "Đà Lạt",
-    date: "05/12/2024",
-    time: "08:00",
-    seats: selectedSeats.length > 0 ? selectedSeats : ["A1", "A2"],
+    from: searchFrom || 'TP. Hồ Chí Minh',
+    to: searchTo || 'Đà Lạt',
+    date: '05/12/2024',
+    time: '08:00',
+    seats: selectedSeats.length > 0 ? selectedSeats : ['A1', 'A2'],
     totalPrice: 440000,
-    companyName: "Phương Trang",
-    passengerName: "Nguyễn Văn A",
-    passengerPhone: "0123456789",
+    companyName: 'Phương Trang',
+    passengerName: 'Nguyễn Văn A',
+    passengerPhone: '0123456789'
   };
 
   const mockTicketData = {
     ...mockTripData,
-    bookingId: currentBookingId || "BK123456789",
-    status: "active" as const,
+    bookingId: currentBookingId || 'BK123456789',
+    status: 'active' as const
   };
 
   const handleSearch = (from: string, to: string, date: string) => {
     setSearchFrom(from);
     setSearchTo(to);
-    changePage("search-results");
+    changePage('search-results');
   };
 
   const handleRouteClick = (from: string, to: string) => {
     setSearchFrom(from);
     setSearchTo(to);
-    changePage("search-results");
+    changePage('search-results');
   };
 
   const handleTripSelect = (tripId: string) => {
     setSelectedTripId(tripId);
-    changePage("trip-detail");
+    changePage('trip-detail');
   };
 
   const handleBooking = (seats: string[]) => {
@@ -99,13 +86,13 @@ export function AppRouter({ onPageChange }: AppRouterProps = {}) {
     if (!isLoggedIn) {
       setShowAuth(true);
     } else {
-      changePage("payment");
+      changePage('payment');
     }
   };
 
   const handlePaymentSuccess = (bookingId: string) => {
     setCurrentBookingId(bookingId);
-    changePage("booking-confirmation");
+    changePage('booking-confirmation');
   };
 
   const handleLoginSuccess = () => {
@@ -113,31 +100,32 @@ export function AppRouter({ onPageChange }: AppRouterProps = {}) {
     setShowAuth(false);
     // Continue with booking if was trying to book
     if (selectedSeats.length > 0) {
-      changePage("payment");
+      changePage('payment');
     }
   };
 
   const handleLogout = () => {
     setIsLoggedIn(false);
-    changePage("home");
+    changePage('home');
   };
 
   return (
     <>
-      {currentPage === "home" && (
+      {currentPage === 'home' && (
         <>
           <Header
             isLoggedIn={isLoggedIn}
             onLoginClick={() => setShowAuth(true)}
-            onMyTripsClick={() => changePage("my-trips")}
-            onProfileClick={() => changePage("user-profile")}
+            onMyTripsClick={() => changePage('my-trips')}
+            onProfileClick={() => changePage('user-profile')}
             onLogout={handleLogout}
-            onRoutesClick={() => changePage("routes")}
-            onContactClick={() => changePage("contact")}
-            onTicketLookupClick={() => changePage("ticket-lookup")}
+            onRoutesClick={() => changePage('routes')}
+            onContactClick={() => changePage('contact')}
+            onTicketLookupClick={() => changePage('ticket-lookup')}
             onHotlineClick={() => setShowHotline(true)}
+            onHomeClick={() => changePage('home')}
           />
-          <HeroSearch
+          <HeroSearch 
             onSearch={handleSearch}
             initialFrom={searchFrom}
             initialTo={searchTo}
@@ -145,89 +133,118 @@ export function AppRouter({ onPageChange }: AppRouterProps = {}) {
           <PopularRoutes onRouteClick={handleRouteClick} />
           <PromoSlider />
           <Features />
-          <Footer
-            onAboutClick={() => changePage("about")}
-            onFAQClick={() => changePage("faq")}
-            onContactClick={() => changePage("contact")}
+          <Footer 
+            onAboutClick={() => changePage('about')}
+            onFAQClick={() => changePage('faq')}
+            onContactClick={() => changePage('contact')}
           />
         </>
       )}
 
-      {currentPage === "routes" && (
-        <RoutesPage
-          onBack={() => changePage("home")}
+      {currentPage === 'routes' && (
+        <RoutesPage 
+          onBack={() => changePage('home')}
           onRouteClick={handleRouteClick}
+          isLoggedIn={isLoggedIn}
+          onLoginClick={() => setShowAuth(true)}
+          onMyTripsClick={() => changePage('my-trips')}
+          onProfileClick={() => changePage('user-profile')}
+          onLogout={handleLogout}
+          onContactClick={() => changePage('contact')}
+          onTicketLookupClick={() => changePage('ticket-lookup')}
+          onHotlineClick={() => setShowHotline(true)}
         />
       )}
 
-      {currentPage === "contact" && (
-        <ContactPage onBack={() => changePage("home")} />
+      {currentPage === 'contact' && (
+        <ContactPage 
+          onBack={() => changePage('home')}
+          isLoggedIn={isLoggedIn}
+          onLoginClick={() => setShowAuth(true)}
+          onMyTripsClick={() => changePage('my-trips')}
+          onProfileClick={() => changePage('user-profile')}
+          onLogout={handleLogout}
+          onRoutesClick={() => changePage('routes')}
+          onTicketLookupClick={() => changePage('ticket-lookup')}
+          onHotlineClick={() => setShowHotline(true)}
+        />
       )}
 
-      {currentPage === "about" && (
-        <AboutPage onBack={() => changePage("home")} />
+      {currentPage === 'about' && (
+        <AboutPage onBack={() => changePage('home')} />
       )}
 
-      {currentPage === "faq" && <FAQPage onBack={() => changePage("home")} />}
+      {currentPage === 'faq' && (
+        <FAQPage onBack={() => changePage('home')} />
+      )}
 
-      {currentPage === "search-results" && (
+      {currentPage === 'search-results' && (
         <SearchResults
-          onBack={() => changePage("home")}
+          onBack={() => changePage('home')}
           onTripSelect={handleTripSelect}
         />
       )}
 
-      {currentPage === "trip-detail" && selectedTripId && (
+      {currentPage === 'trip-detail' && selectedTripId && (
         <TripDetail
           tripId={selectedTripId}
-          onBack={() => changePage("search-results")}
+          onBack={() => changePage('search-results')}
           onBooking={handleBooking}
         />
       )}
 
-      {currentPage === "payment" && (
+      {currentPage === 'payment' && (
         <PaymentPage
-          onBack={() => changePage("trip-detail")}
+          onBack={() => changePage('trip-detail')}
           onPaymentSuccess={handlePaymentSuccess}
           tripData={mockTripData}
         />
       )}
 
-      {currentPage === "booking-confirmation" && (
+      {currentPage === 'booking-confirmation' && (
         <BookingConfirmation
-          onViewTicket={() => changePage("qr-ticket")}
-          onBackToHome={() => changePage("home")}
+          onViewTicket={() => changePage('qr-ticket')}
+          onBackToHome={() => changePage('home')}
           bookingData={{ ...mockTripData, bookingId: currentBookingId }}
         />
       )}
 
-      {currentPage === "qr-ticket" && (
+      {currentPage === 'qr-ticket' && (
         <QRTicketPage
-          onBack={() => changePage("my-trips")}
+          onBack={() => changePage('my-trips')}
           ticketData={mockTicketData}
         />
       )}
 
-      {currentPage === "ticket-lookup" && (
-        <TicketLookup onBack={() => changePage("home")} />
-      )}
-
-      {currentPage === "my-trips" && (
-        <MyTrips onBack={() => changePage("home")} />
-      )}
-
-      {currentPage === "user-profile" && (
-        <UserProfile onBack={() => changePage("home")} />
-      )}
-
-      {showAuth && (
-        <Auth
-          onClose={() => setShowAuth(false)}
-          onLoginSuccess={handleLoginSuccess}
+      {currentPage === 'ticket-lookup' && (
+        <TicketLookup 
+          onBack={() => changePage('home')}
+          isLoggedIn={isLoggedIn}
+          onLoginClick={() => setShowAuth(true)}
+          onMyTripsClick={() => changePage('my-trips')}
+          onProfileClick={() => changePage('user-profile')}
+          onLogout={handleLogout}
+          onRoutesClick={() => changePage('routes')}
+          onContactClick={() => changePage('contact')}
+          onHotlineClick={() => setShowHotline(true)}
         />
       )}
 
-      {showHotline && <HotlineModal onClose={() => setShowHotline(false)} />}
+      {currentPage === 'my-trips' && (
+        <MyTrips onBack={() => changePage('home')} />
+      )}
+
+      {currentPage === 'user-profile' && (
+        <UserProfile onBack={() => changePage('home')} />
+      )}
+
+      {showAuth && (
+        <Auth onClose={() => setShowAuth(false)} onLoginSuccess={handleLoginSuccess} />
+      )}
+
+      {showHotline && (
+        <HotlineModal onClose={() => setShowHotline(false)} />
+      )}
     </>
   );
 }
