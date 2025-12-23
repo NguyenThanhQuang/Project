@@ -1,0 +1,29 @@
+name: obtp-infrastructure
+
+services:
+  mongo1:
+    image: mongo:8.0
+    container_name: obtp-mongo
+    # Cấu hình Replica Set để hỗ trợ Transaction (hỗ trợ cho logic đặt vé)
+    command: ["--replSet", "rs0", "--bind_ip_all", "--port", "27017"]
+    ports:
+      - "27017:27017"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    # Healthcheck: Tự động khởi tạo Replica Set nếu chưa có
+    healthcheck:
+      test: echo "try { rs.status() } catch (err) { rs.initiate({_id:'rs0',members:[{_id:0,host:'host.docker.internal:27017'}]}) }" | mongosh --port 27017 --quiet
+      interval: 10s
+      timeout: 10s
+      retries: 5
+      start_period: 20s
+    volumes:
+      - mongo1_data:/data/db
+  redis:
+    image: redis:alpine
+    container_name: obtp-redis
+    ports:
+      - "6379:6379"
+
+volumes:
+  mongo1_data:
