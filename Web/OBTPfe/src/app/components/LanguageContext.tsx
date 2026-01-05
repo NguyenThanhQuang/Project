@@ -732,6 +732,7 @@ const translations = {
     comparedToLastMonth: 'so với tháng trước',
     loginSubtitle: 'Đăng nhập',
     register: 'Đăng ký',
+    registerSubtitle: 'Tạo tài khoản mới',
     haveAccount: 'Đã có tài khoản?',
     loginNow: 'Đăng nhập ngay',
     emailField: 'Email',
@@ -1071,7 +1072,6 @@ const translations = {
     demoUserName: 'Nguyễn Văn A',
     demoUserEmail: 'nguyenvana@example.com',
     demoDestination: 'Đà Lạt',
-    
     // Additional Missing Keys
     manualEntry: 'Nhập mã thủ công',
     onBoard: 'Đã lên xe',
@@ -1820,6 +1820,7 @@ const translations = {
     comparedToLastMonth: 'compared to last month',
     loginSubtitle: 'Login',
     register: 'Register',
+    registerSubtitle: 'Register a new Account',
     haveAccount: 'Already have an account?',
     loginNow: 'Login now',
     emailField: 'Email',

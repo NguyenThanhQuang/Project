@@ -4,11 +4,10 @@ import { useLanguage } from '../LanguageContext';
 
 export function SettingsPage() {
   const { language, setLanguage, t } = useLanguage();
-  const [selectedTab, setSelectedTab] = useState<'general' | 'company' | 'notifications' | 'security' | 'payment' | 'backup'>('general');
+  const [selectedTab, setSelectedTab] = useState<'general' | 'company' | 'notifications' | 'security' | 'payment'>('general');
   const [emailNotifications, setEmailNotifications] = useState(true);
   const [pushNotifications, setPushNotifications] = useState(true);
   const [smsNotifications, setSmsNotifications] = useState(false);
-  const [autoBackup, setAutoBackup] = useState(true);
   const [twoFactorAuth, setTwoFactorAuth] = useState(false);
 
   // Company Settings
@@ -46,8 +45,7 @@ export function SettingsPage() {
     { id: 'company', icon: Building2, label: t('companyInfo') },
     { id: 'notifications', icon: Bell, label: t('notifications') },
     { id: 'security', icon: Shield, label: t('security') },
-    { id: 'payment', icon: CreditCard, label: t('payment') },
-    { id: 'backup', icon: Database, label: t('backup') }
+    { id: 'payment', icon: CreditCard, label: t('payment') }
   ];
 
   const handleSave = () => {
@@ -654,89 +652,6 @@ export function SettingsPage() {
                     />
                     <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
                   </label>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Backup */}
-          {selectedTab === 'backup' && (
-            <div className="bg-white dark:bg-gray-800 rounded-3xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
-              <div className="flex items-center space-x-3 mb-6">
-                <div className="w-12 h-12 bg-orange-100 dark:bg-orange-900/20 rounded-xl flex items-center justify-center">
-                  <Database className="w-6 h-6 text-orange-600 dark:text-orange-400" />
-                </div>
-                <div>
-                  <h3 className="text-xl text-gray-900 dark:text-white">{t('backupSettings')}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">{t('backupSettingsDesc')}</p>
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                  <div>
-                    <div className="text-gray-900 dark:text-white mb-1">{t('autoBackup')}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{t('autoBackupDesc')}</div>
-                  </div>
-                  <label className="relative inline-flex items-center cursor-pointer">
-                    <input
-                      type="checkbox"
-                      checked={autoBackup}
-                      onChange={(e) => setAutoBackup(e.target.checked)}
-                      className="sr-only peer"
-                    />
-                    <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600"></div>
-                  </label>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('backupFrequency')}</label>
-                  <select className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white">
-                    <option>{t('daily')}</option>
-                    <option>{t('weekly')}</option>
-                    <option>{t('monthly')}</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-gray-700 dark:text-gray-300 mb-2">{t('retentionDays')}</label>
-                  <input
-                    type="number"
-                    defaultValue="30"
-                    className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 text-gray-900 dark:text-white"
-                  />
-                </div>
-
-                <button className="w-full p-4 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-xl hover:shadow-lg transition-all flex items-center justify-center space-x-2">
-                  <Database className="w-5 h-5" />
-                  <span>{t('backupNow')}</span>
-                </button>
-
-                {/* Recent Backups */}
-                <div className="mt-6 p-4 border-t border-gray-200 dark:border-gray-700 pt-6">
-                  <h4 className="text-gray-900 dark:text-white mb-4">{t('recentBackups')}</h4>
-                  <div className="space-y-3">
-                    {[
-                      { date: '05/12/2024 02:00', size: '245 MB', status: 'success' },
-                      { date: '04/12/2024 02:00', size: '242 MB', status: 'success' },
-                      { date: '03/12/2024 02:00', size: '238 MB', status: 'success' }
-                    ].map((backup, index) => (
-                      <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-xl">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 bg-green-100 dark:bg-green-900/30 rounded-xl flex items-center justify-center">
-                            <Database className="w-5 h-5 text-green-600 dark:text-green-400" />
-                          </div>
-                          <div>
-                            <div className="text-gray-900 dark:text-white text-sm">{backup.date}</div>
-                            <div className="text-xs text-gray-600 dark:text-gray-400">{backup.size}</div>
-                          </div>
-                        </div>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition-all">
-                          {t('restore')}
-                        </button>
-                      </div>
-                    ))}
-                  </div>
                 </div>
               </div>
             </div>
