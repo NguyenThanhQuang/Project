@@ -276,7 +276,7 @@ export class AuthService {
         );
       }
     }
-
+    
     const payload: JwtPayload = {
       email: user.email,
       sub: user._id.toString(),

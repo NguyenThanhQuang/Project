@@ -6,6 +6,7 @@ export enum UserRole {
   USER = 'user',
   COMPANY_ADMIN = 'company_admin',
   ADMIN = 'admin',
+  DRIVER = 'driver',
 }
 
 export type UserDocument = HydratedDocument<User> & {
@@ -41,6 +42,9 @@ export class User {
 
   @Prop({ type: Types.ObjectId, ref: 'Company' })
   companyId?: Types.ObjectId;
+
+   @Prop({ type: Types.ObjectId, ref: 'Driver' })
+  driverId?: Types.ObjectId;
 
   @Prop({ type: Boolean, default: false })
   isEmailVerified: boolean;

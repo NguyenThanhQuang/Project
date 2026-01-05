@@ -138,7 +138,12 @@ export class Trip {
     index: true,
   })
   status: TripStatus;
-
+@Prop({
+  type: Types.ObjectId,
+  ref: 'Driver',
+  index: true,
+})
+driverId?: Types.ObjectId;
   @Prop({ type: [SeatSchema], required: true, default: [] })
   seats: Seat[];
 
