@@ -13,6 +13,7 @@ interface Passenger {
 }
 
 interface TripDetailProps {
+  tripId?: string;
   onBack: () => void;
   onScanQR: () => void;
 }
@@ -25,7 +26,7 @@ const mockPassengers: Passenger[] = [
   { id: '5', name: 'Hoàng Văn E', phone: '0909567890', seatNumber: 'B1', checkedIn: true, ticketCode: 'TKT005', boardingPoint: 'Bến xe Miền Đông' },
 ];
 
-export function TripDetail({ onBack }: TripDetailProps) {
+export function TripDetail({ onBack, onScanQR }: TripDetailProps) {
   const { t } = useLanguage();
   const [tripStatus, setTripStatus] = useState<'not-started' | 'in-progress' | 'completed'>('not-started');
   const [passengers, setPassengers] = useState(mockPassengers);

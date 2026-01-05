@@ -1,4 +1,4 @@
-import { ArrowLeft, Save, Globe, Clock, DollarSign, Bell, Shield, Database, Upload, Check } from 'lucide-react';
+import { ArrowLeft, Save, Globe, Clock, DollarSign, Bell, Shield, Upload, Check } from 'lucide-react';
 import { useState } from 'react';
 import { useLanguage } from '../LanguageContext';
 
@@ -8,7 +8,7 @@ interface SettingsProps {
 
 export function Settings({ onBack }: SettingsProps) {
   const { t } = useLanguage();
-  const [activeTab, setActiveTab] = useState<'general' | 'company' | 'pricing' | 'notifications' | 'security' | 'backup'>('general');
+  const [activeTab, setActiveTab] = useState<'general' | 'company' | 'pricing' | 'notifications' | 'security'>('general');
   const [showSuccess, setShowSuccess] = useState(false);
 
   // General settings
@@ -38,11 +38,6 @@ export function Settings({ onBack }: SettingsProps) {
   const [maxLoginAttempts, setMaxLoginAttempts] = useState('5');
   const [twoFactorEnabled, setTwoFactorEnabled] = useState(false);
 
-  // Backup settings
-  const [autoBackup, setAutoBackup] = useState(true);
-  const [backupFrequency, setBackupFrequency] = useState('daily');
-  const [retentionDays, setRetentionDays] = useState('30');
-
   const handleSave = () => {
     setShowSuccess(true);
     setTimeout(() => setShowSuccess(false), 3000);
@@ -54,7 +49,6 @@ export function Settings({ onBack }: SettingsProps) {
     { id: 'pricing' as const, label: t('payment'), icon: DollarSign },
     { id: 'notifications' as const, label: t('notifications'), icon: Bell },
     { id: 'security' as const, label: t('security'), icon: Shield },
-    { id: 'backup' as const, label: t('backup'), icon: Database },
   ];
 
   return (
@@ -471,86 +465,6 @@ export function Settings({ onBack }: SettingsProps) {
                             className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white"
                           />
                         </div>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Backup Settings */}
-              {activeTab === 'backup' && (
-                <div className="space-y-6">
-                  <div>
-                    <h2 className="text-2xl text-gray-900 dark:text-white mb-2">{t('backupSettings')}</h2>
-                    <p className="text-gray-600 dark:text-gray-400">{t('backupSettingsDesc')}</p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                      <div>
-                        <h3 className="text-gray-900 dark:text-white mb-1">{t('autoBackup')}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{t('autoBackupDesc')}</p>
-                      </div>
-                      <button
-                        onClick={() => setAutoBackup(!autoBackup)}
-                        className={`relative w-14 h-8 rounded-full transition-all ${
-                          autoBackup ? 'bg-blue-600' : 'bg-gray-300 dark:bg-gray-600'
-                        }`}
-                      >
-                        <div
-                          className={`absolute top-1 w-6 h-6 bg-white rounded-full transition-all ${
-                            autoBackup ? 'left-7' : 'left-1'
-                          }`}
-                        ></div>
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">{t('backupFrequency')}</label>
-                        <select
-                          value={backupFrequency}
-                          onChange={(e) => setBackupFrequency(e.target.value)}
-                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white"
-                        >
-                          <option value="daily">{t('daily')}</option>
-                          <option value="weekly">{t('weekly')}</option>
-                          <option value="monthly">{t('monthly')}</option>
-                        </select>
-                      </div>
-                      <div>
-                        <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">{t('retentionDays')}</label>
-                        <input
-                          type="number"
-                          value={retentionDays}
-                          onChange={(e) => setRetentionDays(e.target.value)}
-                          className="w-full px-4 py-3 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-xl text-gray-900 dark:text-white"
-                        />
-                      </div>
-                    </div>
-
-                    <button className="w-full px-6 py-3 bg-gradient-to-r from-blue-600 to-teal-500 text-white rounded-xl hover:shadow-lg transition-all">
-                      {t('backupNow')}
-                    </button>
-
-                    <div className="border-t border-gray-200 dark:border-gray-700 pt-4 mt-6">
-                      <h3 className="text-lg text-gray-900 dark:text-white mb-4">{t('recentBackups')}</h3>
-                      <div className="space-y-2">
-                        {[
-                          { date: '08/12/2024 02:00', size: '2.5 GB' },
-                          { date: '07/12/2024 02:00', size: '2.4 GB' },
-                          { date: '06/12/2024 02:00', size: '2.3 GB' },
-                        ].map((backup, index) => (
-                          <div key={index} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700 rounded-xl">
-                            <div>
-                              <p className="text-gray-900 dark:text-white">{backup.date}</p>
-                              <p className="text-sm text-gray-600 dark:text-gray-400">{backup.size}</p>
-                            </div>
-                            <button className="px-3 py-1 bg-blue-600 hover:bg-blue-700 text-white text-sm rounded-lg transition-all">
-                              {t('restore')}
-                            </button>
-                          </div>
-                        ))}
                       </div>
                     </div>
                   </div>
