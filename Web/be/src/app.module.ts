@@ -18,6 +18,7 @@ import { TripsModule } from './trips/trips.module';
 import { UsersModule } from './users/users.module';
 import { VehiclesModule } from './vehicles/vehicles.module';
 import { ScheduleModule } from '@nestjs/schedule';
+import { DriversModule } from './drivers/drivers.module';
 
 @Module({
   imports: [
@@ -44,6 +45,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     DashboardModule,
     PaymentsModule,
     ReviewsModule,
+    DriversModule,
   ],
   controllers: [AppController],
   providers: [AppService],

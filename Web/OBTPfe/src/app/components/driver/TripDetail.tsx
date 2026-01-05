@@ -55,6 +55,20 @@ export function TripDetail({ onBack }: TripDetailProps) {
     ));
   };
 
+  const handleScanQR = () => {
+    // Simulate QR code scanning
+    const scannedTicketCode = prompt('Enter ticket code or scan QR code:');
+    if (scannedTicketCode) {
+      const passenger = passengers.find(p => p.ticketCode === scannedTicketCode);
+      if (passenger) {
+        handlePassengerCheckIn(passenger.id);
+        alert(`${passenger.name} checked in successfully!`);
+      } else {
+        alert('Ticket not found');
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 pb-20">
       {/* Header */}

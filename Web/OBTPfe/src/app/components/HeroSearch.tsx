@@ -1,7 +1,9 @@
-import { Search, MapPin, Calendar, ArrowRightLeft, X } from 'lucide-react';
-import { useState, useEffect, useRef } from 'react';
-import { useLanguage } from './LanguageContext';
-import { HeroLocationSlider } from './HeroLocationSlider';
+import { Search, MapPin, Calendar, ArrowRightLeft, X } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { useLanguage } from "./LanguageContext";
+import { HeroLocationSlider } from "./HeroLocationSlider";
+// 1. IMPORT COMPONENT MỚI
+import { CustomDatePicker } from "./CustomDatePicker";
 
 interface HeroSearchProps {
   onSearch?: (from: string, to: string, date: string) => void;
@@ -9,11 +11,15 @@ interface HeroSearchProps {
   initialTo?: string;
 }
 
-export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroSearchProps) {
+export function HeroSearch({
+  onSearch,
+  initialFrom = "",
+  initialTo = "",
+}: HeroSearchProps) {
   const { t, language } = useLanguage();
   const [from, setFrom] = useState(initialFrom);
   const [to, setTo] = useState(initialTo);
-  const [date, setDate] = useState('');
+  const [date, setDate] = useState("");
   const [showFromSuggestions, setShowFromSuggestions] = useState(false);
   const [showToSuggestions, setShowToSuggestions] = useState(false);
   const fromInputRef = useRef<HTMLInputElement>(null);
@@ -31,50 +37,53 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
       setFrom(departure);
       setTo(destination);
       setDate(eventDate);
-      
+
       // Trigger search automatically
       if (onSearch) {
         onSearch(departure, destination, eventDate);
       }
     };
 
-    window.addEventListener('searchRoute', handleSearchRoute as EventListener);
+    window.addEventListener("searchRoute", handleSearchRoute as EventListener);
     return () => {
-      window.removeEventListener('searchRoute', handleSearchRoute as EventListener);
+      window.removeEventListener(
+        "searchRoute",
+        handleSearchRoute as EventListener
+      );
     };
   }, [onSearch]);
 
   // Danh sách địa điểm phổ biến với cả VI và EN
   const cities = [
-    { vi: 'TP. Hồ Chí Minh', en: 'Ho Chi Minh City', code: 'hcm' },
-    { vi: 'Hà Nội', en: 'Hanoi', code: 'hn' },
-    { vi: 'Đà Nẵng', en: 'Da Nang', code: 'dn' },
-    { vi: 'Đà Lạt', en: 'Da Lat', code: 'dl' },
-    { vi: 'Nha Trang', en: 'Nha Trang', code: 'nt' },
-    { vi: 'Vũng Tàu', en: 'Vung Tau', code: 'vt' },
-    { vi: 'Phan Thiết', en: 'Phan Thiet', code: 'pt' },
-    { vi: 'Cần Thơ', en: 'Can Tho', code: 'ct' },
-    { vi: 'Hải Phòng', en: 'Hai Phong', code: 'hp' },
-    { vi: 'Huế', en: 'Hue', code: 'hue' },
-    { vi: 'Quy Nhơn', en: 'Quy Nhon', code: 'qn' },
-    { vi: 'Sa Pa', en: 'Sa Pa', code: 'sp' },
-    { vi: 'Hội An', en: 'Hoi An', code: 'ha' },
-    { vi: 'Phú Quốc', en: 'Phu Quoc', code: 'pq' },
-    { vi: 'Mũi Né', en: 'Mui Ne', code: 'mn' }
+    { vi: "TP. Hồ Chí Minh", en: "Ho Chi Minh City", code: "hcm" },
+    { vi: "Hà Nội", en: "Hanoi", code: "hn" },
+    { vi: "Đà Nẵng", en: "Da Nang", code: "dn" },
+    { vi: "Đà Lạt", en: "Da Lat", code: "dl" },
+    { vi: "Nha Trang", en: "Nha Trang", code: "nt" },
+    { vi: "Vũng Tàu", en: "Vung Tau", code: "vt" },
+    { vi: "Phan Thiết", en: "Phan Thiet", code: "pt" },
+    { vi: "Cần Thơ", en: "Can Tho", code: "ct" },
+    { vi: "Hải Phòng", en: "Hai Phong", code: "hp" },
+    { vi: "Huế", en: "Hue", code: "hue" },
+    { vi: "Quy Nhơn", en: "Quy Nhon", code: "qn" },
+    { vi: "Sa Pa", en: "Sa Pa", code: "sp" },
+    { vi: "Hội An", en: "Hoi An", code: "ha" },
+    { vi: "Phú Quốc", en: "Phu Quoc", code: "pq" },
+    { vi: "Mũi Né", en: "Mui Ne", code: "mn" },
   ];
 
   // Get display name theo ngôn ngữ
-  const getCityName = (city: typeof cities[0]) => {
-    return language === 'vi' ? city.vi : city.en;
+  const getCityName = (city: (typeof cities)[0]) => {
+    return language === "vi" ? city.vi : city.en;
   };
 
   const handleSearch = () => {
     if (!from || !to) {
-      alert(t('selectBothLocations'));
+      alert(t("selectBothLocations"));
       return;
     }
     if (!date) {
-      const today = new Date().toISOString().split('T')[0];
+      const today = new Date().toISOString().split("T")[0];
       setDate(today);
       onSearch?.(from, to, today);
     } else {
@@ -88,20 +97,20 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
     setTo(temp);
   };
 
-  const filteredFromCities = cities.filter(city => {
+  const filteredFromCities = cities.filter((city) => {
     const cityName = getCityName(city);
     const searchLower = from.toLowerCase();
     return cityName.toLowerCase().includes(searchLower) && cityName !== to;
   });
 
-  const filteredToCities = cities.filter(city => {
+  const filteredToCities = cities.filter((city) => {
     const cityName = getCityName(city);
     const searchLower = to.toLowerCase();
     return cityName.toLowerCase().includes(searchLower) && cityName !== from;
   });
 
   // Set today as min date
-  const today = new Date().toISOString().split('T')[0];
+  const today = new Date().toISOString().split("T")[0];
 
   return (
     <div className="relative bg-gradient-to-br from-blue-600 via-blue-500 to-teal-500 dark:from-blue-900 dark:via-blue-800 dark:to-teal-800 py-24 transition-colors duration-300 overflow-hidden">
@@ -110,19 +119,28 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-white/10 rounded-full blur-3xl animate-pulse"></div>
         <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-teal-300/10 rounded-full blur-3xl animate-pulse delay-1000"></div>
         <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-full h-full">
-          <div className="absolute w-2 h-2 bg-white/30 rounded-full animate-float" style={{ top: '20%', left: '10%' }}></div>
-          <div className="absolute w-3 h-3 bg-white/20 rounded-full animate-float delay-500" style={{ top: '60%', left: '80%' }}></div>
-          <div className="absolute w-2 h-2 bg-white/25 rounded-full animate-float delay-1000" style={{ top: '40%', left: '60%' }}></div>
+          <div
+            className="absolute w-2 h-2 bg-white/30 rounded-full animate-float"
+            style={{ top: "20%", left: "10%" }}
+          ></div>
+          <div
+            className="absolute w-3 h-3 bg-white/20 rounded-full animate-float delay-500"
+            style={{ top: "60%", left: "80%" }}
+          ></div>
+          <div
+            className="absolute w-2 h-2 bg-white/25 rounded-full animate-float delay-1000"
+            style={{ top: "40%", left: "60%" }}
+          ></div>
         </div>
       </div>
 
       <div className="relative max-w-7xl mx-auto px-4">
         <div className="text-center mb-12 animate-fade-in">
           <h1 className="text-5xl text-white mb-4 drop-shadow-lg">
-            {t('heroTitle')}
+            {t("heroTitle")}
           </h1>
           <p className="text-xl text-blue-100 drop-shadow">
-            {t('heroSubtitle')}
+            {t("heroSubtitle")}
           </p>
         </div>
 
@@ -133,7 +151,7 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
               {/* From */}
               <div className="relative md:col-span-4">
                 <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                  {t('departure')}
+                  {t("departure")}
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-blue-500" />
@@ -146,13 +164,15 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
                       setShowFromSuggestions(true);
                     }}
                     onFocus={() => setShowFromSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowFromSuggestions(false), 200)}
-                    placeholder={t('selectDeparture')}
+                    onBlur={() =>
+                      setTimeout(() => setShowFromSuggestions(false), 200)
+                    }
+                    placeholder={t("selectDeparture")}
                     className="w-full pl-10 pr-10 py-3.5 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                   />
                   {from && (
                     <button
-                      onClick={() => setFrom('')}
+                      onClick={() => setFrom("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       <X className="w-4 h-4" />
@@ -172,7 +192,9 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
                         className="w-full px-4 py-3 text-left hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center space-x-3"
                       >
                         <MapPin className="w-4 h-4 text-blue-500 flex-shrink-0" />
-                        <span className="flex-1 text-base">{getCityName(city)}</span>
+                        <span className="flex-1 text-base">
+                          {getCityName(city)}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -193,7 +215,7 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
               {/* To */}
               <div className="relative md:col-span-4">
                 <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                  {t('destination')}
+                  {t("destination")}
                 </label>
                 <div className="relative">
                   <MapPin className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-teal-500" />
@@ -206,13 +228,15 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
                       setShowToSuggestions(true);
                     }}
                     onFocus={() => setShowToSuggestions(true)}
-                    onBlur={() => setTimeout(() => setShowToSuggestions(false), 200)}
-                    placeholder={t('selectDestination')}
+                    onBlur={() =>
+                      setTimeout(() => setShowToSuggestions(false), 200)
+                    }
+                    placeholder={t("selectDestination")}
                     className="w-full pl-10 pr-10 py-3.5 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 focus:border-transparent text-gray-900 dark:text-white transition-all"
                   />
                   {to && (
                     <button
-                      onClick={() => setTo('')}
+                      onClick={() => setTo("")}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
                     >
                       <X className="w-4 h-4" />
@@ -231,28 +255,23 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
                         className="w-full px-4 py-3 text-left hover:bg-teal-50 dark:hover:bg-gray-700 transition-colors text-gray-900 dark:text-white border-b border-gray-100 dark:border-gray-700 last:border-0 flex items-center space-x-3"
                       >
                         <MapPin className="w-4 h-4 text-teal-500 flex-shrink-0" />
-                        <span className="flex-1 text-base">{getCityName(city)}</span>
+                        <span className="flex-1 text-base">
+                          {getCityName(city)}
+                        </span>
                       </button>
                     ))}
                   </div>
                 )}
               </div>
 
-              {/* Date */}
+              {/* 2. SỬA DATE PICKER TẠI ĐÂY */}
               <div className="md:col-span-3">
-                <label className="block text-sm text-gray-700 dark:text-gray-300 mb-2">
-                  {t('date')}
-                </label>
-                <div className="relative">
-                  <Calendar className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-purple-500" />
-                  <input
-                    type="date"
-                    value={date}
-                    min={today}
-                    onChange={(e) => setDate(e.target.value)}
-                    className="w-full pl-10 pr-4 py-3.5 bg-gray-50 dark:bg-gray-700 border-2 border-gray-200 dark:border-gray-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900 dark:text-white transition-all cursor-pointer"
-                  />
-                </div>
+                <CustomDatePicker
+                  label={t("date")}
+                  value={date}
+                  onChange={(newDate) => setDate(newDate)}
+                  min={today}
+                />
               </div>
             </div>
 
@@ -262,7 +281,7 @@ export function HeroSearch({ onSearch, initialFrom = '', initialTo = '' }: HeroS
               className="w-full mt-6 py-4 bg-gradient-to-r from-blue-600 to-teal-500 hover:from-blue-700 hover:to-teal-600 text-white rounded-xl transition-all duration-300 flex items-center justify-center space-x-2 shadow-lg hover:shadow-2xl hover:shadow-blue-500/30 group"
             >
               <Search className="w-5 h-5 group-hover:scale-110 transition-transform" />
-              <span className="text-lg">{t('search')}</span>
+              <span className="text-lg">{t("search")}</span>
             </button>
           </div>
         </div>

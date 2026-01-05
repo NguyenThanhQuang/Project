@@ -1,125 +1,175 @@
 import {
-  Body,
   Controller,
-  Delete,
-  ForbiddenException,
   Get,
-  Param,
-  Patch,
   Post,
-  Req,
+  Put,
+  Delete,
+  Param,
+  Body,
+  Query,
   UseGuards,
+  ParseIntPipe,
+  DefaultValuePipe,
+  HttpStatus,
+  HttpCode,
 } from '@nestjs/common';
-import { Types } from 'mongoose';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { UserRole } from '../users/schemas/user.schema';
 import { CompaniesService } from './companies.service';
 import { CreateCompanyDto } from './dto/create-company.dto';
 import { UpdateCompanyDto } from './dto/update-company.dto';
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { UserRole } from '../users/schemas/user.schema';
+import { CompanyStatus } from './schemas/company.schema';
+import { AssignVehicleDto, UpdateDriverVehicleDto } from './dto/assign-vehicle.dto';
 
-interface AuthenticatedRequest extends Request {
-  user: {
-    userId: string;
-    email: string;
-    roles: UserRole[];
-    companyId?: Types.ObjectId;
-  };
-}
 
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('companies')
+@UseGuards(JwtAuthGuard, RolesGuard)
 export class CompaniesController {
   constructor(private readonly companiesService: CompaniesService) {}
 
-  /**
-   * [POST] /api/companies - Tạo một nhà xe mới
-   * Chỉ dành cho Admin.
-   */
   @Post()
   @Roles(UserRole.ADMIN)
-  create(@Body() createCompanyDto: CreateCompanyDto) {
+  async create(@Body() createCompanyDto: CreateCompanyDto) {
     return this.companiesService.create(createCompanyDto);
   }
 
-  /**
-   * [GET] /api/companies - Lấy danh sách tất cả các nhà xe
-   * Chỉ dành cho Admin.
-   */
   @Get()
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async findAll() {
+    return this.companiesService.findAll();
+  }
+
+  @Get('stats')
   @Roles(UserRole.ADMIN)
-  findAll() {
+  async findAllWithStats() {
     return this.companiesService.findAllWithStats();
   }
 
-  /**
-   * [GET] /api/companies/my-company - Lấy thông tin công ty của Company Admin đang đăng nhập
-   * Dành cho Company Admin.
-   */
-  @Get('my-company')
-  @Roles(UserRole.COMPANY_ADMIN)
-  getMyCompany(@Req() req: AuthenticatedRequest) {
-    const { companyId } = req.user;
-    if (!companyId) {
-      throw new ForbiddenException(
-        'Tài khoản của bạn không được liên kết với nhà xe nào.',
-      );
-    }
-    return this.companiesService.findOne(companyId);
-  }
-
-  /**
-   * [GET] /api/companies/:id - Lấy thông tin chi tiết một nhà xe bằng ID
-   * Dành cho Admin (xem bất kỳ) hoặc Company Admin (chỉ xem công ty của mình).
-   */
   @Get(':id')
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
-  async findOne(@Param('id') id: string, @Req() req: AuthenticatedRequest) {
-    const { roles, companyId } = req.user;
-
-    if (roles.includes(UserRole.COMPANY_ADMIN)) {
-      if (!companyId || companyId.toString() !== id) {
-        throw new ForbiddenException(
-          'Bạn chỉ có quyền xem thông tin của công ty mình.',
-        );
-      }
-    }
-
+  async findOne(@Param('id') id: string) {
     return this.companiesService.findOne(id);
   }
 
-  /**
-   * [PATCH] /api/companies/:id - Cập nhật thông tin nhà xe
-   * Dành cho Admin (cập nhật bất kỳ) hoặc Company Admin (chỉ cập nhật công ty của mình).
-   */
-  @Patch(':id')
+  @Put(':id')
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
   async update(
     @Param('id') id: string,
     @Body() updateCompanyDto: UpdateCompanyDto,
-    @Req() req: AuthenticatedRequest,
   ) {
-    const { roles, companyId } = req.user;
-
-    if (roles.includes(UserRole.COMPANY_ADMIN)) {
-      if (!companyId || companyId.toString() !== id) {
-        throw new ForbiddenException(
-          'Bạn chỉ có quyền cập nhật thông tin của công ty mình.',
-        );
-      }
-    }
-
     return this.companiesService.update(id, updateCompanyDto);
   }
 
-  /**
-   * [DELETE] /api/companies/:id - Xóa một nhà xe
-   * Chỉ dành cho Admin.
-   */
   @Delete(':id')
   @Roles(UserRole.ADMIN)
-  remove(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async remove(@Param('id') id: string) {
     return this.companiesService.remove(id);
+  }
+
+  @Get(':code/by-code')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async findOneByCode(@Param('code') code: string) {
+    return this.companiesService.findOneByCode(code);
+  }
+
+  // ========== DRIVER MANAGEMENT ==========
+
+  @Get(':id/drivers')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async getCompanyDrivers(
+    @Param('id') companyId: string,
+    @Query('status') status?: string,
+    @Query('withVehicle', new DefaultValuePipe(false)) withVehicle?: boolean,
+    @Query('search') search?: string,
+    @Query('page', new DefaultValuePipe(1), ParseIntPipe) page?: number,
+    @Query('limit', new DefaultValuePipe(10), ParseIntPipe) limit?: number,
+  ) {
+    return this.companiesService.getCompanyDrivers(companyId, {
+      status: status as any,
+      withVehicle,
+      page,
+      limit,
+      search,
+    });
+  }
+
+  @Post(':id/drivers/assign-vehicle')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async assignVehicleToDriver(
+    @Param('id') companyId: string,
+    @Body() assignVehicleDto: AssignVehicleDto,
+  ) {
+    return this.companiesService.assignVehicleToDriver(
+      companyId,
+      assignVehicleDto.driverId,
+      assignVehicleDto.vehicleId,
+    );
+  }
+
+  @Put(':id/drivers/:driverId/vehicle')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async updateDriverVehicle(
+    @Param('id') companyId: string,
+    @Param('driverId') driverId: string,
+    @Body() updateDto: UpdateDriverVehicleDto,
+  ) {
+    return this.companiesService.updateDriverVehicle(
+      companyId,
+      driverId,
+      updateDto.newVehicleId,
+    );
+  }
+
+  @Delete(':id/drivers/:driverId/vehicle')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async removeVehicleFromDriver(
+    @Param('id') companyId: string,
+    @Param('driverId') driverId: string,
+  ) {
+    return this.companiesService.removeVehicleFromDriver(companyId, driverId);
+  }
+
+  @Get(':id/drivers/unassigned')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async getUnassignedDrivers(@Param('id') companyId: string) {
+    return this.companiesService.getUnassignedDrivers(companyId);
+  }
+
+  @Get(':id/vehicles/available')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async getAvailableVehicles(
+    @Param('id') companyId: string,
+    @Query('excludeDriverId') excludeDriverId?: string,
+  ) {
+    return this.companiesService.getAvailableVehicles(
+      companyId,
+      excludeDriverId,
+    );
+  }
+
+  @Get(':id/stats')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async getCompanyStats(@Param('id') companyId: string) {
+    return this.companiesService.getCompanyStats(companyId);
+  }
+
+  @Put(':id/status')
+  @Roles(UserRole.ADMIN)
+  async updateStatus(
+    @Param('id') id: string,
+    @Body('status') status: CompanyStatus,
+  ) {
+    return this.companiesService.updateStatus(id, status);
+  }
+
+  @Delete()
+  @Roles(UserRole.ADMIN)
+  @HttpCode(HttpStatus.NO_CONTENT)
+  async deleteAll() {
+    return this.companiesService.deleteAll();
   }
 }

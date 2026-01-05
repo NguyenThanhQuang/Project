@@ -6,9 +6,7 @@ export enum CompanyStatus {
   PENDING = 'pending',
   SUSPENDED = 'suspended',
 }
-
 export type CompanyDocument = HydratedDocument<Company>;
-
 @Schema({ timestamps: true })
 export class Company {
   @Prop({ type: String, required: true, unique: true, trim: true })
@@ -23,6 +21,7 @@ export class Company {
   })
   code: string;
 
+  
   @Prop({ type: String, trim: true })
   address?: string;
 
