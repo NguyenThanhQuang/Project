@@ -16,6 +16,7 @@ import { Company, CompanyDocument, CompanyStatus } from './schemas/company.schem
 import { Driver, DriverDocument, DriverStatus } from '../drivers/schema/driver.schema';
 import { Vehicle, VehicleDocument, VehicleStatus } from '../vehicles/schemas/vehicle.schema';
 import { Trip, TripDocument, TripStatus } from '../trips/schemas/trip.schema';
+import { User, UserDocument } from 'src/users/schemas/user.schema';
 
 @Injectable()
 export class CompaniesService {
@@ -24,6 +25,8 @@ export class CompaniesService {
     @InjectModel(Driver.name) private driverModel: Model<DriverDocument>,
     @InjectModel(Vehicle.name) private vehicleModel: Model<VehicleDocument>,
     @InjectModel(Trip.name) private tripModel: Model<TripDocument>,
+    @InjectModel(User.name) private userModel: Model<UserDocument>,
+
     @InjectConnection() private readonly connection: Connection,
     private readonly usersService: UsersService,
     private readonly mailService: MailService,
@@ -105,6 +108,62 @@ export class CompaniesService {
   async findAll(): Promise<CompanyDocument[]> {
     return this.companyModel.find().exec();
   }
+/**
+ * ✅ Kích hoạt / vô hiệu hoá tài xế
+ * Đồng bộ Driver.status & User.isBanned
+ */
+async updateDriverAccountStatus(
+  companyId: string | Types.ObjectId,
+  driverId: string,
+  isActive: boolean,
+) {
+  if (!Types.ObjectId.isValid(driverId)) {
+    throw new BadRequestException('driverId không hợp lệ.');
+  }
+
+  const companyObjectId =
+    typeof companyId === 'string' ? new Types.ObjectId(companyId) : companyId;
+
+  await this.findOne(companyObjectId);
+
+  const driver = await this.driverModel.findById(driverId);
+  if (!driver) throw new NotFoundException('Không tìm thấy tài xế.');
+
+  if (driver.companyId.toString() !== companyObjectId.toString()) {
+    throw new ForbiddenException('Tài xế không thuộc nhà xe này.');
+  }
+
+  const user = await this.userModel.findOne({ driverId: driver._id });
+  if (!user) throw new NotFoundException('Không tìm thấy tài khoản tài xế.');
+
+  const session = await this.connection.startSession();
+  session.startTransaction();
+
+  try {
+    driver.status = isActive
+      ? DriverStatus.ACTIVE
+      : DriverStatus.SUSPENDED;
+    await driver.save({ session });
+
+    user.isBanned = !isActive;
+    await user.save({ session });
+
+    await session.commitTransaction();
+
+    return {
+      message: isActive
+        ? 'Kích hoạt tài xế thành công.'
+        : 'Vô hiệu hoá tài xế thành công.',
+      driverStatus: driver.status,
+      userIsBanned: user.isBanned,
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    await session.endSession();
+  }
+}
 
   async findOne(id: string | Types.ObjectId): Promise<CompanyDocument> {
     if (!Types.ObjectId.isValid(id)) {
