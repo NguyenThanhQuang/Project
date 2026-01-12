@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // Lấy địa chỉ API từ biến môi trường
 // Nếu không có biến môi trường thì fallback về localhost:3000/api
-const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
+const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api';
 
 const api = axios.create({
   baseURL: API_BASE_URL,

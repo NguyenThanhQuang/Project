@@ -23,7 +23,6 @@ import { UserRole } from '../users/schemas/user.schema';
 import { CompanyStatus } from './schemas/company.schema';
 import { AssignVehicleDto, UpdateDriverVehicleDto } from './dto/assign-vehicle.dto';
 
-
 @Controller('companies')
 @UseGuards(JwtAuthGuard, RolesGuard)
 export class CompaniesController {
@@ -75,7 +74,7 @@ export class CompaniesController {
     return this.companiesService.findOneByCode(code);
   }
 
-  // ========== DRIVER MANAGEMENT ==========
+  // ================= DRIVER MANAGEMENT =================
 
   @Get(':id/drivers')
   @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
@@ -94,6 +93,23 @@ export class CompaniesController {
       limit,
       search,
     });
+  }
+
+  /**
+   * ✅ NEW: Kích hoạt / vô hiệu hoá tài xế
+   */
+  @Put(':id/drivers/:driverId/status')
+  @Roles(UserRole.ADMIN, UserRole.COMPANY_ADMIN)
+  async updateDriverStatus(
+    @Param('id') companyId: string,
+    @Param('driverId') driverId: string,
+    @Body('isActive') isActive: boolean,
+  ) {
+    return this.companiesService.updateDriverAccountStatus(
+      companyId,
+      driverId,
+      isActive,
+    );
   }
 
   @Post(':id/drivers/assign-vehicle')

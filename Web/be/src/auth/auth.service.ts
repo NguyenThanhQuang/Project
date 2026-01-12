@@ -37,6 +37,7 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { LoginDto } from './dto/login.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtPayload } from './strategies/jwt.strategy';
+import { Driver, DriverDocument, DriverStatus } from 'src/drivers/schema/driver.schema';
 
 @Injectable()
 export class AuthService {
@@ -45,6 +46,9 @@ export class AuthService {
   constructor(
     @InjectModel(User.name) private userModel: Model<UserDocument>,
     @InjectModel(Company.name) private companyModel: Model<CompanyDocument>,
+    @InjectModel(Driver.name)
+private driverModel: Model<DriverDocument>,
+
     private usersService: UsersService,
     private jwtService: JwtService,
     private mailService: MailService,
@@ -207,25 +211,47 @@ export class AuthService {
   }
 
   async validateUser(
-    identifier: string,
-    pass: string,
-  ): Promise<UserDocument | null> {
-    let user: UserDocument | null = null;
-    const identifierLower = identifier.toLowerCase();
-
-    if (isEmail(identifierLower)) {
-      user = await this.usersService.findOneByEmail(identifierLower);
-    } else {
-      user = await this.usersService.findOneByPhone(identifier);
-    }
-
-    if (user && (await user.comparePassword(pass))) {
-      return user;
-    }
-    return null;
+  identifier: string,
+  password: string,
+): Promise<UserDocument> {
+  // 1️⃣ Validate input
+  if (!identifier || !password) {
+    throw new BadRequestException(
+      'Email/Số điện thoại và mật khẩu là bắt buộc',
+    );
   }
 
-  async login(
+  const identifierTrimmed = identifier.trim();
+
+  let user: UserDocument | null = null;
+
+  // 2️⃣ Xác định là email hay phone
+  if (isEmail(identifierTrimmed)) {
+    const emailLower = identifierTrimmed.toLowerCase();
+    user = await this.usersService.findOneByEmail(emailLower);
+  } else {
+    user = await this.usersService.findOneByPhone(identifierTrimmed);
+  }
+
+  // 3️⃣ Không tìm thấy user
+  if (!user) {
+    throw new UnauthorizedException(
+      'Email/Số điện thoại hoặc mật khẩu không chính xác',
+    );
+  }
+
+  // 4️⃣ So sánh mật khẩu
+  const isPasswordValid = await user.comparePassword(password);
+  if (!isPasswordValid) {
+    throw new UnauthorizedException(
+      'Email/Số điện thoại hoặc mật khẩu không chính xác',
+    );
+  }
+
+  return user;
+}
+
+async login(
     loginDto: LoginDto,
   ): Promise<{ accessToken: string; user: SanitizedUser }> {
     const user = await this.validateUser(
@@ -233,19 +259,15 @@ export class AuthService {
       loginDto.password,
     );
 
-    if (!user) {
-      throw new UnauthorizedException(
-        'Email/Số điện thoại hoặc mật khẩu không chính xác.',
-      );
-    }
-
+    // 1) Check user bị khoá
     if (user.isBanned) {
       this.logger.warn(`Login attempt for BANNED user: ${user.email}`);
       throw new ForbiddenException(
-        'Tài khoản của bạn đã bị khóa. Vui lòng liên hệ với quản trị viên để biết thêm chi tiết.',
+        'Tài khoản hiện tại đang bị tạm ngưng. Vui lòng liên hệ quản trị viên để được hỗ trợ.',
       );
     }
 
+    // 2) Update lastLoginDate (không await để tránh chậm)
     user.lastLoginDate = new Date();
     user
       .save()
@@ -253,6 +275,7 @@ export class AuthService {
         this.logger.error('Failed to update last login date', err),
       );
 
+    // 3) Check email verified
     if (!user.isEmailVerified) {
       this.logger.warn(`Login attempt for unverified email: ${user.email}`);
       throw new UnauthorizedException(
@@ -260,29 +283,74 @@ export class AuthService {
       );
     }
 
+    // 4) Nếu là COMPANY_ADMIN → check company status
     if (user.roles.includes(UserRole.COMPANY_ADMIN)) {
       if (!user.companyId) {
         throw new UnauthorizedException(
           'Tài khoản quản trị viên này không được liên kết với nhà xe nào.',
         );
       }
+
       const company = await this.companyModel
         .findById(user.companyId)
         .select('status')
         .exec();
+
       if (!company || company.status !== CompanyStatus.ACTIVE) {
         throw new UnauthorizedException(
-          `Không thể đăng nhập. Nhà xe đang ở trạng thái "${company?.status || 'không tồn tại'}".`,
+          `Không thể đăng nhập. Nhà xe đang ở trạng thái "${
+            company?.status || 'không tồn tại'
+          }".`,
         );
       }
     }
-    
+
+    // 5) ✅ Nếu là DRIVER → check driver status
+    if (user.roles.includes(UserRole.DRIVER)) {
+      if (!user.driverId) {
+        throw new UnauthorizedException(
+          'Tài khoản tài xế chưa được liên kết với hồ sơ tài xế.',
+        );
+      }
+
+      const driver = await this.driverModel
+        .findById(user.driverId)
+        .select('status companyId')
+        .exec();
+
+      if (!driver) {
+        throw new UnauthorizedException('Không tìm thấy hồ sơ tài xế.');
+      }
+
+      if (driver.status !== DriverStatus.ACTIVE) {
+        throw new ForbiddenException(
+          'Tài khoản hiện tại đang bị tạm ngưng. Vui lòng liên hệ nhà xe để được hỗ trợ.',
+        );
+      }
+
+      // (Khuyến nghị) nếu muốn chặt hơn: check company của driver cũng ACTIVE
+      if (driver.companyId) {
+        const company = await this.companyModel
+          .findById(driver.companyId)
+          .select('status')
+          .exec();
+
+        if (!company || company.status !== CompanyStatus.ACTIVE) {
+          throw new UnauthorizedException(
+            'Không thể đăng nhập. Nhà xe đang bị tạm ngưng hoặc không tồn tại.',
+          );
+        }
+      }
+    }
+
+    // 6) Sign JWT
     const payload: JwtPayload = {
       email: user.email,
       sub: user._id.toString(),
       roles: user.roles,
       companyId: user.companyId?.toString(),
     };
+
     const accessToken = this.jwtService.sign(payload);
 
     return {
@@ -290,6 +358,7 @@ export class AuthService {
       user: this.usersService.sanitizeUser(user),
     };
   }
+
 
   async processEmailVerification(
     token: string,
