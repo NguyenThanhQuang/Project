@@ -8,11 +8,14 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { Request } from 'express';
+import { Roles } from 'src/auth/decorators/roles.decorator';
+import { RolesGuard } from 'src/auth/guards/roles.guard';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/guards/optional-jwt-auth.guard';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
-import { UserDocument } from '../users/schemas/user.schema';
+import { UserDocument, UserRole } from '../users/schemas/user.schema';
 import { BookingsService } from './bookings.service';
+import { CheckInTicketDto } from './dto/check-in-ticket.dto';
 import { CreateBookingHoldDto } from './dto/create-booking-hold.dto';
 import { LookupBookingDto } from './dto/lookup-booking.dto';
 
@@ -58,5 +61,21 @@ export class BookingsController {
   lookupBooking(@Body() lookupDto: LookupBookingDto) {
     return this.bookingsService.lookupBooking(lookupDto);
   }
-  
+  /**
+   * [DRIVER] Soát vé (Check-in) bằng mã vé
+   * @route POST /api/bookings/check-in
+   */
+  @Post('check-in')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER)
+  async checkInTicket(
+    @Body() checkInDto: CheckInTicketDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const userId = req.user?._id?.toString();
+    if (!userId) {
+      throw new Error('User ID is missing');
+    }
+    return this.bookingsService.checkInTicket(checkInDto, userId);
+  }
 }

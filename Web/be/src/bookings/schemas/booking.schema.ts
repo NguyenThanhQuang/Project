@@ -102,6 +102,12 @@ export class Booking {
 
   @Prop({ type: Types.ObjectId, ref: 'Review', required: false, index: true })
   reviewId?: Types.ObjectId;
+
+  @Prop({ type: Boolean, default: false })
+  isCheckedIn: boolean;
+
+  @Prop({ type: Date })
+  checkedInAt?: Date;
 }
 
 export const BookingSchema = SchemaFactory.createForClass(Booking);

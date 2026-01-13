@@ -21,12 +21,14 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ParseMongoIdPipe } from '../common/pipes/parse-mongo-id.pipe';
 import { UserRole } from '../users/schemas/user.schema';
+import { AssignDriverDto } from './dto/assign-driver.dto';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
 import { ToggleRecurrenceDto } from './dto/toggle-recurrence.dto';
 import { UpdateTripStopStatusDto } from './dto/update-trip-stop-status.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import { TripsService } from './trips.service';
+import { UpdateTripDriverDto } from './dto/update-trip-driver.dto';
 
 interface AuthenticatedRequest extends Request {
   user: {
@@ -293,5 +295,73 @@ export class TripsController {
       tripId,
       toggleRecurrenceDto.isActive,
     );
+  }
+
+  /**
+   * [MANAGEMENT] Phân công tài xế cho chuyến đi
+   * @route PATCH /api/trips/:tripId/assign-driver
+   */
+  @Patch(':tripId/assign-driver')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY_ADMIN)
+  async assignDriver(
+    @Param('tripId', ParseMongoIdPipe) tripId: string,
+    @Body() assignDriverDto: AssignDriverDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { companyId } = req.user;
+    if (!companyId) {
+      throw new ForbiddenException('Bạn không thuộc nhà xe nào.');
+    }
+
+    // Kiểm tra sơ bộ chuyến đi có thuộc công ty này không trước khi gán
+    const trip = await this.tripsService.findOne(tripId);
+    if (trip.companyId.toString() !== companyId.toString()) {
+      throw new ForbiddenException('Bạn không có quyền quản lý chuyến đi này.');
+    }
+
+    return this.tripsService.assignDriver(tripId, assignDriverDto.driverId);
+  }
+
+  /**
+   * [DRIVER] Lấy danh sách chuyến đi của tôi (Hôm nay & Tương lai)
+   * @route GET /api/trips/driver/my-trips
+   */
+  @Get('driver/my-trips')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER)
+  async getMyDriverTrips(@Req() req: AuthenticatedRequest) {
+    const { userId } = req.user;
+    return this.tripsService.getDriverTrips(userId);
+  }
+
+  /**
+   * [DRIVER] Xem chi tiết lệnh vận chuyển / Danh sách hành khách (Manifest)
+   * @route GET /api/trips/:tripId/driver-manifest
+   */
+  @Get(':tripId/driver-manifest')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER)
+  async getDriverManifest(
+    @Param('tripId', ParseMongoIdPipe) tripId: string,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { userId } = req.user;
+    return this.tripsService.getDriverManifest(tripId, userId);
+  }
+  /**
+   * [DRIVER] Cập nhật trạng thái chuyến đi (Xuất bến, Đến nơi, Cập nhật trạm)
+   * @route PATCH /api/trips/:id/driver-status
+   */
+  @Patch(':id/driver-status')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.DRIVER)
+  async updateTripStatusByDriver(
+    @Param('id', ParseMongoIdPipe) tripId: string,
+    @Body() updateDto: UpdateTripDriverDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { userId } = req.user;
+    return this.tripsService.updateDriverStatus(tripId, userId, updateDto);
   }
 }

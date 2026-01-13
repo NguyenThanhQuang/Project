@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConflictException,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +13,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SanitizedUser, UserDocument, UserRole } from './schemas/user.schema';
 import { UsersRepository } from './users.repository';
+import { CreateDriverDto } from './dto/create-driver.dto';
 
 export interface InternalCreateUserPayload extends CreateUserDto {
   role?: UserRole;
@@ -207,5 +209,33 @@ export class UsersService {
     } finally {
       await session.endSession();
     }
+  }
+
+  async createDriver(
+    createDriverDto: CreateDriverDto,
+    companyId: string,
+  ): Promise<UserDocument> {
+    const { email, phone } = createDriverDto;
+
+    const existingByEmail = await this.usersRepository.findOne({ email });
+    if (existingByEmail) {
+      throw new ConflictException('Email tài xế đã tồn tại trong hệ thống.');
+    }
+
+    const existingByPhone = await this.usersRepository.findOne({ phone });
+    if (existingByPhone) {
+      throw new ConflictException(
+        'Số điện thoại tài xế đã tồn tại trong hệ thống.',
+      );
+    }
+
+    return this.usersRepository.create({
+      ...createDriverDto,
+      passwordHash: createDriverDto.password,
+      roles: [UserRole.DRIVER],
+      companyId: new Types.ObjectId(companyId),
+      isEmailVerified: true,
+      isBanned: false,
+    });
   }
 }

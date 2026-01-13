@@ -8,6 +8,7 @@ import {
   NotFoundException,
   Param,
   Patch,
+  Post,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { Roles } from '../auth/decorators/roles.decorator';
 import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
+import { CreateDriverDto } from './dto/create-driver.dto';
 import { UpdateUserStatusDto } from './dto/update-user-status.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { SanitizedUser, UserRole } from './schemas/user.schema';
@@ -27,6 +29,7 @@ interface AuthenticatedRequest extends Request {
     userId: string;
     email: string;
     roles: UserRole[];
+    companyId?: Types.ObjectId;
   };
 }
 
@@ -114,5 +117,28 @@ export class UsersController {
   @UseGuards(JwtAuthGuard)
   getMyBookings(@Req() req: AuthenticatedRequest) {
     return this.usersService.findUserBookings(req.user.userId);
+  }
+  /**
+   * [COMPANY_ADMIN] Tạo tài khoản Tài xế
+   * @route POST /api/users/company/create-driver
+   */
+  @Post('company/create-driver')
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Roles(UserRole.COMPANY_ADMIN)
+  async createDriver(
+    @Body() createDriverDto: CreateDriverDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    const { companyId } = req.user;
+    if (!companyId) {
+      throw new ForbiddenException(
+        'Tài khoản quản trị viên chưa được liên kết với nhà xe.',
+      );
+    }
+    const driver = await this.usersService.createDriver(
+      createDriverDto,
+      companyId.toString(),
+    );
+    return this.usersService.sanitizeUser(driver);
   }
 }

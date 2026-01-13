@@ -81,9 +81,17 @@ export class SeedService {
     }
 
     const companies = await this.seedCompanies(50);
+
     const users = await this.seedUsers(companies, 100, 50);
+    const drivers = users.filter((u) => u.roles.includes(UserRole.DRIVER));
+    this.logger.log(
+      `- Đã lọc được ${drivers.length} tài xế sẵn sàng nhận chuyến.`,
+    );
+
     const vehicles = await this.seedVehicles(companies);
-    const trips = await this.seedTrips(vehicles, locations);
+
+    const trips = await this.seedTrips(vehicles, locations, drivers);
+
     await this.seedBookingsAndReviews(trips, users);
 
     this.logger.log('Hoàn tất quá trình seeding!');
@@ -174,8 +182,9 @@ export class SeedService {
     userCount: number,
     adminCount: number,
   ): Promise<UserDocument[]> {
-    this.logger.log(`>>> Bước 4: Seeding ${userCount} Users...`);
+    this.logger.log(`>>> Bước 4: Seeding Users, Admins và Drivers...`);
     const createdUsers: UserDocument[] = [];
+
     for (let i = 0; i < userCount; i++) {
       const userData: Partial<User> = {
         name: faker.person.fullName() || `Người dùng ${i}`,
@@ -197,8 +206,37 @@ export class SeedService {
       const newUser = await this.userModel.create(userData);
       createdUsers.push(newUser);
     }
-    this.logger.log(`- Đã tạo ${createdUsers.length} người dùng.`);
-    this.logger.log(`- Trong đó có ${adminCount} tài khoản Company Admin.`);
+
+    // --- [NEW] Tạo Drivers ---
+    // Tạo khoảng 10 tài xế, chia đều cho các nhà xe (theo chỉ mục)
+    const driverCount = 10;
+    this.logger.log(
+      `--- Đang tạo thêm ${driverCount} tài khoản Driver (pass: driver123)...`,
+    );
+
+    for (let i = 0; i < driverCount; i++) {
+      // Chia driver cho các company
+      const companyIndex = i % companies.length;
+      const targetCompany = companies[companyIndex];
+
+      const driverData: Partial<User> = {
+        name: `Tài xế ${faker.person.lastName()} ${faker.person.firstName()}`,
+        email: `driver${i}@${targetCompany.code.toLowerCase()}.com`,
+        phone: `07${faker.string.numeric(8)}`, // Đầu số riêng cho dễ phân biệt
+        passwordHash: 'driver123', // Mật khẩu cố định theo yêu cầu
+        isEmailVerified: true,
+        roles: [UserRole.DRIVER],
+        companyId: targetCompany._id,
+        lastLoginDate: new Date(),
+      };
+
+      const newDriver = await this.userModel.create(driverData);
+      createdUsers.push(newDriver);
+    }
+
+    this.logger.log(
+      `- Tổng cộng đã tạo ${createdUsers.length} account (Users + Admins + Drivers).`,
+    );
     return createdUsers;
   }
 
@@ -266,8 +304,9 @@ export class SeedService {
   private async seedTrips(
     vehicles: VehicleDocument[],
     locations: LocationDocument[],
+    drivers: UserDocument[], // [NEW] Nhận danh sách drivers
   ): Promise<TripDocument[]> {
-    this.logger.log(`>>> Bước 6: Seeding Trips (Quá khứ & Hôm nay)...`);
+    this.logger.log(`>>> Bước 6: Seeding Trips (Có gán Tài xế)...`);
     const createdTrips: TripDocument[] = [];
 
     const validEndpoints = locations.filter((l) => l.type !== 'rest_stop');
@@ -281,6 +320,21 @@ export class SeedService {
     const halfwayIndex = Math.floor(vehicles.length / 2);
     const pastTripVehicles = vehicles.slice(0, halfwayIndex);
     const todayTripVehicles = vehicles.slice(halfwayIndex);
+
+    // --- Helper function để chọn tài xế cùng công ty ---
+    const assignRandomDriver = (companyId: any) => {
+      // Lọc các driver thuộc công ty này
+      const companyDrivers = drivers.filter(
+        (d) => d.companyId && d.companyId.toString() === companyId.toString(),
+      );
+
+      // Random: Khoảng 70% trip sẽ được gán driver nếu có driver
+      if (companyDrivers.length > 0 && Math.random() < 0.7) {
+        const selected = faker.helpers.arrayElement(companyDrivers);
+        return selected._id;
+      }
+      return undefined;
+    };
 
     // --- TẠO CHUYẾN ĐI QUÁ KHỨ ---
     for (const vehicle of pastTripVehicles) {
@@ -304,6 +358,8 @@ export class SeedService {
       const tripData: Partial<Trip> = {
         companyId: vehicle.companyId,
         vehicleId: vehicle._id,
+        // [NEW] Gán tài xế
+        driverId: assignRandomDriver(vehicle.companyId),
         departureTime,
         expectedArrivalTime: arrivalTime,
         price: faker.number.int({ min: 15, max: 50 }) * 10000,
@@ -319,19 +375,23 @@ export class SeedService {
           stops: [],
         },
       });
+      // Tạo chuyến về (nhưng code cũ của bạn không loop thêm vehicle nên ta push thẳng)
+      createdTrips.push(tripGo);
+
+      // Tạo thêm chiều về nếu muốn
       const tripReturn = await this.tripModel.create({
         ...tripData,
+        driverId: assignRandomDriver(vehicle.companyId), // Random lại cho chuyến về
+        departureTime: dayjs(departureTime).add(12, 'hour').toDate(),
+        expectedArrivalTime: dayjs(arrivalTime).add(12, 'hour').toDate(),
         route: {
           fromLocationId: toLocation._id,
           toLocationId: fromLocation._id,
           stops: [],
         },
       });
-      createdTrips.push(tripGo, tripReturn);
+      createdTrips.push(tripReturn);
     }
-    this.logger.log(
-      `- Đã tạo ${pastTripVehicles.length * 2} chuyến đi trong quá khứ.`,
-    );
 
     // --- TẠO CHUYẾN ĐI HÔM NAY ---
     for (const vehicle of todayTripVehicles) {
@@ -354,6 +414,8 @@ export class SeedService {
       const tripData: Partial<Trip> = {
         companyId: vehicle.companyId,
         vehicleId: vehicle._id,
+        // [NEW] Gán tài xế
+        driverId: assignRandomDriver(vehicle.companyId),
         departureTime,
         expectedArrivalTime: arrivalTime,
         price: faker.number.int({ min: 15, max: 50 }) * 10000,
@@ -369,21 +431,26 @@ export class SeedService {
           stops: [],
         },
       });
+      createdTrips.push(tripGo);
+
+      // Tạo chiều về
       const tripReturn = await this.tripModel.create({
         ...tripData,
+        driverId: assignRandomDriver(vehicle.companyId),
+        departureTime: dayjs(departureTime).add(10, 'hour').toDate(),
+        expectedArrivalTime: dayjs(arrivalTime).add(10, 'hour').toDate(),
         route: {
           fromLocationId: toLocation._id,
           toLocationId: fromLocation._id,
           stops: [],
         },
       });
-      createdTrips.push(tripGo, tripReturn);
+      createdTrips.push(tripReturn);
     }
-    this.logger.log(
-      `- Đã tạo ${todayTripVehicles.length * 2} chuyến đi cho hôm nay.`,
-    );
 
-    this.logger.log(`- Tổng cộng đã tạo ${createdTrips.length} chuyến đi.`);
+    this.logger.log(
+      `- Tổng cộng đã tạo ${createdTrips.length} chuyến đi (cả khứ hồi).`,
+    );
     return createdTrips;
   }
 
@@ -393,6 +460,14 @@ export class SeedService {
   ) {
     this.logger.log('>>> Bước 7: Seeding Bookings và Reviews...');
 
+    // Chỉ user thường mới booking (loại trừ Admin và Driver) để dữ liệu sạch
+    const passengerUsers = users.filter(
+      (u) =>
+        u.roles.includes(UserRole.USER) &&
+        !u.roles.includes(UserRole.COMPANY_ADMIN) &&
+        !u.roles.includes(UserRole.DRIVER),
+    );
+
     const pastTrips = trips.filter(
       (trip) => trip.status === TripStatus.ARRIVED,
     );
@@ -401,14 +476,15 @@ export class SeedService {
 
     for (let i = 0; i < pastTrips.length; i++) {
       const trip = pastTrips[i];
-      const user = faker.helpers.arrayElement(
-        users.filter((u) => u.roles.includes(UserRole.USER)),
-      );
+      const user = faker.helpers.arrayElement(passengerUsers); // Lấy user thường
       const seatToBook = trip.seats.find(
         (s) => s.status === SeatStatus.AVAILABLE,
       );
 
       if (seatToBook && user) {
+        // [NEW] Logic Check-in: Khoảng 30% vé đã check-in
+        const isCheckedIn = Math.random() < 0.3;
+
         const bookingData: Partial<Booking> = {
           userId: user._id,
           tripId: trip._id,
@@ -416,6 +492,10 @@ export class SeedService {
           status: BookingStatus.CONFIRMED,
           paymentStatus: PaymentStatus.PAID,
           totalAmount: trip.price,
+          // Field Check-in
+          isCheckedIn: isCheckedIn,
+          checkedInAt: isCheckedIn ? faker.date.recent() : undefined,
+
           passengers: [
             {
               name: user.name,
@@ -431,6 +511,7 @@ export class SeedService {
         const createdBooking = await this.bookingModel.create(bookingData);
         bookingCount++;
 
+        // Logic Review cũ
         if (i < pastTrips.length / 2) {
           const reviewData: Partial<Review> = {
             userId: user._id,

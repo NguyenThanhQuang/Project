@@ -12,7 +12,6 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { InjectModel } from '@nestjs/mongoose';
 import * as bcrypt from 'bcrypt';
-import { isEmail } from 'class-validator';
 import { randomBytes } from 'crypto';
 import { Model } from 'mongoose';
 import {
@@ -209,18 +208,31 @@ export class AuthService {
     identifier: string,
     pass: string,
   ): Promise<UserDocument | null> {
-    let user: UserDocument | null = null;
     const identifierLower = identifier.toLowerCase();
 
-    if (isEmail(identifierLower)) {
-      user = await this.usersService.findOneByEmail(identifierLower);
-    } else {
-      user = await this.usersService.findOneByPhone(identifier);
+    const user = await this.userModel
+      .findOne({
+        $or: [{ email: identifierLower }, { phone: identifier }],
+      })
+      .select('+passwordHash')
+      .exec();
+
+    this.logger.log(
+      `[LOGIN_FIX] Tìm thấy User ID: ${user ? user._id : 'Không tìm thấy'}`,
+    );
+    this.logger.log(
+      `[LOGIN_FIX] Hash trong DB: ${user?.passwordHash ? 'Có dữ liệu' : 'UNDEFINED'}`,
+    );
+
+    if (!user) {
+      return null;
     }
 
-    if (user && (await user.comparePassword(pass))) {
+    const isMatch = await user.comparePassword(pass);
+    if (isMatch) {
       return user;
     }
+
     return null;
   }
 

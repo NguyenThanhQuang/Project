@@ -1,5 +1,6 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { HydratedDocument, Types } from 'mongoose';
+import { User } from 'src/users/schemas/user.schema';
 import {
   Company,
   CompanyDocument,
@@ -150,6 +151,14 @@ export class Trip {
 
   @Prop({ type: Boolean, default: true, index: true })
   isRecurrenceActive: boolean;
+
+  @Prop({
+    type: Types.ObjectId,
+    ref: User.name,
+    required: false,
+    index: true,
+  })
+  driverId?: Types.ObjectId;
 }
 
 export const TripSchema = SchemaFactory.createForClass(Trip);

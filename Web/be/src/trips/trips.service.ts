@@ -1,6 +1,9 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
+  forwardRef,
+  Inject,
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
@@ -12,6 +15,8 @@ import utc from 'dayjs/plugin/utc';
 import { Connection, Model, Types } from 'mongoose';
 import { CompanyStatus } from 'src/companies/schemas/company.schema';
 import { Review, ReviewDocument } from 'src/reviews/schemas/review.schema';
+import { UserRole } from 'src/users/schemas/user.schema';
+import { UsersService } from 'src/users/users.service';
 import {
   Booking,
   BookingDocument,
@@ -27,6 +32,7 @@ import {
 import { VehiclesService } from '../vehicles/vehicles.service';
 import { CreateTripDto } from './dto/create-trip.dto';
 import { QueryTripsDto } from './dto/query-trips.dto';
+import { UpdateTripDriverDto } from './dto/update-trip-driver.dto';
 import { UpdateTripDto } from './dto/update-trip.dto';
 import {
   Seat,
@@ -84,6 +90,8 @@ export class TripsService {
     private readonly vehiclesService: VehiclesService,
     private readonly locationsService: LocationsService,
     private readonly mapsService: MapsService,
+    @Inject(forwardRef(() => UsersService))
+    private readonly usersService: UsersService,
   ) {}
 
   private generateSeatsFromVehicle(vehicle: VehicleDocument): Seat[] {
@@ -594,5 +602,192 @@ export class TripsService {
 
     tripTemplate.isRecurrenceActive = isActive;
     return this.tripsRepository.save(tripTemplate);
+  }
+
+  async assignDriver(tripId: string, driverId: string): Promise<TripDocument> {
+    // 1. Lấy chuyến đi
+    const trip = await this.tripsRepository.findById(tripId);
+    if (!trip) {
+      throw new NotFoundException('Không tìm thấy chuyến đi.');
+    }
+
+    if (
+      trip.status === TripStatus.CANCELLED ||
+      trip.status === TripStatus.ARRIVED
+    ) {
+      throw new BadRequestException(
+        'Không thể gán tài xế cho chuyến đã hủy hoặc đã hoàn thành.',
+      );
+    }
+
+    // 2. Lấy tài xế và kiểm tra
+    const driver = await this.usersService.findById(driverId);
+    if (!driver) {
+      throw new NotFoundException('Không tìm thấy tài xế.');
+    }
+
+    // Validate 1: Driver role
+    if (!driver.roles.includes(UserRole.DRIVER)) {
+      throw new BadRequestException(
+        'Người dùng được gán không phải là tài xế.',
+      );
+    }
+
+    // Validate 2: Driver Company
+    if (
+      !driver.companyId ||
+      driver.companyId.toString() !== trip.companyId.toString()
+    ) {
+      throw new ConflictException(
+        'Tài xế không thuộc về nhà xe của chuyến đi này.',
+      );
+    }
+
+    // Validate 3: Driver Active
+    if (driver.isBanned) {
+      throw new ConflictException('Tài xế này hiện đang bị khóa.');
+    }
+
+    // 3. Gán và lưu
+    trip.driverId = driver._id;
+    return this.tripsRepository.save(trip);
+  }
+
+  /**
+   * [DRIVER] Lấy danh sách chuyến đi
+   */
+  async getDriverTrips(driverId: string): Promise<TripDocument[]> {
+    return this.tripsRepository.findUpcomingTripsByDriver(driverId);
+  }
+
+  /**
+   * [DRIVER] Xem Manifest (Lệnh vận chuyển/Danh sách khách)
+   */
+  async getDriverManifest(tripId: string, driverId: string) {
+    // 1. Lấy thông tin chuyến đi chi tiết
+    const trip = await this.tripsRepository.findTripForManifest(tripId);
+
+    if (!trip) {
+      throw new NotFoundException('Không tìm thấy chuyến đi.');
+    }
+
+    // 2. [GUARD] Kiểm tra quyền: Phải là tài xế của chuyến này
+    if (!trip.driverId || trip.driverId.toString() !== driverId) {
+      throw new ForbiddenException(
+        'Bạn không được phân công cho chuyến đi này.',
+      );
+    }
+
+    // 3. Lấy danh sách Booking đã CONFIRMED của chuyến này
+    const bookings = await this.bookingModel
+      .find({
+        tripId: trip._id,
+        status: BookingStatus.CONFIRMED,
+      })
+      .lean()
+      .exec();
+
+    // 4. Flatten cấu trúc: Biến Booking thành danh sách Passengers hiển thị phẳng
+    const passengerList = bookings.flatMap((booking: BookingDocument) => {
+      // Vì Booking schema lưu 1 array passengers, ta cần tách lẻ từng người để tài xế dễ kiểm soát
+      return booking.passengers.map((passenger) => ({
+        bookingCode: booking.ticketCode, // Mã vé
+        seatNumber: passenger.seatNumber, // Số ghế
+        name: passenger.name, // Tên hành khách
+        phone: passenger.phone, // SĐT hành khách
+
+        price: passenger.price,
+
+        isCheckedIn: booking.isCheckedIn,
+        note: `Đơn hàng: ${booking.contactPhone}`,
+      }));
+    });
+
+    passengerList.sort((a, b) => a.seatNumber.localeCompare(b.seatNumber));
+
+    const summary = {
+      totalSeats: trip.seats.length,
+      bookedCount: passengerList.length,
+      checkedInCount: bookings.filter((b) => b.isCheckedIn).length,
+    };
+
+    return {
+      tripInfo: {
+        _id: trip._id,
+        vehicleNumber: (trip.vehicleId as any)?.vehicleNumber,
+        departureTime: trip.departureTime,
+        status: trip.status,
+      },
+      route: {
+        from: (trip.route.fromLocationId as any)?.name,
+        to: (trip.route.toLocationId as any)?.name,
+        stops: trip.route.stops.map((stop) => ({
+          name: (stop.locationId as any)?.name,
+          fullAddress: (stop.locationId as any)?.fullAddress,
+          arrivalTime: stop.expectedArrivalTime,
+          status: stop.status,
+        })),
+      },
+      summary,
+      passengers: passengerList,
+    };
+  }
+  /**
+   * [DRIVER] Cập nhật trạng thái hành trình (Chính hoặc Điểm dừng)
+   */
+  async updateDriverStatus(
+    tripId: string,
+    driverId: string,
+    dto: UpdateTripDriverDto,
+  ): Promise<TripDocument> {
+    const trip = await this.findOne(tripId);
+
+    // 1. Kiểm tra quyền Tài xế
+    if (!trip.driverId || trip.driverId.toString() !== driverId) {
+      throw new ForbiddenException(
+        'Bạn không được phân công cho chuyến đi này.',
+      );
+    }
+
+    // 2. Cập nhật Trạng thái Chuyến đi (Main Status)
+    if (dto.status) {
+      if (
+        (trip.status === TripStatus.SCHEDULED &&
+          dto.status !== TripStatus.DEPARTED) ||
+        (trip.status === TripStatus.DEPARTED &&
+          dto.status !== TripStatus.ARRIVED) ||
+        trip.status === TripStatus.ARRIVED || // Đã kết thúc thì không cập nhật lại
+        trip.status === TripStatus.CANCELLED
+      ) {
+        throw new BadRequestException(
+          `Không thể chuyển trạng thái từ "${trip.status}" sang "${dto.status}".`,
+        );
+      }
+      trip.status = dto.status;
+    }
+
+    // 3. Cập nhật Trạng thái Điểm dừng (Stops)
+    if (dto.stopLocationId && dto.stopStatus) {
+      const stop = trip.route.stops.find(
+        (s) => s.locationId.toString() === dto.stopLocationId,
+      );
+      if (!stop) {
+        throw new NotFoundException(
+          'Không tìm thấy điểm dừng này trong lộ trình.',
+        );
+      }
+      stop.status = dto.stopStatus;
+
+      // Logic phụ (Optional): Nếu đã đến điểm cuối cùng -> Auto set Trip Status = ARRIVED
+      const isLastStop =
+        trip.route.stops[trip.route.stops.length - 1].locationId.toString() ===
+        dto.stopLocationId;
+
+      if (isLastStop && dto.stopStatus === TripStopStatus.ARRIVED) {
+        trip.status = TripStatus.ARRIVED;
+      }
+    }
+
+    return this.tripsRepository.save(trip);
   }
 }

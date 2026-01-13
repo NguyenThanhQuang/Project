@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { ClientSession, FilterQuery, Model, Types } from 'mongoose';
 import { Trip, TripDocument, TripStatus } from './schemas/trip.schema';
+import dayjs from 'dayjs';
 
 @Injectable()
 export class TripsRepository {
@@ -187,5 +188,37 @@ export class TripsRepository {
         },
       ])
       .exec();
+  }
+  /**
+   * [DRIVER] Tìm các chuyến đi của tài xế (Hôm nay trở đi)
+   */
+  async findUpcomingTripsByDriver(driverId: string | Types.ObjectId): Promise<TripDocument[]> {
+    const startOfToday = dayjs().startOf('day').toDate();
+
+    return this.tripModel
+      .find({
+        driverId: driverId,
+        // Lấy chuyến có thời gian khởi hành từ hôm nay HOẶC chuyến đang chạy (DEPARTED) bất kể thời gian
+        $or: [
+            { departureTime: { $gte: startOfToday } },
+            { status: TripStatus.DEPARTED }
+        ],
+        status: { $ne: TripStatus.CANCELLED }
+      })
+      .populate('vehicleId', 'vehicleNumber type') // Chỉ lấy biển số và loại xe
+      .populate('route.fromLocationId', 'name fullAddress')
+      .populate('route.toLocationId', 'name fullAddress')
+      .sort({ departureTime: 1 }) // Sắp xếp tăng dần thời gian (chuyến sắp chạy lên đầu)
+      .exec();
+  }
+
+  async findTripForManifest(id: string): Promise<TripDocument | null> {
+    return this.tripModel
+        .findById(id)
+        .populate('vehicleId', 'vehicleNumber type seatMap seatMapFloor2 totalSeats')
+        .populate('route.stops.locationId', 'name fullAddress')
+        .populate('route.fromLocationId', 'name')
+        .populate('route.toLocationId', 'name')
+        .exec();
   }
 }

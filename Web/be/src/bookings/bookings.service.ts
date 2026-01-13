@@ -11,11 +11,12 @@ import { ConfigService } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { FilterQuery, Types } from 'mongoose';
 import { AuthenticatedUser } from 'src/auth/strategies/jwt.strategy';
+import { BUSINESS_CONSTANTS } from 'src/common/constants/business.constants';
 import { UsersService } from 'src/users/users.service';
 import { SeatStatus, TripStatus } from '../trips/schemas/trip.schema';
 import { TripsService } from '../trips/trips.service';
 import { UserDocument } from '../users/schemas/user.schema';
-import { BookingsRepository } from './bookings.repository'; // Import Repository
+import { BookingsRepository } from './bookings.repository';
 import { CreateBookingHoldDto } from './dto/create-booking-hold.dto';
 import { LookupBookingDto } from './dto/lookup-booking.dto';
 import {
@@ -25,7 +26,7 @@ import {
   PassengerInfo,
   PaymentStatus,
 } from './schemas/booking.schema';
-import { BUSINESS_CONSTANTS } from 'src/common/constants/business.constants';
+import { CheckInTicketDto } from './dto/check-in-ticket.dto';
 
 export interface BookingWithReviewStatus extends BookingDocument {
   isReviewed: boolean;
@@ -120,7 +121,7 @@ export class BookingsService {
       'SEAT_HOLD_DURATION_MINUTES',
       BUSINESS_CONSTANTS.BOOKING.SEAT_HOLD_DURATION_MINUTES,
     );
-    
+
     const heldUntil = new Date(Date.now() + holdDurationMinutes * 60 * 1000);
 
     const bookingData: Partial<Booking> = {
@@ -367,5 +368,53 @@ export class BookingsService {
     condition: FilterQuery<Booking>,
   ): Promise<BookingDocument | null> {
     return this.bookingsRepository.findByCondition(condition);
+  }
+  /**
+   * [DRIVER] Check-in (Soát vé)
+   */
+  async checkInTicket(dto: CheckInTicketDto, driverId: string): Promise<any> {
+    const { ticketCode } = dto;
+
+    const booking = await this.bookingsRepository.findOne({ ticketCode });
+    if (!booking) {
+      throw new NotFoundException(`Vé có mã "${ticketCode}" không tồn tại.`);
+    }
+
+    if (booking.status !== BookingStatus.CONFIRMED) {
+      throw new BadRequestException(
+        `Vé này đang ở trạng thái "${booking.status}", không thể check-in (Yêu cầu phải Đã thanh toán/Xác nhận).`,
+      );
+    }
+
+    const trip = await this.tripsService.findOne(booking.tripId.toString());
+
+    if (!trip.driverId || trip.driverId.toString() !== driverId) {
+      throw new ForbiddenException(
+        'CẢNH BÁO: Vé này thuộc chuyến đi khác, không thuộc chuyến đi bạn đang phụ trách.',
+      );
+    }
+
+    if (booking.isCheckedIn) {
+      return {
+        message: 'Vé này đã được check-in trước đó.',
+        isCheckedIn: true,
+        checkedInAt: booking.checkedInAt,
+        passengers: booking.passengers,
+        bookingId: booking._id,
+      };
+    }
+
+    booking.isCheckedIn = true;
+    booking.checkedInAt = new Date();
+    await this.bookingsRepository.save(booking);
+
+    return {
+      message: 'Check-in thành công!',
+      isCheckedIn: true,
+      checkedInAt: booking.checkedInAt,
+      passengers: booking.passengers,
+      contactName: booking.contactName,
+      bookingId: booking._id,
+    };
   }
 }

@@ -6,6 +6,7 @@ export enum UserRole {
   USER = 'user',
   COMPANY_ADMIN = 'company_admin',
   ADMIN = 'admin',
+  DRIVER = 'driver',
 }
 
 export type UserDocument = HydratedDocument<User> & {
