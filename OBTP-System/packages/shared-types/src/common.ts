@@ -66,6 +66,16 @@ export interface AuthenticatedUser {
   companyId?: string; // Chỉ có nếu là COMPANY_ADMIN hoặc tài khoản liên kết nhà xe
 }
 
+// Dữ liệu User trả về cho Client sau khi Login/Register (Đã sanitize)
+export interface AuthUserResponse {
+  id: string;
+  email: string;
+  name: string;
+  roles: string[]; // Client nhận về string array
+  companyId?: string;
+  phone: string;
+}
+
 /**
  * Cấu trúc Token trả về khi Login thành công
  */
@@ -73,6 +83,8 @@ export interface LoginResponse {
   accessToken: string;
   user: AuthenticatedUser;
 }
+
+export const ROLES_KEY = "roles";
 
 /**
  * Interface cho dữ liệu Error chuẩn của hệ thống
