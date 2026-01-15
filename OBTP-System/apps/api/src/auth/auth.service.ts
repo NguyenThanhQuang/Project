@@ -21,8 +21,8 @@ import {
   ResetPasswordPayload,
 } from '@obtp/validation';
 
-import { CompanyDocument } from '../../companies/schemas/company.schema';
-import { UserDocument } from '../../users/schemas/user.schema';
+import { CompanyDocument } from '../companies/schemas/company.schema';
+import { UserDocument } from '../users/schemas/user.schema';
 
 @Injectable()
 export class AuthService {
@@ -40,7 +40,7 @@ export class AuthService {
 
   // === REGISTER ===
   async register(payload: RegisterPayload): Promise<{ message: string }> {
-    // 1. Check tồn tại (DB Interaction)
+    // Check tồn tại (DB Interaction)
     const existingUser = await this.userModel.findOne({
       $or: [{ email: payload.email.toLowerCase() }, { phone: payload.phone }],
     });
@@ -61,7 +61,7 @@ export class AuthService {
       throw new ConflictException('Email hoặc số điện thoại đã được sử dụng.');
     }
 
-    // 2. Prepare Data (Business Logic in Service due to DB coupling)
+    // Prepare Data (Business Logic in Service due to DB coupling)
     const token = this.generateSecureToken();
     const expiresIn = parseInt(
       this.configService.get(
@@ -70,7 +70,7 @@ export class AuthService {
       ),
     );
 
-    // 3. Create (DB Interaction)
+    // Create (DB Interaction)
     const newUser = await this.userModel.create({
       ...payload,
       email: payload.email.toLowerCase(),
@@ -80,7 +80,7 @@ export class AuthService {
       emailVerificationExpires: new Date(Date.now() + expiresIn),
     });
 
-    // 4. Side Effects (Events)
+    // Side Effects (Events)
     this.eventEmitter.emit(SystemEvent.USER_REGISTERED, {
       email: newUser.email,
       name: newUser.name,
@@ -94,7 +94,7 @@ export class AuthService {
 
   // === LOGIN ===
   async login(payload: LoginPayload) {
-    // 1. Find User (cho phép login bằng email hoặc phone)
+    // Find User (cho phép login bằng email hoặc phone)
     const identifier = payload.identifier.toLowerCase();
     const user = await this.userModel
       .findOne({
@@ -106,7 +106,7 @@ export class AuthService {
       throw new UnauthorizedException('Thông tin đăng nhập không chính xác.');
     }
 
-    // 2. Validate Constraints (Business Logic calls)
+    // Validate Constraints (Business Logic calls)
     if (user.isBanned) throw new ForbiddenException('Tài khoản đã bị khóa.');
     if (!user.isEmailVerified)
       throw new UnauthorizedException('Email chưa được xác thực.');
@@ -130,11 +130,21 @@ export class AuthService {
       }
     }
 
-    // 3. Generate Token (Lib)
-    // Map data sang format AuthUserResponse (shared-types)
-    const cleanUser = sanitizeUser(user.toObject()) as AuthUserResponse;
+    // Generate Token (Lib)
+    const userObject = user.toObject();
 
-    // Note: Dùng type của CleanUser để đảm bảo payload JWT chuẩn
+    const userForAuth: any = {
+      ...userObject,
+      id: userObject._id.toString(),
+      companyId: userObject.companyId
+        ? userObject.companyId.toString()
+        : undefined,
+    };
+
+    // Lúc này sanitizeUser mới chịu nhận vì đúng kiểu
+    const cleanUser = sanitizeUser(userForAuth) as AuthUserResponse;
+
+    // Dùng type của CleanUser để đảm bảo payload JWT chuẩn
     const accessToken = this.jwtService.sign({
       sub: user._id.toString(),
       email: user.email,

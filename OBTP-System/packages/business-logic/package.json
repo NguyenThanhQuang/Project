@@ -10,9 +10,11 @@
     "lint": "eslint src/"
   },
   "dependencies": {
-    "@obtp/shared-types": "workspace:*"
+    "@obtp/shared-types": "workspace:*",
+    "mongoose": "^9.0.2"
   },
   "devDependencies": {
+    "@types/node": "^22.15.3",
     "tsup": "^8.0.0",
     "typescript": "^5.0.0"
   }

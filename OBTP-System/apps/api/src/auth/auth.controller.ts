@@ -9,22 +9,25 @@ import {
   Res,
   UsePipes,
 } from '@nestjs/common';
-import { Response } from 'express';
-import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
-import {
+import type {
   ForgotPasswordPayload,
   LoginPayload,
   RegisterPayload,
   ResetPasswordPayload,
   VerifyEmailQuery,
+} from '@obtp/validation';
+import type { Response } from 'express';
+import { ZodValidationPipe } from '../common/pipes/zod-validation.pipe';
+import { UrlBuilderService } from '../common/utils/url-builder.service';
+import { AuthService } from './auth.service';
+
+import {
   forgotPasswordSchema,
   loginSchema,
   registerSchema,
   resetPasswordSchema,
   verifyEmailQuerySchema,
 } from '@obtp/validation';
-import { UrlBuilderService } from '../common/utils/url-builder.service';
-import { AuthService } from './auth.service';
 
 @Controller('auth')
 export class AuthController {

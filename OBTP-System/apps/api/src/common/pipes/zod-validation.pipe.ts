@@ -4,11 +4,12 @@ import {
   Injectable,
   PipeTransform,
 } from '@nestjs/common';
-import { ZodError, ZodSchema } from 'zod';
+import type { ZodType } from 'zod';
+import { ZodError } from 'zod';
 
 @Injectable()
 export class ZodValidationPipe implements PipeTransform {
-  constructor(private schema: ZodSchema) {}
+  constructor(private schema: ZodType) {}
 
   transform(value: unknown, metadata: ArgumentMetadata) {
     // Chỉ validate body, query, param (bỏ qua custom decorator nếu không cần thiết)

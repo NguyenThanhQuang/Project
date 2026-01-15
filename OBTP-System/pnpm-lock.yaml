@@ -203,7 +203,13 @@ importers:
       '@obtp/shared-types':
         specifier: workspace:*
         version: link:../shared-types
+      mongoose:
+        specifier: ^9.0.2
+        version: 9.0.2
     devDependencies:
+      '@types/node':
+        specifier: ^22.15.3
+        version: 22.15.3
       tsup:
         specifier: ^8.0.0
         version: 8.5.1(typescript@5.9.3)
