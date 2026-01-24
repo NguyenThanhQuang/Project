@@ -1,14 +1,21 @@
-import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin } from 'lucide-react';
+import { Facebook, Twitter, Instagram, Youtube, Mail, Phone, MapPin, Bus } from 'lucide-react';
 import { useLanguage } from './LanguageContext';
 
 interface FooterProps {
   onAboutClick?: () => void;
   onFAQClick?: () => void;
   onContactClick?: () => void;
+  onNavigate?: (page: string) => void;
 }
 
-export function Footer({ onAboutClick, onFAQClick, onContactClick }: FooterProps = {}) {
+export function Footer({ onAboutClick, onFAQClick, onContactClick, onNavigate }: FooterProps = {}) {
   const { t } = useLanguage();
+  
+  const handleNavigation = (page: string) => {
+    if (onNavigate) {
+      onNavigate(page);
+    }
+  };
   
   return (
     <footer className="bg-gray-900 text-gray-300 pt-16 pb-8">
@@ -16,12 +23,10 @@ export function Footer({ onAboutClick, onFAQClick, onContactClick }: FooterProps
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           {/* Company Info */}
           <div>
-            <div className="flex items-center space-x-3 mb-4">
-              <div className="bg-gradient-to-br from-blue-600 to-teal-500 text-white px-4 py-3 rounded-2xl shadow-lg">
-                <span className="text-2xl">🚌</span>
-              </div>
+            <div className="flex items-center space-x-3 mb-6">
+              <Bus className="w-10 h-10 text-blue-400" />
               <span className="text-2xl bg-gradient-to-r from-blue-400 to-teal-400 bg-clip-text text-transparent">
-                VeXe.com
+                Online Bus Ticket Platform
               </span>
             </div>
             <p className="text-gray-400 mb-4">
@@ -48,16 +53,16 @@ export function Footer({ onAboutClick, onFAQClick, onContactClick }: FooterProps
             <h3 className="text-white mb-4">{t('aboutUs')}</h3>
             <ul className="space-y-2">
               <li>
-                <button onClick={onAboutClick} className="hover:text-blue-400 transition-all">{t('aboutCompany')}</button>
+                <button onClick={() => handleNavigation('about-us')} className="hover:text-blue-400 transition-all">{t('aboutCompany')}</button>
               </li>
               <li>
-                <button onClick={onFAQClick} className="hover:text-blue-400 transition-all">{t('faq')}</button>
+                <button onClick={() => handleNavigation('faq')} className="hover:text-blue-400 transition-all">{t('faq')}</button>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400 transition-all">{t('termsOfService')}</a>
+                <button onClick={() => handleNavigation('terms')} className="hover:text-blue-400 transition-all">{t('termsOfService')}</button>
               </li>
               <li>
-                <a href="#" className="hover:text-blue-400 transition-all">{t('privacyPolicy')}</a>
+                <button onClick={() => handleNavigation('privacy')} className="hover:text-blue-400 transition-all">{t('privacyPolicy')}</button>
               </li>
             </ul>
           </div>
@@ -73,7 +78,7 @@ export function Footer({ onAboutClick, onFAQClick, onContactClick }: FooterProps
                 <a href="#" className="hover:text-blue-400 transition-all">{t('refundPolicy')}</a>
               </li>
               <li>
-                <button onClick={onContactClick} className="hover:text-blue-400 transition-all">{t('contact')}</button>
+                <button onClick={() => handleNavigation('contact-us')} className="hover:text-blue-400 transition-all">{t('contact')}</button>
               </li>
               <li>
                 <a href="#" className="hover:text-blue-400 transition-all">{t('feedbackAndComplaint')}</a>
@@ -95,7 +100,7 @@ export function Footer({ onAboutClick, onFAQClick, onContactClick }: FooterProps
               </li>
               <li className="flex items-center space-x-2">
                 <Mail className="w-5 h-5 text-blue-400" />
-                <a href="mailto:support@vexe.com" className="hover:text-blue-400 transition-all">support@vexe.com</a>
+                <a href="mailto:support@busticket.com" className="hover:text-blue-400 transition-all">support@busticket.com</a>
               </li>
             </ul>
           </div>
@@ -103,7 +108,7 @@ export function Footer({ onAboutClick, onFAQClick, onContactClick }: FooterProps
 
         {/* Bottom */}
         <div className="border-t border-gray-800 pt-8 text-center text-gray-500">
-          <p>&copy; 2024 VeXe.com. {t('allRightsReserved')}</p>
+          <p>&copy; 2025 Online Bus Ticket Platform. {t('allRightsReserved')}</p>
         </div>
       </div>
     </footer>

@@ -1,4 +1,4 @@
-import { Phone, User, Globe, Menu, Sun, Moon, ChevronDown, LogOut, Ticket, UserCircle } from 'lucide-react';
+import { Bus, User, Globe, Menu, Sun, Moon, ChevronDown, LogOut, Ticket, UserCircle, Phone } from 'lucide-react';
 import { useTheme } from './ThemeProvider';
 import { useLanguage } from './LanguageContext';
 import { useState } from 'react';
@@ -41,17 +41,18 @@ export function Header({
       <div className="max-w-7xl mx-auto px-4">
         <div className="flex items-center justify-between h-20">
           {/* Logo */}
-          <div className="flex items-center space-x-3 group cursor-pointer">
-            <div className="bg-gradient-to-br from-blue-600 to-teal-500 text-white px-4 py-3 rounded-2xl shadow-lg shadow-blue-500/20 group-hover:scale-110 transition-transform">
-              <span className="text-2xl">🚌</span>
-            </div>
-            <span className="text-2xl bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent">
-              VeXe.com
+          <button 
+            onClick={onHomeClick}
+            className="flex items-center space-x-3 group cursor-pointer"
+          >
+            <Bus className="w-8 h-8 text-blue-600 dark:text-blue-400 group-hover:scale-110 transition-transform" />
+            <span className="text-xl font-bold bg-gradient-to-r from-blue-600 to-teal-500 bg-clip-text text-transparent whitespace-nowrap">
+              Online Bus Ticket Platform
             </span>
-          </div>
+          </button>
 
           {/* Navigation */}
-          <nav className="hidden md:flex items-center space-x-8">
+          <nav className="hidden lg:flex items-center space-x-8">
             <button
               onClick={onHomeClick}
               className="text-gray-700 dark:text-gray-300 hover:text-blue-600 dark:hover:text-blue-400 transition-all relative group"
@@ -171,7 +172,7 @@ export function Header({
               </button>
             )}
             
-            <button className="md:hidden p-2 text-gray-700 dark:text-gray-300">
+            <button className="lg:hidden p-2 text-gray-700 dark:text-gray-300">
               <Menu className="w-6 h-6" />
             </button>
           </div>

@@ -11,6 +11,8 @@ import { ReviewManagement } from "./ReviewManagement";
 import { SettingsPage } from "./SettingsPage";
 import { DriverManagement } from "./DriverManagement";
 import { DriverApplications } from "./DriverApplications";
+import { PromoCodeManagement } from "./PromoCodeManagement";
+import { RouteImagesManagement } from "./RouteImagesManagement";
 import { useTheme } from "../ThemeProvider";
 import { useLanguage } from "../LanguageContext";
 import {
@@ -31,6 +33,8 @@ import {
   Sun,
   Moon,
   Globe,
+  Tag,
+  Image as ImageIcon,
 } from "lucide-react";
 
 type AdminType = "company" | "system";
@@ -44,6 +48,8 @@ type Page =
   | "users"
   | "companies"
   | "reviews"
+  | "promo-codes"
+  | "route-images"
   | "settings";
 
 interface AdminAppProps {
@@ -144,6 +150,16 @@ export function AdminApp({
       label: "dataManagement",
       page: "settings" as Page,
     },
+    {
+      icon: Tag,
+      label: "promoCodeManagement",
+      page: "promo-codes" as Page,
+    },
+    {
+      icon: ImageIcon,
+      label: "routeImagesManagement",
+      page: "route-images" as Page,
+    },
   ];
 
   const menuItems =
@@ -194,6 +210,14 @@ export function AdminApp({
     
     if (currentPage === "settings") {
       return <SettingsPage />;
+    }
+
+    if (currentPage === "promo-codes" && adminType === "system") {
+      return <PromoCodeManagement />;
+    }
+
+    if (currentPage === "route-images" && adminType === "system") {
+      return <RouteImagesManagement />;
     }
 
     // For other pages not yet implemented

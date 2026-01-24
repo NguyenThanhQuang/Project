@@ -103,8 +103,8 @@ export function ContactPage({
                   </div>
                   <div>
                     <h3 className="text-gray-900 dark:text-white mb-1">{t('emailLabel')}</h3>
-                    <p className="text-gray-600 dark:text-gray-400">support@vexe.com</p>
-                    <p className="text-gray-600 dark:text-gray-400">info@vexe.com</p>
+                    <p className="text-gray-600 dark:text-gray-400">support@busticket.com</p>
+                    <p className="text-gray-600 dark:text-gray-400">info@busticket.com</p>
                   </div>
                 </div>
               </div>

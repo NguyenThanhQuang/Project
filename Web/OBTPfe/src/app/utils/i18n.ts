@@ -267,19 +267,22 @@ export function formatLocalizedPrice(
  */
 export function formatLocalizedDate(
   date: Date | string,
-  language: Language = 'vi',
+  language: Language = 'vi', // Đảm bảo type Language đã được import hoặc định nghĩa
   format: 'short' | 'long' | 'full' = 'short'
 ): string {
   const dateObj = typeof date === 'string' ? new Date(date) : date;
   const locale = language === 'vi' ? 'vi-VN' : 'en-US';
-  
-  const optionsMap: Record<string, Intl.DateTimeFormatOptions> = {
+
+  // FIX: Khai báo kiểu Record rõ ràng để TS hiểu các giá trị bên trong đúng chuẩn Intl
+  const formatOptions: Record<typeof format, Intl.DateTimeFormatOptions> = {
     short: { day: '2-digit', month: '2-digit', year: 'numeric' },
     long: { day: 'numeric', month: 'long', year: 'numeric' },
-    full: { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' }
+    full: { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' },
   };
-  const options = optionsMap[format];
-  
+
+  // Lấy options dựa trên format
+  const options = formatOptions[format];
+
   return dateObj.toLocaleDateString(locale, options);
 }
 

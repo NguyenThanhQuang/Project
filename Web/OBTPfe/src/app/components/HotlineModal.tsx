@@ -6,7 +6,7 @@ interface HotlineModalProps {
 }
 
 export function HotlineModal({ onClose }: HotlineModalProps) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
 
   const hotlines = [
     {
@@ -93,7 +93,7 @@ export function HotlineModal({ onClose }: HotlineModalProps) {
         {/* Footer */}
         <div className="bg-gray-50 dark:bg-gray-700/50 p-6 rounded-b-3xl border-t border-gray-200 dark:border-gray-600">
           <p className="text-center text-gray-600 dark:text-gray-400 text-sm">
-            📧 Email: support@vexe.com | 🕐 Hỗ trợ 24/7
+            📧 Email: support@busticket.com | 🕐 {language === 'vi' ? 'Hỗ trợ 24/7' : 'Support 24/7'}
           </p>
         </div>
       </div>
