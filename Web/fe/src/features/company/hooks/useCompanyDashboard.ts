@@ -9,32 +9,25 @@ import {
   createMyVehicle,
   getMyTrips,
   getMyVehicles,
+  updateMyVehicle
 } from "../services/companyDashboardService";
 import type { CompanyTrip, CompanyVehicle } from "../types/dashboard";
 import { updateTrip } from "../services/tripCompanyService";
 
 export const useCompanyDashboard = () => {
-  // State & Hooks cơ bản
   const { showNotification } = useNotification();
   const { user } = useSelector((state: RootState) => state.auth);
 
-  // State cho giao diện
-  const [activeTab, setActiveTab] = useState(0); // 0: Chuyến xe, 1: Xe
-  const [loading, setLoading] = useState(true); // Loading cho lần tải dữ liệu đầu tiên
-  const [isActionLoading, setIsActionLoading] = useState(false); // Loading cho các hành động cụ thể (VD: bấm nút sửa)
-
-  // State cho dữ liệu
+  const [activeTab, setActiveTab] = useState(0);
+  const [loading, setLoading] = useState(true);
+  const [isActionLoading, setIsActionLoading] = useState(false);
+  
   const [trips, setTrips] = useState<CompanyTrip[]>([]);
   const [vehicles, setVehicles] = useState<CompanyVehicle[]>([]);
-
-  // State cho Dialog
+  
   const [vehicleDialogOpen, setVehicleDialogOpen] = useState(false);
   const [vehicleToEdit, setVehicleToEdit] = useState<Vehicle | null>(null);
 
-  /**
-   * Hàm gọi API để lấy toàn bộ dữ liệu cần thiết cho trang.
-   * Sử dụng Promise.all để tăng hiệu suất.
-   */
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
@@ -58,20 +51,11 @@ export const useCompanyDashboard = () => {
     fetchData();
   }, [fetchData]);
 
-  /**
-   * Mở dialog để thêm xe mới.
-   * Reset vehicleToEdit để đảm bảo form trống.
-   */
   const handleOpenCreateDialog = () => {
     setVehicleToEdit(null);
     setVehicleDialogOpen(true);
   };
 
-  /**
-   * Xử lý khi bấm nút "Sửa" xe.
-   * Lấy dữ liệu chi tiết của xe đó rồi mới mở dialog.
-   * @param vehicleSummary Dữ liệu tóm tắt của xe từ danh sách
-   */
   const handleOpenEditDialog = async (vehicleSummary: CompanyVehicle) => {
     setIsActionLoading(true);
     try {
@@ -88,11 +72,6 @@ export const useCompanyDashboard = () => {
     }
   };
 
-  /**
-   * Xử lý việc lưu thông tin từ dialog (cả thêm mới và chỉnh sửa).
-   * @param data Dữ liệu từ form trong dialog
-   * @param vehicleId ID của xe (nếu đang ở chế độ sửa)
-   */
   const handleSaveVehicle = async (
     data: VehiclePayload,
     vehicleId?: string
@@ -100,20 +79,42 @@ export const useCompanyDashboard = () => {
     setIsActionLoading(true);
     try {
       if (vehicleId) {
-        // TODO: Implement updateMyVehicle service and logic
-        // await updateMyVehicle(vehicleId, data);
+        // Gọi API cập nhật
+        await updateMyVehicle(vehicleId, data);
         showNotification("Cập nhật thông tin xe thành công!", "success");
+        
+        // Cập nhật UI ngay lập tức (optimistic update)
+        setVehicles(prevVehicles =>
+          prevVehicles.map(vehicle =>
+            vehicle._id === vehicleId
+              ? { 
+                  ...vehicle, 
+                  ...data,
+                  vehicleNumber: data.vehicleNumber || vehicle.vehicleNumber,
+                  type: data.type || vehicle.type,
+                  totalSeats: data.totalSeats || vehicle.totalSeats
+                }
+              : vehicle
+          )
+        );
       } else {
         await createMyVehicle(data);
         showNotification("Thêm xe mới thành công!", "success");
+        
+        // Fetch lại dữ liệu để có thông tin mới nhất
+        await fetchData();
       }
+      
       setVehicleDialogOpen(false);
-      await fetchData();
+      setVehicleToEdit(null);
+      
     } catch (error) {
       showNotification(
         getErrorMessage(error, "Lưu thông tin xe thất bại."),
         "error"
       );
+      // Nếu lỗi, fetch lại để đồng bộ với server
+      await fetchData();
     } finally {
       setIsActionLoading(false);
     }
@@ -121,6 +122,7 @@ export const useCompanyDashboard = () => {
 
   const handleToggleRecurrence = async (tripToUpdate: CompanyTrip) => {
     try {
+      // Optimistic update
       setTrips((currentTrips) =>
         currentTrips.map((trip) =>
           trip._id === tripToUpdate._id
@@ -136,14 +138,11 @@ export const useCompanyDashboard = () => {
       showNotification("Cập nhật trạng thái lặp lại thành công!", "success");
     } catch (error) {
       showNotification(getErrorMessage(error, "Cập nhật thất bại."), "error");
-      fetchData();
+      // Rollback nếu có lỗi
+      await fetchData();
     }
   };
 
-  /**
-   * Tính toán các chỉ số thống kê cho chuyến xe.
-   * Dùng useMemo để chỉ tính lại khi danh sách `trips` thay đổi.
-   */
   const tripStats = useMemo(() => {
     return {
       total: trips.length,

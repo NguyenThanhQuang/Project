@@ -76,80 +76,76 @@ export class MailService {
     });
   }
 
-  async sendVerificationEmail(email: string, name: string, token: string) {
-    const apiBaseUrl = this.configService.get<string>('API_BASE_URL');
+async sendVerificationEmail(email: string, name: string, token: string) {
+  // SỬA: Đảm bảo đúng URL frontend
+  const clientUrl = this.configService.get<string>(
+    'CLIENT_URL',
+    'http://localhost:5173',
+  );
+  
+  // Đường dẫn frontend cho trang xác thực
+  const verificationUrl = `${clientUrl}/auth/verify-email?token=${token}`;
 
-    if (!apiBaseUrl) {
-      this.logger.error(
-        'API_BASE_URL is not configured in .env. Cannot send verification email.',
-      );
-      throw new InternalServerErrorException(
-        'Lỗi cấu hình hệ thống, không thể gửi email.',
-      );
-    }
+  const mailFromName = this.configService.get<string>(
+    'MAIL_FROM_NAME',
+    'Online Bus Ticket Platform',
+  );
+  const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
+  const tokenExpiresText = this.configService.get<string>(
+    'EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_TEXT',
+    '24 giờ',
+  );
 
-    const verificationUrl = `${apiBaseUrl}/auth/verify-email?token=${token}`;
-    const mailFromName = this.configService.get<string>(
-      'MAIL_FROM_NAME',
-      'Online Bus Ticket Platform',
+  if (!mailFromAddress) {
+    this.logger.error(
+      'MAIL_FROM_ADDRESS is not configured in .env. Cannot send email.',
     );
-    const mailFromAddress = this.configService.get<string>('MAIL_FROM_ADDRESS');
-    const tokenExpiresText = this.configService.get<string>(
-      'EMAIL_VERIFICATION_TOKEN_EXPIRES_IN_TEXT',
-      '24 giờ',
+    throw new InternalServerErrorException(
+      'Không thể gửi email do thiếu cấu hình địa chỉ người gửi.',
     );
-
-    if (!mailFromAddress) {
-      this.logger.error(
-        'MAIL_FROM_ADDRESS is not configured in .env. Cannot send email.',
-      );
-      throw new InternalServerErrorException(
-        'Không thể gửi email do thiếu cấu hình địa chỉ người gửi.',
-      );
-    }
-
-    const mailOptions = {
-      from: `"${mailFromName}" <${mailFromAddress}>`,
-      to: email,
-      subject: `Xác thực địa chỉ Email cho ${mailFromName}`,
-      html: `
-        <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
-            <h2 style="color: #007bff;">Chào ${name},</h2>
-            <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>${mailFromName}</strong>.</p>
-            <p>Để hoàn tất quá trình đăng ký và kích hoạt tài khoản, vui lòng nhấp vào nút bên dưới để xác thực địa chỉ email của bạn:</p>
-            <p style="text-align: center; margin: 25px 0;">
-              <a href="${verificationUrl}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block;">Xác thực Email của tôi</a>
-            </p>
-            <p>Nếu nút trên không hoạt động, bạn cũng có thể sao chép và dán URL sau vào thanh địa chỉ của trình duyệt:</p>
-            <p style="word-break: break-all;"><a href="${verificationUrl}" style="color: #007bff;">${verificationUrl}</a></p>
-            <p>Liên kết xác thực này sẽ có hiệu lực trong vòng <strong>${tokenExpiresText}</strong>.</p>
-            <p>Nếu bạn không thực hiện yêu cầu đăng ký này, vui lòng bỏ qua email này. Tài khoản của bạn sẽ không được kích hoạt.</p>
-            <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
-            <p style="font-size: 0.9em; color: #777;">Trân trọng,<br>Đội ngũ ${mailFromName}</p>
-          </div>
-        </div>
-      `,
-    };
-
-    try {
-      const info = await this.transporter.sendMail(mailOptions);
-
-      this.logger.log(
-        `Verification email sent to ${email}. Message ID: ${info.messageId}, Preview URL: ${nodemailer.getTestMessageUrl(info)}`,
-      );
-    } catch (error) {
-      this.logger.error(`Error sending verification email to ${email}:`, error);
-      throw new InternalServerErrorException(
-        'Không thể gửi email xác thực. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.',
-      );
-    }
   }
+
+  const mailOptions = {
+    from: `"${mailFromName}" <${mailFromAddress}>`,
+    to: email,
+    subject: `Xác thực địa chỉ Email cho ${mailFromName}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
+        <div style="max-width: 600px; margin: 20px auto; padding: 20px; border: 1px solid #ddd; border-radius: 5px;">
+          <h2 style="color: #007bff;">Chào ${name},</h2>
+          <p>Cảm ơn bạn đã đăng ký tài khoản tại <strong>${mailFromName}</strong>.</p>
+          <p>Để hoàn tất quá trình đăng ký và kích hoạt tài khoản, vui lòng nhấp vào nút bên dưới để xác thực địa chỉ email của bạn:</p>
+          <p style="text-align: center; margin: 25px 0;">
+            <a href="${verificationUrl}" style="background-color: #007bff; color: white; padding: 12px 25px; text-decoration: none; border-radius: 5px; font-size: 16px; display: inline-block;">Xác thực Email của tôi</a>
+          </p>
+          <p>Nếu nút trên không hoạt động, bạn cũng có thể sao chép và dán URL sau vào thanh địa chỉ của trình duyệt:</p>
+          <p style="word-break: break-all;"><a href="${verificationUrl}" style="color: #007bff;">${verificationUrl}</a></p>
+          <p>Liên kết xác thực này sẽ có hiệu lực trong vòng <strong>${tokenExpiresText}</strong>.</p>
+          <p>Nếu bạn không thực hiện yêu cầu đăng ký này, vui lòng bỏ qua email này. Tài khoản của bạn sẽ không được kích hoạt.</p>
+          <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+          <p style="font-size: 0.9em; color: #777;">Trân trọng,<br>Đội ngũ ${mailFromName}</p>
+        </div>
+      </div>
+    `,
+  };
+
+  try {
+    const info = await this.transporter.sendMail(mailOptions);
+    this.logger.log(
+      `Verification email sent to ${email}. Message ID: ${info.messageId}, Verification URL: ${verificationUrl}`,
+    );
+  } catch (error) {
+    this.logger.error(`Error sending verification email to ${email}:`, error);
+    throw new InternalServerErrorException(
+      'Không thể gửi email xác thực. Vui lòng thử lại sau hoặc liên hệ hỗ trợ.',
+    );
+  }
+}
 
   async sendPasswordResetEmail(email: string, name: string, token: string) {
     const clientUrl = this.configService.get<string>(
       'CLIENT_URL',
-      'http://localhost:3001',
+      'http://localhost:5173',
     );
     const resetPasswordPath = this.configService.get<string>(
       'CLIENT_PASSWORD_RESET_PATH',
@@ -216,6 +212,7 @@ export class MailService {
       );
     }
   }
+  
   async sendBookingConfirmationEmail(booking: BookingDocument) {
     const populatedBooking = booking as unknown as PopulatedBooking;
 

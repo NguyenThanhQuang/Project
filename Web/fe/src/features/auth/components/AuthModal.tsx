@@ -94,6 +94,9 @@ const AuthModal: React.FC<AuthModalProps> = ({
     phone: "",
     confirmPassword: "",
   });
+  // THÊM: State để hiển thị thông báo đăng ký thành công
+  const [registrationSuccess, setRegistrationSuccess] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
 
   const getMailServiceUrl = (email: string): string | null => {
     const domain = email.substring(email.lastIndexOf("@") + 1);
@@ -118,6 +121,8 @@ const AuthModal: React.FC<AuthModalProps> = ({
         phone: "",
         confirmPassword: "",
       });
+      setRegistrationSuccess(false); // THÊM: Reset trạng thái đăng ký thành công
+      setRegisteredEmail(""); // THÊM: Reset email đã đăng ký
     }
   }, [open, initialTab, dispatch]);
 
@@ -135,6 +140,7 @@ const AuthModal: React.FC<AuthModalProps> = ({
     newValue: "login" | "register"
   ) => {
     setTab(newValue);
+    setRegistrationSuccess(false); // THÊM: Reset khi chuyển tab
     dispatch(clearAuthStatus()); // Xóa lỗi khi chuyển tab
   };
 
@@ -203,11 +209,24 @@ const AuthModal: React.FC<AuthModalProps> = ({
       )
         .unwrap()
         .then(() => {
+          // THÊM: Hiển thị thông báo thành công thay vì đóng modal
+          setRegistrationSuccess(true);
+          setRegisteredEmail(formData.email);
+          
+          // Reset form
+          setFormData({
+            email: "",
+            password: "",
+            name: "",
+            phone: "",
+            confirmPassword: "",
+          });
+          
+          // Mở hộp thư nếu có thể
           const mailUrl = getMailServiceUrl(formData.email);
           if (mailUrl) {
-            window.open(mailUrl, "_blank");
+            window.open(mailUrl, "_blank", "noopener,noreferrer");
           }
-          onClose();
         })
         .catch((error) => {
           console.error("Registration failed in component:", error);
@@ -248,322 +267,367 @@ const AuthModal: React.FC<AuthModalProps> = ({
           }}
         >
           <Typography variant="h5" sx={{ fontWeight: 700 }}>
-            {tab === "login" ? "Đăng nhập" : "Đăng ký"}
+            {registrationSuccess ? "Đăng ký thành công!" : (tab === "login" ? "Đăng nhập" : "Đăng ký")}
           </Typography>
           <IconButton onClick={onClose} size="small">
             <Close />
           </IconButton>
         </Box>
-        <Tabs
-          value={tab}
-          onChange={handleTabChange}
-          sx={{
-            px: 3,
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: 600,
-              fontSize: "1rem",
-            },
-          }}
-        >
-          <Tab label="Đăng nhập" value="login" />
-          <Tab label="Đăng ký" value="register" />
-        </Tabs>
+        {!registrationSuccess && (
+          <Tabs
+            value={tab}
+            onChange={handleTabChange}
+            sx={{
+              px: 3,
+              "& .MuiTab-root": {
+                textTransform: "none",
+                fontWeight: 600,
+                fontSize: "1rem",
+              },
+            }}
+          >
+            <Tab label="Đăng nhập" value="login" />
+            <Tab label="Đăng ký" value="register" />
+          </Tabs>
+        )}
       </DialogTitle>
 
       <DialogContent sx={{ p: 3 }}>
-        <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
-          {/* THAY ĐỔI: Hiển thị lỗi hoặc thông báo thành công từ Redux store */}
-          {authError && (
-            <Alert severity="error" sx={{ mb: 2 }}>
-              {authError}
-            </Alert>
-          )}
-          {successMessage && tab === "register" && (
-            <Alert severity="success" sx={{ mb: 2 }}>
-              {successMessage}
-            </Alert>
-          )}
-
-          {tab === "register" && (
-            <>
-              <TextField
-                fullWidth
-                label="Họ và tên"
-                value={formData.name}
-                onChange={handleInputChange("name")}
-                required
-                sx={{ mb: 2 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Person sx={{ color: "primary.main" }} />
-                    </InputAdornment>
-                  ),
-                }}
-              />
-              <TextField
-                fullWidth
-                label="Số điện thoại"
-                value={formData.phone}
-                onChange={handleInputChange("phone")}
-                placeholder="+84987654321"
-                sx={{ mb: 2 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">📱</InputAdornment>
-                  ),
-                }}
-              />
-            </>
-          )}
-
-          <TextField
-            fullWidth
-            label="Email hoặc Số điện thoại"
-            type="text"
-            value={formData.email}
-            onChange={handleInputChange("email")}
-            required
-            sx={{ mb: 2 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Email sx={{ color: "primary.main" }} />
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          <TextField
-            fullWidth
-            label="Mật khẩu"
-            type={showPassword ? "text" : "password"}
-            value={formData.password}
-            onChange={handleInputChange("password")}
-            required
-            sx={{ mb: tab === "register" ? 2 : 3 }}
-            InputProps={{
-              startAdornment: (
-                <InputAdornment position="start">
-                  <Lock sx={{ color: "primary.main" }} />
-                </InputAdornment>
-              ),
-              endAdornment: (
-                <InputAdornment position="end">
-                  <IconButton
-                    onClick={() => setShowPassword(!showPassword)}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOff /> : <Visibility />}
-                  </IconButton>
-                </InputAdornment>
-              ),
-            }}
-          />
-
-          {tab === "register" && (
-            <>
-              <TextField
-                fullWidth
-                label="Xác nhận mật khẩu"
-                type={showConfirmPassword ? "text" : "password"}
-                value={formData.confirmPassword}
-                onChange={handleInputChange("confirmPassword")}
-                required
-                sx={{ mb: 2 }}
-                error={formData.confirmPassword !== "" && !isPasswordMatch}
-                helperText={
-                  formData.confirmPassword !== "" && !isPasswordMatch
-                    ? "Mật khẩu xác nhận không khớp"
-                    : ""
-                }
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Lock sx={{ color: "primary.main" }} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: (
-                    <InputAdornment position="end">
-                      <Box
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        {formData.confirmPassword !== "" && (
-                          <>
-                            {isPasswordMatch ? (
-                              <CheckCircle
-                                sx={{ color: "success.main", fontSize: 20 }}
-                              />
-                            ) : (
-                              <Cancel
-                                sx={{ color: "error.main", fontSize: 20 }}
-                              />
-                            )}
-                          </>
-                        )}
-                        <IconButton
-                          onClick={() =>
-                            setShowConfirmPassword(!showConfirmPassword)
-                          }
-                          edge="end"
-                        >
-                          {showConfirmPassword ? (
-                            <VisibilityOff />
-                          ) : (
-                            <Visibility />
-                          )}
-                        </IconButton>
-                      </Box>
-                    </InputAdornment>
-                  ),
-                }}
-              />
-
-              {/* Password Requirements */}
-              {formData.password && (
-                <Box sx={{ mb: 2, p: 2, bgcolor: "grey.50", borderRadius: 2 }}>
-                  <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
-                    Yêu cầu mật khẩu:
-                  </Typography>
-                  <Box
-                    sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
-                  >
-                    {[
-                      {
-                        check: passwordValidation.checks.minLength,
-                        text: "Ít nhất 8 ký tự",
-                      },
-                      {
-                        check: passwordValidation.checks.hasUpperCase,
-                        text: "Có chữ hoa",
-                      },
-                      {
-                        check: passwordValidation.checks.hasLowerCase,
-                        text: "Có chữ thường",
-                      },
-                      {
-                        check: passwordValidation.checks.hasNumbers,
-                        text: "Có số",
-                      },
-                      {
-                        check: passwordValidation.checks.hasSpecialChar,
-                        text: "Có ký tự đặc biệt",
-                      },
-                    ].map((requirement, index) => (
-                      <Box
-                        key={index}
-                        sx={{ display: "flex", alignItems: "center", gap: 1 }}
-                      >
-                        {requirement.check ? (
-                          <CheckCircle
-                            sx={{ color: "success.main", fontSize: 16 }}
-                          />
-                        ) : (
-                          <Cancel sx={{ color: "error.main", fontSize: 16 }} />
-                        )}
-                        <Typography
-                          variant="body2"
-                          sx={{
-                            color: requirement.check
-                              ? "success.main"
-                              : "error.main",
-                            fontSize: "0.875rem",
-                          }}
-                        >
-                          {requirement.text}
-                        </Typography>
-                      </Box>
-                    ))}
-                  </Box>
-                </Box>
-              )}
-            </>
-          )}
-
-          <Button
-            type="submit"
-            fullWidth
-            variant="contained"
-            size="large"
-            disabled={
-              loading ||
-              (tab === "register" &&
-                (!passwordValidation.isValid || !isPasswordMatch))
-            }
-            sx={{
-              py: 1.5,
-              fontWeight: 700,
-              fontSize: "1.1rem",
-              background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
-              "&:hover": {
-                background: "linear-gradient(135deg, #004c8b 0%, #003366 100%)",
-              },
-              mb: 2,
-            }}
-          >
-            {loading ? (
-              <CircularProgress size={24} color="inherit" />
-            ) : tab === "login" ? (
-              "Đăng nhập"
-            ) : (
-              "Đăng ký"
-            )}
-          </Button>
-
-          <Divider sx={{ my: 2 }}>
-            <Typography variant="body2" color="text.secondary">
-              Hoặc
+        {/* THÊM: Hiển thị thông báo đăng ký thành công */}
+        {registrationSuccess ? (
+          <Box sx={{ textAlign: "center", py: 2 }}>
+            <CheckCircle sx={{ fontSize: 60, color: "success.main", mb: 2 }} />
+            <Typography variant="h6" gutterBottom sx={{ fontWeight: 600 }}>
+              Đăng ký thành công!
             </Typography>
-          </Divider>
-
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<GoogleLogo size={20} />}
-              sx={{
-                py: 1.5,
-                borderColor: "#db4437",
-                color: "#db4437",
-                "&:hover": {
-                  borderColor: "#db4437",
-                  backgroundColor: "rgba(219, 68, 55, 0.04)",
-                },
-              }}
-            >
-              Google
-            </Button>
-            <Button
-              fullWidth
-              variant="outlined"
-              startIcon={<Facebook />}
-              sx={{
-                py: 1.5,
-                borderColor: "#1877f2",
-                color: "#1877f2",
-                "&:hover": {
-                  borderColor: "#1877f2",
-                  backgroundColor: "rgba(24, 119, 242, 0.04)",
-                },
-              }}
-            >
-              Facebook
-            </Button>
-          </Box>
-
-          {tab === "login" && (
-            <Box sx={{ textAlign: "center", mt: 2 }}>
+            <Typography variant="body1" sx={{ mb: 3, color: "text.secondary" }}>
+              Chúng tôi đã gửi email xác thực đến <strong>{registeredEmail}</strong>.
+              Vui lòng kiểm tra hộp thư và nhấp vào liên kết để kích hoạt tài khoản.
+            </Typography>
+            <Typography variant="body2" sx={{ mb: 3, color: "text.secondary", fontStyle: "italic" }}>
+              📧 Nếu không thấy email, hãy kiểm tra thư mục <strong>Spam</strong> hoặc <strong>Junk</strong>
+            </Typography>
+            <Box sx={{ display: "flex", gap: 2, justifyContent: "center", mb: 3 }}>
               <Button
-                variant="text"
-                size="small"
-                onClick={handleForgotPassword}
+                variant="outlined"
+                onClick={() => {
+                  const mailUrl = getMailServiceUrl(registeredEmail);
+                  if (mailUrl) {
+                    window.open(mailUrl, "_blank", "noopener,noreferrer");
+                  }
+                }}
+                startIcon={<Email />}
               >
-                Quên mật khẩu?
+                Mở hộp thư
+              </Button>
+              <Button
+                variant="contained"
+                onClick={() => {
+                  setRegistrationSuccess(false);
+                  setTab("login");
+                }}
+              >
+                Đăng nhập ngay
               </Button>
             </Box>
-          )}
-        </Box>
+            <Typography variant="body2" sx={{ mt: 2, color: "text.secondary" }}>
+              <strong>Lưu ý:</strong> Bạn cần xác thực email trước khi đăng nhập.
+            </Typography>
+          </Box>
+        ) : (
+          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+            {/* Hiển thị lỗi hoặc thông báo thành công từ Redux store */}
+            {authError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {authError}
+              </Alert>
+            )}
+            {successMessage && tab === "register" && (
+              <Alert severity="info" sx={{ mb: 2 }}>
+                {successMessage}
+              </Alert>
+            )}
+
+            {tab === "register" && (
+              <>
+                <TextField
+                  fullWidth
+                  label="Họ và tên"
+                  value={formData.name}
+                  onChange={handleInputChange("name")}
+                  required
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Person sx={{ color: "primary.main" }} />
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+                <TextField
+                  fullWidth
+                  label="Số điện thoại"
+                  value={formData.phone}
+                  onChange={handleInputChange("phone")}
+                  placeholder="+84987654321"
+                  sx={{ mb: 2 }}
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">📱</InputAdornment>
+                    ),
+                  }}
+                />
+              </>
+            )}
+
+            <TextField
+              fullWidth
+              label="Email hoặc Số điện thoại"
+              type="text"
+              value={formData.email}
+              onChange={handleInputChange("email")}
+              required
+              sx={{ mb: 2 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Email sx={{ color: "primary.main" }} />
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            <TextField
+              fullWidth
+              label="Mật khẩu"
+              type={showPassword ? "text" : "password"}
+              value={formData.password}
+              onChange={handleInputChange("password")}
+              required
+              sx={{ mb: tab === "register" ? 2 : 3 }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Lock sx={{ color: "primary.main" }} />
+                  </InputAdornment>
+                ),
+                endAdornment: (
+                  <InputAdornment position="end">
+                    <IconButton
+                      onClick={() => setShowPassword(!showPassword)}
+                      edge="end"
+                    >
+                      {showPassword ? <VisibilityOff /> : <Visibility />}
+                    </IconButton>
+                  </InputAdornment>
+                ),
+              }}
+            />
+
+            {tab === "register" && (
+              <>
+                <TextField
+                  fullWidth
+                  label="Xác nhận mật khẩu"
+                  type={showConfirmPassword ? "text" : "password"}
+                  value={formData.confirmPassword}
+                  onChange={handleInputChange("confirmPassword")}
+                  required
+                  sx={{ mb: 2 }}
+                  error={formData.confirmPassword !== "" && !isPasswordMatch}
+                  helperText={
+                    formData.confirmPassword !== "" && !isPasswordMatch
+                      ? "Mật khẩu xác nhận không khớp"
+                      : ""
+                  }
+                  InputProps={{
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Lock sx={{ color: "primary.main" }} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: (
+                      <InputAdornment position="end">
+                        <Box
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          {formData.confirmPassword !== "" && (
+                            <>
+                              {isPasswordMatch ? (
+                                <CheckCircle
+                                  sx={{ color: "success.main", fontSize: 20 }}
+                                />
+                              ) : (
+                                <Cancel
+                                  sx={{ color: "error.main", fontSize: 20 }}
+                                />
+                              )}
+                            </>
+                          )}
+                          <IconButton
+                            onClick={() =>
+                              setShowConfirmPassword(!showConfirmPassword)
+                            }
+                            edge="end"
+                          >
+                            {showConfirmPassword ? (
+                              <VisibilityOff />
+                            ) : (
+                              <Visibility />
+                            )}
+                          </IconButton>
+                        </Box>
+                      </InputAdornment>
+                    ),
+                  }}
+                />
+
+                {/* Password Requirements */}
+                {formData.password && (
+                  <Box sx={{ mb: 2, p: 2, bgcolor: "grey.50", borderRadius: 2 }}>
+                    <Typography variant="body2" sx={{ fontWeight: 600, mb: 1 }}>
+                      Yêu cầu mật khẩu:
+                    </Typography>
+                    <Box
+                      sx={{ display: "flex", flexDirection: "column", gap: 0.5 }}
+                    >
+                      {[
+                        {
+                          check: passwordValidation.checks.minLength,
+                          text: "Ít nhất 8 ký tự",
+                        },
+                        {
+                          check: passwordValidation.checks.hasUpperCase,
+                          text: "Có chữ hoa",
+                        },
+                        {
+                          check: passwordValidation.checks.hasLowerCase,
+                          text: "Có chữ thường",
+                        },
+                        {
+                          check: passwordValidation.checks.hasNumbers,
+                          text: "Có số",
+                        },
+                        {
+                          check: passwordValidation.checks.hasSpecialChar,
+                          text: "Có ký tự đặc biệt",
+                        },
+                      ].map((requirement, index) => (
+                        <Box
+                          key={index}
+                          sx={{ display: "flex", alignItems: "center", gap: 1 }}
+                        >
+                          {requirement.check ? (
+                            <CheckCircle
+                              sx={{ color: "success.main", fontSize: 16 }}
+                            />
+                          ) : (
+                            <Cancel sx={{ color: "error.main", fontSize: 16 }} />
+                          )}
+                          <Typography
+                            variant="body2"
+                            sx={{
+                              color: requirement.check
+                                ? "success.main"
+                                : "error.main",
+                              fontSize: "0.875rem",
+                            }}
+                          >
+                            {requirement.text}
+                          </Typography>
+                        </Box>
+                      ))}
+                    </Box>
+                  </Box>
+                )}
+              </>
+            )}
+
+            <Button
+              type="submit"
+              fullWidth
+              variant="contained"
+              size="large"
+              disabled={
+                loading ||
+                (tab === "register" &&
+                  (!passwordValidation.isValid || !isPasswordMatch))
+              }
+              sx={{
+                py: 1.5,
+                fontWeight: 700,
+                fontSize: "1.1rem",
+                background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
+                "&:hover": {
+                  background: "linear-gradient(135deg, #004c8b 0%, #003366 100%)",
+                },
+                mb: 2,
+              }}
+            >
+              {loading ? (
+                <CircularProgress size={24} color="inherit" />
+              ) : tab === "login" ? (
+                "Đăng nhập"
+              ) : (
+                "Đăng ký"
+              )}
+            </Button>
+
+            <Divider sx={{ my: 2 }}>
+              <Typography variant="body2" color="text.secondary">
+                Hoặc
+              </Typography>
+            </Divider>
+
+            <Box sx={{ display: "flex", gap: 2 }}>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<GoogleLogo size={20} />}
+                sx={{
+                  py: 1.5,
+                  borderColor: "#db4437",
+                  color: "#db4437",
+                  "&:hover": {
+                    borderColor: "#db4437",
+                    backgroundColor: "rgba(219, 68, 55, 0.04)",
+                  },
+                }}
+              >
+                Google
+              </Button>
+              <Button
+                fullWidth
+                variant="outlined"
+                startIcon={<Facebook />}
+                sx={{
+                  py: 1.5,
+                  borderColor: "#1877f2",
+                  color: "#1877f2",
+                  "&:hover": {
+                    borderColor: "#1877f2",
+                    backgroundColor: "rgba(24, 119, 242, 0.04)",
+                  },
+                }}
+              >
+                Facebook
+              </Button>
+            </Box>
+
+            {tab === "login" && (
+              <Box sx={{ textAlign: "center", mt: 2 }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={handleForgotPassword}
+                >
+                  Quên mật khẩu?
+                </Button>
+              </Box>
+            )}
+          </Box>
+        )}
       </DialogContent>
     </Dialog>
   );

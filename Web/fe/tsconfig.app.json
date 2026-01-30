@@ -21,7 +21,9 @@
     "noUnusedParameters": false,
     "noImplicitAny": false,
     "noFallthroughCasesInSwitch": true,
-    "noUncheckedSideEffectImports": false
+    "noUncheckedSideEffectImports": false,
+     "skipLibCheck": true,  // QUAN TRỌNG: bỏ qua kiểm tra thư viện
+    "types": []  // Để trống, không cần @mui/types
   },
-  "include": ["src"]
+  "include": ["src","src/mui-fix.d.ts"]
 }

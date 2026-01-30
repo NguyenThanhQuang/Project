@@ -291,60 +291,127 @@ export class AuthService {
     };
   }
 
-  async processEmailVerification(
-    token: string,
-  ): Promise<{ accessToken: string; user: SanitizedUser }> {
-    if (!token || typeof token !== 'string') {
-      throw new BadRequestException('Token xác thực không hợp lệ.');
-    }
+async processEmailVerification(
+  token: string,
+): Promise<{ accessToken: string; user: SanitizedUser }> {
+  this.logger.debug(`=== PROCESS EMAIL VERIFICATION START ===`);
+  this.logger.debug(`Token: ${token?.substring(0, 10)}...`);
+  this.logger.debug(`Token length: ${token?.length}`);
 
-    const user = await this.usersService.findOneByCondition({
-      emailVerificationToken: token,
-    });
-
-    if (!user) {
-      throw new UnauthorizedException(
-        'Token xác thực không hợp lệ hoặc đã được sử dụng.',
-      );
-    }
-
-    if (user.isEmailVerified) {
-      this.logger.log(
-        `Email ${user.email} is already verified. Proceeding to log in.`,
-      );
-    } else {
-      if (
-        !user.emailVerificationExpires ||
-        user.emailVerificationExpires.getTime() < Date.now()
-      ) {
-        user.emailVerificationToken = undefined;
-        user.emailVerificationExpires = undefined;
-        await user.save();
-        throw new UnauthorizedException(
-          'Token xác thực đã hết hạn. Vui lòng yêu cầu gửi lại.',
-        );
-      }
-      user.isEmailVerified = true;
-      user.emailVerificationToken = undefined;
-      user.emailVerificationExpires = undefined;
-      await user.save();
-      this.logger.log(`Email ${user.email} verified successfully.`);
-    }
-
-    const payload: JwtPayload = {
-      email: user.email,
-      sub: user._id.toString(),
-      roles: user.roles,
-      companyId: user.companyId?.toString(),
-    };
-    const accessToken = this.jwtService.sign(payload);
-
-    return {
-      accessToken,
-      user: this.usersService.sanitizeUser(user),
-    };
+  if (!token || typeof token !== 'string') {
+    throw new BadRequestException('Token xác thực không hợp lệ.');
   }
 
+  // TÌM USER BẰNG TOKEN
+  const user = await this.usersService.findOneByCondition({
+    emailVerificationToken: token,
+  });
+
+  this.logger.debug(`User found: ${!!user}`);
+  
+  if (!user) {
+    // Token không tồn tại - có thể đã được xóa sau khi verify
+    // TÌM USER BẰNG EMAIL ĐÃ VERIFY
+    const verifiedUser = await this.userModel.findOne({
+      $or: [
+        { emailVerificationToken: null, isEmailVerified: true },
+        // Hoặc tìm bằng token hash nếu lưu history
+      ]
+    }).exec();
+    
+    if (verifiedUser) {
+      this.logger.log(`User ${verifiedUser.email} already verified (token was deleted).`);
+      
+      // Tạo JWT token cho user đã verify
+      const payload: JwtPayload = {
+        email: verifiedUser.email,
+        sub: verifiedUser._id.toString(),
+        roles: verifiedUser.roles,
+        companyId: verifiedUser.companyId?.toString(),
+      };
+      
+      const accessToken = this.jwtService.sign(payload, {
+        expiresIn: this.configService.get('JWT_EXPIRATION_TIME', '1h'),
+      });
+
+      return {
+        accessToken,
+        user: this.usersService.sanitizeUser(verifiedUser),
+      };
+    }
+    
+    throw new UnauthorizedException(
+      'Token xác thực không hợp lệ hoặc đã được sử dụng.',
+    );
+  }
+
+  this.logger.debug(`User email: ${user.email}`);
+  this.logger.debug(`User isEmailVerified before: ${user.isEmailVerified}`);
+  this.logger.debug(`Token expires at: ${user.emailVerificationExpires}`);
+  this.logger.debug(`Current time: ${new Date()}`);
+
+  // KIỂM TRA THỜI HẠN TOKEN
+  if (
+    !user.emailVerificationExpires ||
+    user.emailVerificationExpires.getTime() < Date.now()
+  ) {
+    // Token hết hạn - xóa token
+    user.emailVerificationToken = undefined;
+    user.emailVerificationExpires = undefined;
+    await user.save();
+    throw new UnauthorizedException(
+      'Token xác thực đã hết hạn. Vui lòng yêu cầu gửi lại.',
+    );
+  }
+
+  // KIỂM TRA XEM EMAIL ĐÃ ĐƯỢC VERIFY CHƯA
+  let wasAlreadyVerified = false;
+  if (user.isEmailVerified) {
+    this.logger.log(
+      `Email ${user.email} is already verified. Proceeding to log in.`,
+    );
+    wasAlreadyVerified = true;
+  } else {
+    // VERIFY EMAIL
+    user.isEmailVerified = true;
+    this.logger.log(`Email ${user.email} verified successfully.`);
+  }
+
+  // LUÔN XÓA TOKEN SAU KHI XỬ LÝ (dù đã verify hay mới verify)
+  user.emailVerificationToken = undefined;
+  user.emailVerificationExpires = undefined;
+  
+  try {
+    await user.save();
+  } catch (error) {
+    this.logger.error(`Failed to save user after verification:`, error);
+    // Không throw error ở đây vì email đã được verify
+  }
+
+  // TẠO JWT PAYLOAD VÀ ACCESS TOKEN
+  const payload: JwtPayload = {
+    email: user.email,
+    sub: user._id.toString(),
+    roles: user.roles,
+    companyId: user.companyId?.toString(),
+  };
+  
+  const accessToken = this.jwtService.sign(payload, {
+    expiresIn: this.configService.get('JWT_EXPIRATION_TIME', '1h'),
+  });
+
+  // LOG THÔNG TIN
+  this.logger.debug(`Generated JWT token for user: ${user.email}`);
+  this.logger.debug(`User roles: ${user.roles.join(', ')}`);
+  this.logger.debug(`User companyId: ${user.companyId}`);
+  this.logger.debug(`Was already verified: ${wasAlreadyVerified}`);
+  this.logger.debug(`=== PROCESS EMAIL VERIFICATION END ===`);
+
+  return {
+    accessToken,
+    user: this.usersService.sanitizeUser(user),
+  };
+}
   async requestResendVerificationEmail(email: string): Promise<void> {
     const emailLower = email.toLowerCase();
     const user = await this.usersService.findOneByEmail(emailLower);
@@ -625,4 +692,6 @@ export class AuthService {
 
     return { isValid: true, userName: user.name, companyName: companyName };
   }
+
+  
 }

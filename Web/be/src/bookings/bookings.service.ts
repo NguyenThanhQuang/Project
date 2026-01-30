@@ -33,6 +33,7 @@ export interface BookingWithReviewStatus extends BookingDocument {
 @Injectable()
 export class BookingsService {
   private readonly logger = new Logger(BookingsService.name);
+  
   constructor(
     @InjectModel(Booking.name) private bookingModel: Model<BookingDocument>,
     private readonly tripsService: TripsService,
@@ -125,7 +126,6 @@ export class BookingsService {
       userId: bookingUserId,
       tripId: new Types.ObjectId(createDto.tripId),
       companyId: trip.companyId._id,
-      //companyId: trip.companyId,
       status: BookingStatus.HELD,
       paymentStatus: PaymentStatus.PENDING,
       heldUntil,
@@ -267,6 +267,67 @@ export class BookingsService {
   }
 
   /**
+   * MỚI: Gia hạn thời gian giữ chỗ
+   */
+  async extendHoldTime(
+    bookingId: string,
+    user?: UserDocument,
+    additionalMinutes: number = 15,
+  ): Promise<BookingDocument> {
+    const booking = await this.findOne(bookingId, user);
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt vé.');
+
+    if (booking.status !== BookingStatus.HELD) {
+      throw new BadRequestException('Chỉ có thể gia hạn vé đang ở trạng thái giữ chỗ.');
+    }
+
+    if (user && booking.userId && user._id.toString() !== booking.userId.toString()) {
+      throw new ForbiddenException('Bạn không có quyền gia hạn vé này.');
+    }
+
+    // Kiểm tra xem vé đã hết hạn chưa
+    if (booking.heldUntil && booking.heldUntil < new Date()) {
+      throw new BadRequestException('Vé giữ chỗ đã hết hạn. Vui lòng đặt lại.');
+    }
+
+    // Gia hạn thêm thời gian
+    const newHeldUntil = new Date();
+    newHeldUntil.setMinutes(newHeldUntil.getMinutes() + additionalMinutes);
+    booking.heldUntil = newHeldUntil;
+
+    const savedBooking = await booking.save();
+    this.logger.log(`Booking ${bookingId} hold extended to ${newHeldUntil}`);
+    
+    return savedBooking;
+  }
+
+  /**
+   * MỚI: Tạo lại link thanh toán cho vé đang giữ chỗ
+   */
+
+
+  /**
+   * MỚI: Lấy danh sách vé đang giữ chỗ của user
+   */
+  async getHeldBookings(user: UserDocument): Promise<BookingDocument[]> {
+    return this.bookingModel.find({
+      userId: user._id,
+      status: BookingStatus.HELD,
+      heldUntil: { $gt: new Date() }, // Chỉ lấy vé chưa hết hạn
+    })
+    .populate({
+      path: 'tripId',
+      populate: [
+        { path: 'companyId', select: 'name logoUrl' },
+        { path: 'route.fromLocationId', select: 'name fullAddress' },
+        { path: 'route.toLocationId', select: 'name fullAddress' },
+      ],
+    })
+    .sort({ createdAt: -1 })
+    .exec();
+  }
+
+  /**
    * Tra cứu thông tin booking
    */
   async lookupBooking(
@@ -326,6 +387,7 @@ export class BookingsService {
     }
     return result;
   }
+
   /**
    * Hàm này dành cho việc tra cứu nội bộ giữa các service, bỏ qua kiểm tra quyền.
    * Chỉ nên được gọi từ các service đáng tin cậy khác như ReviewsService.
@@ -351,9 +413,86 @@ export class BookingsService {
     }
     return booking;
   }
+
   async findOneByCondition(
     condition: FilterQuery<Booking>,
   ): Promise<BookingDocument | null> {
     return this.bookingModel.findOne(condition).exec();
+  }// ... (phần trên giữ nguyên)
+
+  /**
+   * MỚI: Lấy tất cả booking của user (bao gồm cả vé đã xác nhận và đã hủy)
+   */
+  async getUserBookings(user: UserDocument): Promise<BookingDocument[]> {
+    return this.bookingModel.find({
+      userId: user._id,
+      status: { $in: [BookingStatus.CONFIRMED, BookingStatus.CANCELLED] },
+    })
+    .populate({
+      path: 'tripId',
+      populate: [
+        { path: 'companyId', select: 'name logoUrl' },
+        { path: 'route.fromLocationId', select: 'name fullAddress' },
+        { path: 'route.toLocationId', select: 'name fullAddress' },
+      ],
+    })
+    .sort({ createdAt: -1 })
+    .exec();
   }
+
+  /**
+   * MỚI: Lấy tất cả booking của user (tất cả trạng thái)
+   */
+  async getAllUserBookings(user: UserDocument): Promise<BookingDocument[]> {
+    return this.bookingModel.find({
+      userId: user._id,
+    })
+    .populate({
+      path: 'tripId',
+      populate: [
+        { path: 'companyId', select: 'name logoUrl' },
+        { path: 'route.fromLocationId', select: 'name fullAddress' },
+        { path: 'route.toLocationId', select: 'name fullAddress' },
+      ],
+    })
+    .sort({ createdAt: -1 })
+    .exec();
+  }
+
+// ... (phần dưới giữ nguyên)// ... (phần trên giữ nguyên)
+
+  /**
+   * MỚI: Tạo lại link thanh toán cho vé đang giữ chỗ
+   */
+  async regeneratePaymentLink(
+    bookingId: string,
+    user?: UserDocument,
+  ): Promise<{ booking: BookingDocument; paymentUrl: string }> {
+    const booking = await this.findOne(bookingId, user);
+    if (!booking) throw new NotFoundException('Không tìm thấy đơn đặt vé.');
+
+    if (booking.status !== BookingStatus.HELD) {
+      throw new BadRequestException('Chỉ có thể tạo lại link thanh toán cho vé đang giữ chỗ.');
+    }
+
+    if (user && booking.userId && user._id.toString() !== booking.userId.toString()) {
+      throw new ForbiddenException('Bạn không có quyền tạo lại link thanh toán cho vé này.');
+    }
+
+    // Kiểm tra xem vé đã hết hạn chưa
+    if (booking.heldUntil && booking.heldUntil < new Date()) {
+      throw new BadRequestException('Vé giữ chỗ đã hết hạn. Vui lòng đặt lại.');
+    }
+
+    // TODO: Thực tế sẽ gọi PaymentService để tạo link thanh toán thực
+    // Ở đây tạm thời tạo URL đến trang thanh toán lại
+    const frontendUrl = this.configService.get<string>('FRONTEND_URL', 'http://localhost:3000');
+    const paymentUrl = `${frontendUrl}/payment/retry?bookingId=${bookingId}&amount=${booking.totalAmount}`;
+    
+    this.logger.log(`New payment link generated for booking ${bookingId}: ${paymentUrl}`);
+    
+    return { booking, paymentUrl };
+  }
+
+// ... (phần dưới giữ nguyên)
 }

@@ -27,3 +27,10 @@ export const createMyVehicle = async (
   const response = await api.post<CompanyVehicle>("/vehicles", data);
   return response.data;
 };
+export const updateMyVehicle = async (
+  vehicleId: string,
+  data: VehiclePayload
+): Promise<CompanyVehicle> => {
+  const response = await api.patch(`/vehicles/${vehicleId}`, data);
+  return response.data;
+};

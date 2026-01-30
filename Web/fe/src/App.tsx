@@ -46,6 +46,7 @@ import BookingLookupPage from "./features/bookings/pages/BookingLookupPage";
 import ActivateAccountPage from "./features/auth/pages/ActivateAccountPage";
 import ManageReviewsPage from "./features/admin/pages/ManageReviewsPage";
 import EditTripPage from "./features/company/pages/EditTripPage";
+import VerifyEmailPage from "./features/auth/pages/VerifyEmailPage";
 
 function App() {
   const dispatch = useDispatch<AppDispatch>();
@@ -77,6 +78,7 @@ function App() {
                   }
                 />
                 {/* Trang public */}
+                 <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
                 <Route index element={<Homepage />} />
                 <Route
                   path="/trips/search-results"
@@ -128,6 +130,14 @@ function App() {
                       <ChangePassword />
                     </ProtectedRoute>
                   }
+                // />
+                //  <Route
+                //   path="company/dashboard"
+                //   element={
+                //     <ProtectedRoute allowedRoles={["company_admin"]}>
+                //       <CompanyDashboard />
+                //     </ProtectedRoute>
+                //   }
                 />
                 <Route path="payment/status" element={<PaymentStatus />} />
                 <Route path="bookings/checkout" element={<BookingCheckout />} />
@@ -147,6 +157,7 @@ function App() {
                     </ProtectedRoute>
                   }
                 />
+               
                 {/* <Route
                   path="bus-tracking"
                   element={
@@ -190,7 +201,6 @@ function App() {
                   element={<NotificationManagement />}
                 />
               </Route>
-
               {/* Route cho trang không tìm thấy */}
               {/* <Route path="*" element={<NotFoundPage />} /> */}
             </Routes>

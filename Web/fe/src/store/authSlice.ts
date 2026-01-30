@@ -28,6 +28,7 @@ const initialState: AuthState = {
 interface KnownError {
   message: string | string[];
 }
+
 /**
  * Đăng ký người dùng mới.
  * Backend sẽ gửi email xác thực và trả về một message.
@@ -202,7 +203,6 @@ export const changePassword = createAsyncThunk(
     { rejectWithValue }
   ) => {
     try {
-      //PATCH /api/users/me/change-password
       const response = await api.patch<{ message: string }>(
         "/users/me/change-password",
         data

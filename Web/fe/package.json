@@ -10,12 +10,12 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@emotion/react": "^11.14.0",
-    "@emotion/styled": "^11.14.0",
-    "@mui/icons-material": "^7.1.1",
-    "@mui/material": "^7.1.1",
-    "@mui/system": "^7.1.1",
-    "@mui/x-date-pickers": "^8.5.1",
+    "@emotion/react": "^11.11.4",
+    "@emotion/styled": "^11.11.0",
+    "@mui/icons-material": "^5.15.20",
+    "@mui/material": "^5.15.20",
+    "@mui/system": "^5.15.20",
+    "@mui/x-date-pickers": "^6.20.2",
     "@react-spring/three": "^10.0.1",
     "@react-three/drei": "^10.5.0",
     "@react-three/fiber": "^9.2.0",

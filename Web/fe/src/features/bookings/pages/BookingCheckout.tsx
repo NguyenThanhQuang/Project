@@ -15,14 +15,15 @@ import {
   AccordionDetails,
   CircularProgress,
   Chip,
+  Alert,
 } from "@mui/material";
 import {
   Person,
   Phone,
-  // Email,
   Schedule,
   LocationOn,
   ExpandMore,
+  AccessTime,
 } from "@mui/icons-material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useNotification } from "../../../components/common/NotificationProvider";
@@ -165,6 +166,20 @@ const BookingCheckout: React.FC = () => {
       <Grid container spacing={4}>
         {/* Cột trái: Form nhập liệu */}
         <Grid size={{ xs: 12, lg: 8 }}>
+          {/* Thông báo thời gian giữ chỗ */}
+          <Alert 
+            severity="info" 
+            icon={<AccessTime />}
+            sx={{ mb: 3 }}
+          >
+            <Typography variant="body2" fontWeight="bold">
+              Lưu ý: Thời gian giữ chỗ là 15 phút
+            </Typography>
+            <Typography variant="body2">
+              Sau khi thanh toán, bạn có thể xem và quản lý vé trong mục "Vé của tôi"
+            </Typography>
+          </Alert>
+
           {/* Thông tin hành khách */}
           <Paper elevation={3} sx={{ borderRadius: 3, mb: 4 }}>
             <Box
@@ -306,8 +321,7 @@ const BookingCheckout: React.FC = () => {
               sx={{ p: 3, borderBottom: "1px solid", borderColor: "divider" }}
             >
               <Typography variant="h5" sx={{ fontWeight: 700 }}>
-                {" "}
-                Tóm tắt đặt vé{" "}
+                Tóm tắt đặt vé
               </Typography>
             </Box>
             <CardContent sx={{ p: 3 }}>
@@ -321,12 +335,10 @@ const BookingCheckout: React.FC = () => {
                 </Avatar>
                 <Box>
                   <Typography variant="h6" sx={{ fontWeight: 600 }}>
-                    {" "}
-                    {trip.companyName}{" "}
+                    {trip.companyName}
                   </Typography>
                   <Typography variant="body2" color="text.secondary">
-                    {" "}
-                    {trip.vehicleType}{" "}
+                    {trip.vehicleType}
                   </Typography>
                 </Box>
               </Box>
@@ -336,15 +348,13 @@ const BookingCheckout: React.FC = () => {
                 >
                   <LocationOn sx={{ fontSize: 16, color: "text.secondary" }} />
                   <Typography variant="body2">
-                    {" "}
-                    {trip.fromLocation} → {trip.toLocation}{" "}
+                    {trip.fromLocation} → {trip.toLocation}
                   </Typography>
                 </Box>
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
                   <Schedule sx={{ fontSize: 16, color: "text.secondary" }} />
                   <Typography variant="body2">
-                    {" "}
-                    {trip.departureTime} - {trip.arrivalTime}{" "}
+                    {trip.departureTime} - {trip.arrivalTime}
                   </Typography>
                 </Box>
               </Box>
@@ -353,8 +363,7 @@ const BookingCheckout: React.FC = () => {
               {/* Selected Seats */}
               <Box sx={{ mb: 3 }}>
                 <Typography variant="h6" sx={{ fontWeight: 600, mb: 2 }}>
-                  {" "}
-                  Ghế đã chọn ({selectedSeats.length}){" "}
+                  Ghế đã chọn ({selectedSeats.length})
                 </Typography>
                 <Box sx={{ display: "flex", flexWrap: "wrap", gap: 1 }}>
                   {selectedSeats.map((seat) => (
@@ -378,8 +387,7 @@ const BookingCheckout: React.FC = () => {
                   }}
                 >
                   <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                    {" "}
-                    Tổng cộng{" "}
+                    Tổng cộng
                   </Typography>
                   <Typography
                     variant="h6"
@@ -405,6 +413,16 @@ const BookingCheckout: React.FC = () => {
                   "Đến trang thanh toán"
                 )}
               </Button>
+
+              <Box sx={{ mt: 2, textAlign: "center" }}>
+                <Button
+                  variant="text"
+                  size="small"
+                  onClick={() => navigate("/my-bookings")}
+                >
+                  Xem vé đang giữ chỗ của tôi
+                </Button>
+              </Box>
             </CardContent>
           </Paper>
         </Grid>

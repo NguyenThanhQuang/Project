@@ -27,11 +27,75 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 @Controller('auth')
 export class AuthController {
   private readonly logger = new Logger(AuthController.name);
+  private processingTokens = new Set<string>(); // THÊM: Set để theo dõi token đang xử lý
 
   constructor(
     private authService: AuthService,
     private configService: ConfigService,
   ) {}
+
+  @Get('verify-email')
+  async verifyEmailToken(@Query('token') token: string) {
+    if (!token) {
+      throw new BadRequestException('Token xác thực không hợp lệ');
+    }
+
+    // CHẶN DUPLICATE REQUEST - THÊM
+    if (this.processingTokens.has(token)) {
+      this.logger.warn(`Duplicate verification request for token: ${token.substring(0, 10)}...`);
+      throw new BadRequestException('Đang xử lý yêu cầu xác thực. Vui lòng đợi...');
+    }
+
+    try {
+      // ĐÁNH DẤU TOKEN ĐANG ĐƯỢC XỬ LÝ
+      this.processingTokens.add(token);
+      
+      const result = await this.authService.processEmailVerification(token);
+      
+      return {
+        success: true,
+        message: 'Email đã được xác thực thành công! Bạn có thể đăng nhập ngay bây giờ.',
+        accessToken: result.accessToken,
+        user: result.user,
+      };
+    } catch (error) {
+      this.logger.error(`Email verification failed for token: ${token.substring(0, 10)}...`, error);
+      
+      // PHÂN BIỆT CÁC LOẠI LỖI
+      if (error instanceof UnauthorizedException) {
+        const errorResponse = error.getResponse();
+        let errorMessage = 'Token không hợp lệ hoặc đã hết hạn.';
+        
+        if (typeof errorResponse === 'object' && errorResponse !== null) {
+          if ('message' in errorResponse) {
+            const message = errorResponse.message as string;
+            if (message.includes('đã được sử dụng')) {
+              // Token đã được sử dụng - có thể email đã verify
+              errorMessage = 'Token đã được sử dụng. Email của bạn có thể đã được xác thực trước đó. Vui lòng thử đăng nhập.';
+            } else if (message.includes('hết hạn')) {
+              errorMessage = 'Token xác thực đã hết hạn. Vui lòng yêu cầu gửi lại email xác thực.';
+            } else {
+              errorMessage = message;
+            }
+          }
+        }
+        
+        throw new BadRequestException(errorMessage);
+      }
+      
+      if (error instanceof NotFoundException) {
+        throw new BadRequestException('Không tìm thấy người dùng với token này');
+      }
+      if (error instanceof BadRequestException) {
+        throw error;
+      }
+      
+      throw new BadRequestException('Đã xảy ra lỗi trong quá trình xác thực');
+    } finally {
+      // XÓA TOKEN KHỎI DANH SÁCH ĐANG XỬ LÝ
+      this.processingTokens.delete(token);
+    }
+  }
 
   @Post('register')
   @HttpCode(HttpStatus.CREATED)
@@ -43,62 +107,6 @@ export class AuthController {
       name: registerDto.name,
     };
     return this.authService.register(createUserPayload);
-  }
-
-  @Get('verify-email')
-  async verifyEmailToken(@Query('token') token: string, @Res() res: Response) {
-    const clientBaseUrl = this.configService.get<string>(
-      'CLIENT_URL',
-      'http://localhost:3001',
-    );
-    const verificationResultPath = this.configService.get<string>(
-      'CLIENT_VERIFICATION_RESULT_PATH',
-      '/auth/verification-result',
-    );
-
-    if (!token) {
-      const clientErrorUrl = `${clientBaseUrl}${verificationResultPath}?success=false&message=InvalidTokenLink`;
-      return res.redirect(clientErrorUrl);
-    }
-
-    try {
-      const result = await this.authService.processEmailVerification(token);
-      const successUrl = `${clientBaseUrl}${verificationResultPath}?success=true&message=EmailVerified&accessToken=${result.accessToken}`;
-      return res.redirect(successUrl);
-    } catch (error) {
-      let errorMessageKey = 'VerificationFailed';
-      let logMessage = 'An unknown error occurred';
-      let errorStack: string | undefined;
-
-      if (error instanceof HttpException) {
-        errorStack = error.stack;
-        const response = error.getResponse();
-        logMessage =
-          typeof response === 'string' ? response : JSON.stringify(response);
-
-        if (error instanceof UnauthorizedException) {
-          errorMessageKey = logMessage.includes('hết hạn')
-            ? 'TokenExpired'
-            : 'TokenInvalidOrUsed';
-        } else if (error instanceof BadRequestException) {
-          errorMessageKey = 'InvalidTokenFormat';
-        } else if (error instanceof NotFoundException) {
-          errorMessageKey = 'UserNotFoundWithToken';
-        }
-      } else if (error instanceof Error) {
-        logMessage = error.message;
-        errorStack = error.stack;
-      }
-
-      this.logger.error(
-        `Email verification failed: ${logMessage}`,
-        errorStack,
-        `TokenPrefix: ${token.substring(0, 10)}...`,
-      );
-
-      const failureUrl = `${clientBaseUrl}${verificationResultPath}?success=false&message=${errorMessageKey}`;
-      return res.redirect(failureUrl);
-    }
   }
 
   @Post('login')

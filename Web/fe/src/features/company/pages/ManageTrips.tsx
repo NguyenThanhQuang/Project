@@ -166,7 +166,12 @@ const VehiclesView: React.FC<{
               <TableCell>{vehicle.type}</TableCell>
               <TableCell>{vehicle.totalSeats}</TableCell>
               <TableCell>
-                <Chip label={vehicle.status} size="small" variant="outlined" />
+                <Chip
+                  label={vehicle.status === "active" ? "Hoạt động" : "Không hoạt động"}
+                  color={vehicle.status === "active" ? "success" : "error"}
+                  size="small"
+                  variant="outlined"
+                />
               </TableCell>
               <TableCell align="center">
                 <Button
@@ -252,7 +257,7 @@ const ManageTrips: React.FC = () => {
 
       {/* Stats Cards with correct Grid syntax */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid item xs={12} md={4}>
           <Card
             sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}
           >
@@ -275,7 +280,7 @@ const ManageTrips: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid item xs={12} md={4}>
           <Card
             sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}
           >
@@ -298,7 +303,7 @@ const ManageTrips: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid size={{ xs: 12, md: 4 }}>
+        <Grid item xs={12} md={4}>
           <Card
             sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}
           >
@@ -354,6 +359,7 @@ const ManageTrips: React.FC = () => {
                 variant="contained"
                 startIcon={<Add />}
                 onClick={handleOpenCreateDialog}
+                disabled={isActionLoading}
               >
                 Thêm xe mới
               </Button>

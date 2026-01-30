@@ -41,7 +41,7 @@ export interface VehiclePayload {
   type: string;
   description?: string;
   status: VehicleStatus;
-
+ totalSeats: number;
   floors: number;
   seatColumns: number;
   seatRows: number;
