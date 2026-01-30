@@ -63,10 +63,10 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
         {/* Điểm đi */}
         <Grid size={{ xs: 12, md: variant === "hero" ? 12 : 2.5 }}>
           <Autocomplete
-            options={fromProps.options}
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, value) => option._id === value._id}
-            value={searchData.from}
+            options={fromProps.options || []}
+            getOptionLabel={(option) => option.name || ""}
+            isOptionEqualToValue={(option, value) => option._id === value?._id}
+            value={searchData.from || null}
             onChange={(_, newValue) => handleSearchDataChange("from", newValue)}
             onInputChange={(_, newInputValue) =>
               fromProps.onInputChange(newInputValue)
@@ -77,7 +77,7 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
               <TextField {...params} label="Điểm đi" required />
             )}
             renderOption={(props, option) => (
-              <Box component="li" {...props} key={option._id}>
+              <Box component="li" {...props} key={option._id || option.name}>
                 <LocationOn sx={{ mr: 1.5, color: "text.secondary" }} />
                 <Box>
                   <Typography variant="body1">{option.name}</Typography>
@@ -87,6 +87,8 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
                 </Box>
               </Box>
             )}
+            noOptionsText="Không tìm thấy điểm đi"
+            loadingText="Đang tải..."
           />
         </Grid>
 
@@ -102,10 +104,10 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
         {/* Điểm đến */}
         <Grid size={{ xs: 12, md: variant === "hero" ? 12 : 2.5 }}>
           <Autocomplete
-            options={toProps.options}
-            getOptionLabel={(option) => option.name}
-            isOptionEqualToValue={(option, value) => option._id === value._id}
-            value={searchData.to}
+            options={toProps.options || []}
+            getOptionLabel={(option) => option.name || ""}
+            isOptionEqualToValue={(option, value) => option._id === value?._id}
+            value={searchData.to || null}
             onChange={(_, newValue) => handleSearchDataChange("to", newValue)}
             onInputChange={(_, newInputValue) =>
               toProps.onInputChange(newInputValue)
@@ -116,7 +118,7 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
               <TextField {...params} label="Điểm đến" required />
             )}
             renderOption={(props, option) => (
-              <Box component="li" {...props} key={option._id}>
+              <Box component="li" {...props} key={option._id || option.name}>
                 <LocationOn sx={{ mr: 1.5, color: "text.secondary" }} />
                 <Box>
                   <Typography variant="body1">{option.name}</Typography>
@@ -126,6 +128,8 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
                 </Box>
               </Box>
             )}
+            noOptionsText="Không tìm thấy điểm đến"
+            loadingText="Đang tải..."
           />
         </Grid>
 
@@ -133,7 +137,7 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
         <Grid size={{ xs: 12, sm: 6, md: variant === "hero" ? 6 : 2 }}>
           <DatePicker
             label="Ngày đi"
-            value={searchData.date}
+            value={searchData.date || dayjs()}
             onChange={(newValue) => {
               if (newValue) handleSearchDataChange("date", newValue);
             }}
@@ -148,11 +152,11 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
             label="Số khách"
             type="number"
             fullWidth
-            value={searchData.passengers}
+            value={searchData.passengers || 1}
             onChange={(e) =>
               handleSearchDataChange(
                 "passengers",
-                parseInt(e.target.value) || 1
+                Math.max(1, parseInt(e.target.value) || 1)
               )
             }
             inputProps={{ min: 1, max: 10 }}
@@ -173,6 +177,9 @@ export const SharedSearchForm: React.FC<SharedSearchFormProps> = ({
               fontSize: "1.1rem",
               fontWeight: 700,
               background: "linear-gradient(135deg, #0077be 0%, #004c8b 100%)",
+              "&:hover": {
+                background: "linear-gradient(135deg, #004c8b 0%, #003366 100%)",
+              },
             }}
           >
             Tìm kiếm
