@@ -53,6 +53,7 @@ export const useAddTripForm = ({ allLocations }: UseAddTripFormProps) => {
     saveFunction: createTrip,
     onSuccessRedirectPath: () => "/manage-trips",
     allLocations: allLocations,
+    isCreatingTemplate: false,
   });
 
   return {

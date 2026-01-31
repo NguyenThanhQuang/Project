@@ -182,25 +182,37 @@ export const useTripFormLogic = ({
 
     setLoading(true);
 
-    const payload: CreateTripPayload = {
-      companyId: formData.companyId,
-      vehicleId: formData.vehicleId,
-      route: {
-        fromLocationId: formData.fromLocationId,
-        toLocationId: formData.toLocationId,
-        stops: formData.stops
-          .filter((s) => s.locationId && s.expectedArrivalTime)
-          .map((s) => ({
-            locationId: s.locationId,
-            expectedArrivalTime: s.expectedArrivalTime!.toISOString(),
-            expectedDepartureTime: s.expectedDepartureTime?.toISOString(),
-          })),
-      },
-      departureTime: formData.departureTime.toISOString(),
-      expectedArrivalTime: formData.expectedArrivalTime.toISOString(),
-      price: formData.price,
-      isRecurrenceTemplate: formData.isRecurrenceTemplate,
-    };
+const payload: CreateTripPayload = {
+  companyId: formData.companyId,
+  vehicleId: formData.vehicleId,
+  route: {
+    fromLocationId:
+      typeof formData.fromLocationId === "string"
+        ? formData.fromLocationId
+        : (formData.fromLocationId as any)?._id,
+
+    toLocationId:
+      typeof formData.toLocationId === "string"
+        ? formData.toLocationId
+        : (formData.toLocationId as any)?._id,
+
+    stops: formData.stops
+      .filter((s) => s.locationId && s.expectedArrivalTime)
+      .map((s) => ({
+        locationId:
+          typeof s.locationId === "string"
+            ? s.locationId
+            : (s.locationId as any)._id,
+        expectedArrivalTime: s.expectedArrivalTime!.toISOString(),
+        expectedDepartureTime: s.expectedDepartureTime?.toISOString(),
+      })),
+  },
+  departureTime: formData.departureTime.toISOString(),
+  expectedArrivalTime: formData.expectedArrivalTime.toISOString(),
+  price: formData.price,
+  isRecurrenceTemplate: formData.isRecurrenceTemplate,
+};
+
 
     try {
       await saveFunction(payload);
