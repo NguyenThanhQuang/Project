@@ -125,9 +125,9 @@ const TripsView: React.FC<{
                   <IconButton onClick={() => navigate(`/trips/${trip._id}`)}>
                     <Visibility />
                   </IconButton>
-                  <IconButton>
+                  {/* <IconButton>
                     <Edit />
-                  </IconButton>
+                  </IconButton> */}
                 </TableCell>
               </TableRow>
             ))}
@@ -167,7 +167,11 @@ const VehiclesView: React.FC<{
               <TableCell>{vehicle.totalSeats}</TableCell>
               <TableCell>
                 <Chip
-                  label={vehicle.status === "active" ? "Hoạt động" : "Không hoạt động"}
+                  label={
+                    vehicle.status === "active"
+                      ? "Hoạt động"
+                      : "Không hoạt động"
+                  }
                   color={vehicle.status === "active" ? "success" : "error"}
                   size="small"
                   variant="outlined"
@@ -257,7 +261,7 @@ const ManageTrips: React.FC = () => {
 
       {/* Stats Cards with correct Grid syntax */}
       <Grid container spacing={3} sx={{ mb: 4 }}>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card
             sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}
           >
@@ -280,7 +284,7 @@ const ManageTrips: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card
             sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}
           >
@@ -303,7 +307,7 @@ const ManageTrips: React.FC = () => {
             </CardContent>
           </Card>
         </Grid>
-        <Grid item xs={12} md={4}>
+        <Grid size={{ xs: 12, md: 4 }}>
           <Card
             sx={{ borderRadius: 3, boxShadow: "0 4px 20px rgba(0,0,0,0.05)" }}
           >
